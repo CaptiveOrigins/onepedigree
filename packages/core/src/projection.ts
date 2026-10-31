@@ -1,4 +1,4 @@
-import { getRelationshipPaths } from './graph'
+import { getDescendants, getRelationshipPaths } from './graph'
 import { indexPedigree, reproductiveStructure, type PedigreeIndex } from './normalize'
 import type { CohortId, Individual, IndividualId, PedigreeDocument, PedigreeIssue, ReproductiveStructure } from './types'
 
@@ -221,8 +221,9 @@ function addSiblings(b: ProjectionBuilder) {
   const parents = new Set((b.index.parentsOf.get(focalId) ?? []).map((p) => p.individual))
   const siblings = new Set([...parents].flatMap((p) => b.index.childrenOf.get(p) ?? []))
   siblings.delete(focalId)
-  // A parent can also be a child of the other parent (backcross): ancestors are not siblings.
-  for (const o of b.occurrences) if (o.generation > 0) siblings.delete(o.individualId)
+  // A parent can also be a child of the other parent (backcross): ancestors and descendants are not siblings.
+  for (const o of b.occurrences) if (o.generation !== 0) siblings.delete(o.individualId)
+  for (const d of getDescendants(b.index, focalId, { maxGenerations: 10, maxIndividuals: 5000 }).individuals) siblings.delete(d.id)
   for (const p of parents) siblings.delete(p)
   for (const s of [...siblings].sort()) {
     const r = b.add(s, 0, [s])

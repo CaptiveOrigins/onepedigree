@@ -79,8 +79,10 @@ export function getSiblings(index: PedigreeIndex, id: IndividualId): SiblingGrou
   if (!mine.size) return { full, partial, unresolved }
   const candidates = new Set([...mine].flatMap((p) => getChildren(index, p)))
   candidates.delete(id)
-  // In a backcross a parent is also a child of the other parent: ancestors are never siblings.
+  // In a backcross a parent is also a child of the other parent (and an offspring shares a parent):
+  // ancestors and descendants are never listed as siblings.
   for (const a of getAncestors(index, id, { maxGenerations: 10, maxIndividuals: 5000 }).individuals) candidates.delete(a.id)
+  for (const d of getDescendants(index, id, { maxGenerations: 10, maxIndividuals: 5000 }).individuals) candidates.delete(d.id)
   const key = parentKey(index, id)
   for (const c of [...candidates].sort()) {
     if (parentKey(index, c) === key) (parentSetComplete(index, id) && parentSetComplete(index, c) ? full : unresolved).push(c)
