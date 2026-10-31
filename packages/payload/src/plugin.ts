@@ -39,7 +39,7 @@ const graphGlobal = (opts: ResolvedOptions): GlobalConfig => ({
 const settingsGlobal = (opts: ResolvedOptions): GlobalConfig => ({
   slug: opts.settingsGlobal,
   label: 'Pedigree settings',
-  access: { read: () => true, update: ({ req }) => Boolean(req.user) },
+  access: { read: () => true, update: opts.admin?.settingsAccess ?? (({ req }) => Boolean(req.user)) },
   fields: [
     {
       name: 'theme',

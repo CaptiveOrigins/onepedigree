@@ -1,5 +1,5 @@
 import type { LineageRoleConfig, PedigreeViewId, ReproductiveModeId, ValidationRule } from '@captiveorigins/onepedigree-core'
-import type { CollectionConfig, Field } from 'payload'
+import type { Access, CollectionConfig, Field } from 'payload'
 
 /** How parentage is stored on the host collection. */
 export type ParentageMapping =
@@ -67,6 +67,8 @@ export type OnePedigreePluginOptions = {
     panel?: boolean
     /** A "Pedigree settings" global with the color theme editor (default true). */
     settings?: boolean
+    /** Who may change the settings (default: any signed-in user; restrict this in apps with member accounts). */
+    settingsAccess?: Access
   }
   /** Access, fields or hooks to add to collections the plugin creates (managed mode). */
   overrides?: {

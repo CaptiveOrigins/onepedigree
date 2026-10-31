@@ -1,5 +1,7 @@
 'use client'
 
+import '@captiveorigins/onepedigree-react/styles.css'
+
 import type { PedigreeViewId } from '@captiveorigins/onepedigree-core'
 import { ThemeEditor, THEME_PRESETS, VIEW_LABELS, type PedigreeTheme } from '@captiveorigins/onepedigree-react'
 import { useField } from '@payloadcms/ui'
