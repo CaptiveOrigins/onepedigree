@@ -70,6 +70,19 @@ describe('server rendering', () => {
     expect(html).toContain('4 animals')
   })
 
+  it('names anonymous placeholders "Private record", never by their ID', () => {
+    const doc = {
+      schemaVersion: 1 as const,
+      individuals: [
+        { id: 'private-1', data: { private: true } },
+        { id: 'kid', label: 'Kid', parentage: { parents: [{ individual: 'private-1', role: 'father' }] } },
+      ],
+    }
+    const html = render(doc, { focalId: 'kid', view: 'pedigree' })
+    expect(html).toContain('Private record')
+    expect(html).not.toContain('>private-1<')
+  })
+
   it('summarizes the projection in words', () => {
     const p = projectPedigree(reptileBreeding, { focalId: 'ember', view: 'inbreeding' })
     expect(describeProjection(p)).toBe('Inbreeding of Ember: 4 individuals across 3 generations. 1 individual appears more than once.')

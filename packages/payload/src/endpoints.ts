@@ -142,7 +142,22 @@ export async function getPedigree(req: PayloadRequest, opts: ResolvedOptions, id
     maxNodes,
   })
   const { individuals, beyond, hiddenSeen } = redact([...n.document.individuals], new Set(n.unavailable), opts)
-  const document: PedigreeDocument = { schemaVersion: 1, individuals }
+  // Names of the cohorts involved that the requester may read (for cohort markers).
+  const cohortIds = [...new Set(individuals.map((i) => i.parentage?.cohort).filter((c): c is string => Boolean(c)))]
+  const cohorts =
+    opts.cohorts && cohortIds.length
+      ? (
+          await req.payload.find({
+            collection: opts.cohorts.collection as CollectionSlug,
+            where: { id: { in: cohortIds } },
+            depth: 0,
+            pagination: false,
+            overrideAccess: false,
+            req,
+          })
+        ).docs.map((c) => ({ id: String(c.id), label: typeof (c as Doc)[opts.cohorts!.label] === 'string' ? ((c as Doc)[opts.cohorts!.label] as string) : null }))
+      : []
+  const document: PedigreeDocument = { schemaVersion: 1, individuals, cohorts }
   const projection = projectPedigree(document, {
     focalId: id,
     view,

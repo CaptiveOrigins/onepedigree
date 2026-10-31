@@ -113,7 +113,7 @@ function groupBox(group: ProjectionGroup, nodes: Map<string, PositionedNode>, pa
   const ns = group.occurrenceIds.map((id) => nodes.get(id)).filter((n): n is PositionedNode => Boolean(n))
   if (!ns.length) return null
   const x = Math.min(...ns.map((n) => n.x)) - pad
-  const y = Math.min(...ns.map((n) => n.y)) - pad - 14
+  const y = Math.min(...ns.map((n) => n.y)) - pad
   return { x, y, width: Math.max(...ns.map((n) => n.x + n.width)) - x + pad, height: Math.max(...ns.map((n) => n.y + n.height)) - y + pad }
 }
 
@@ -164,7 +164,8 @@ export function PedigreeView(props: PedigreeViewProps) {
               ) : (
                 <>
                   <rect className="op-cohort-box" x={b.x} y={b.y} width={b.width} height={b.height} rx={12} ry={12} />
-                  <text className="op-cohort-label" x={b.x + 10} y={b.y + 12}>
+                  {/* Below the box: connectors enter from above. */}
+                  <text className="op-cohort-label" x={b.x + 10} y={b.y + b.height + 14}>
                     {g.label ?? terms.cohort}
                   </text>
                 </>

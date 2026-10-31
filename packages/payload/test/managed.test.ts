@@ -64,6 +64,11 @@ describe('managed collections', () => {
     }
   })
 
+  it('names cohorts in cohort markers', async () => {
+    const { body } = await callEndpoint(payload, 'individuals', '/:id/pedigree', { id: doc('tinta') }, { user: null, query: { view: 'cohort' } })
+    expect(body.projection.groups.find((g: { kind: string }) => g.kind === 'cohort').label).toBe('2022 clutch')
+  })
+
   it('rejects cycles, self-parents and duplicates on every write, with field paths', async () => {
     await expect(update('rf-sire', [{ individual: doc('ember'), role: 'father' }])).rejects.toMatchObject({ data: { errors: [{ path: 'parentage.parents' }] } })
     const fieldError = (message: RegExp) => ({ data: { errors: [{ path: 'parentage.parents', message: expect.stringMatching(message) }] } })

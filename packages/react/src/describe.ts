@@ -16,7 +16,7 @@ export const VIEW_LABELS: Record<PedigreeViewId, string> = {
   paternal: 'Paternal line',
 }
 
-export type Terminology = { individual: string; individuals: string; parent: string; cohort: string; repeated: string; unknown: string }
+export type Terminology = { individual: string; individuals: string; parent: string; cohort: string; repeated: string; unknown: string; privateRecord: string }
 export const DEFAULT_TERMS: Terminology = {
   individual: 'individual',
   individuals: 'individuals',
@@ -24,9 +24,12 @@ export const DEFAULT_TERMS: Terminology = {
   cohort: 'cohort',
   repeated: 'appears more than once',
   unknown: 'Unknown',
+  privateRecord: 'Private record',
 }
 
-export const labelOf = (individual: Individual | undefined, terms: Terminology = DEFAULT_TERMS) => individual?.label || individual?.id || terms.unknown
+/** Display name: the label, else the ID; anonymous placeholders (`data.private`) never show their ID. */
+export const labelOf = (individual: Individual | undefined, terms: Terminology = DEFAULT_TERMS) =>
+  individual?.data?.private ? terms.privateRecord : individual?.label || individual?.id || terms.unknown
 
 const MODE_TEXT: Record<string, string> = {
   sexual: 'sexual reproduction',
