@@ -11,7 +11,7 @@ layout, server-renderable React components and a Payload CMS plugin.
 |---|---|
 | `@captiveorigins/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
 | `@captiveorigins/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
-| `@captiveorigins/payload-plugin-onepedigree` | Payload plugin: fields, collections, hooks, endpoints, Admin components. *(in progress)* |
+| `@captiveorigins/payload-plugin-onepedigree` | Payload plugin: managed, standard or mapped collections, cycle-safe serialized writes, deletion policies, permission-aware endpoints, Admin preview and color settings. |
 
 ## Principles
 

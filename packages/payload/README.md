@@ -1,0 +1,75 @@
+# @captiveorigins/payload-plugin-onepedigree
+
+[OnePedigree](../../README.md) for Payload CMS 3: parentage on your own collection, cycle-safe
+writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin
+components (pedigree preview, relatives, color theme settings).
+
+```ts
+import { onePedigree } from '@captiveorigins/payload-plugin-onepedigree'
+
+export default buildConfig({
+  collections: [Animals, Clutches],
+  plugins: [
+    onePedigree({
+      collection: 'animals',
+      mode: 'standard-fields', // or 'managed' (creates the collections) or 'mapped' (your fields)
+      cohorts: { collection: 'clutches' },
+      hiddenRecords: 'placeholder', // a private relative shows as an anonymous "private record"
+      navigation: { individualUrl: '/animals/{id}' },
+    }),
+  ],
+})
+```
+
+## Modes
+
+- **`managed`**: creates `individuals`-style and cohort collections from the factories
+  (`createIndividualsCollection`, `createCohortsCollection`).
+- **`standard-fields`** (default): adds the `parentage` group (`parents[{ individual, role }]`,
+  `reproductiveMode`, `cohort`) to your existing collection.
+- **`mapped`**: uses your fields, e.g. `{ kind: 'role-fields', roles: { mother: 'dam', father: 'sire' }, cohort: 'clutch' }`
+  or `{ kind: 'parent-array', path: 'lineage', individualField: 'animal', roleField: 'role' }`.
+
+The plugin never creates collections for parents, roles, modes, graph edges or occurrences.
+
+## Integrity
+
+On every write (Admin, REST, GraphQL, Local API, imports):
+
+- self-parents, duplicated parents and **cycles** are rejected with field-addressable errors;
+  the cycle check walks the full stored descendant line;
+- a parent the editor **cannot read** is rejected, with the same message as a missing one;
+- host `rules` (e.g. taxonomy) run on the proposed record;
+- parentage changes are **serialized**: each updates a graph-revision global in the same
+  transaction, so two concurrent edits that would together form a cycle cannot both commit
+  (requires a MongoDB replica set or another adapter with transactions). The revision also
+  serves as a cache key.
+
+Deleting a recorded parent is refused (`onReferencedIndividualDelete: 'restrict'`, default) or
+removes the references (`'detach'`).
+
+## Endpoints
+
+| Route | |
+|---|---|
+| `GET /api/<collection>/:id/pedigree?view=…` | Projection + layout; `ancestorDepth`, `descendantDepth`, `relatedId`, `cohortId`, `occurrenceMode`, `includeSiblings`, `orientation`, `maxNodes`, `layout=false` |
+| `GET /api/<collection>/:id/relatives` | Parents, offspring, siblings (full / partial / unresolved), cohort mates |
+| `POST /api/<collection>/:id/pedigree/validate` | Check `{ parents, reproductiveMode, cohort }` without saving (needs update access) |
+| `GET /api/<cohorts>/:id/members` | Members the requester may see |
+
+Every read runs as the requester (access control applies), is bounded by `limits`
+(`maxDepth`, `maxNodes`) and returns display projections, not documents. Records the requester
+cannot read are omitted or replaced by anonymous placeholders; their IDs, names and links never
+appear in responses. Add an index on the parent path (`parentage.parents.individual`, or your
+role fields) in production; the standard fields declare it.
+
+## Admin
+
+- A pedigree panel on the edit view: preview of the saved record in any view (pan, zoom,
+  selection), relatives, and structural notices.
+- A **Pedigree settings** global: color theme (seven presets, per-view accents, hex editing)
+  used by the preview; read it in your frontend to match.
+
+## License
+
+MIT
