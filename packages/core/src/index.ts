@@ -34,3 +34,27 @@ export {
   type PedigreeRepository,
 } from './repository'
 export { parsePedigree, SCHEMA_VERSION, serializePedigree } from './serialize'
+export {
+  DEFAULT_LINEAGE_ROLES,
+  PEDIGREE_VIEWS,
+  projectPedigree,
+  type IndividualOccurrence,
+  type LineageRoleConfig,
+  type OccurrenceMode,
+  type PedigreeViewId,
+  type PedigreeViewProjection,
+  type ProjectedEdge,
+  type ProjectionGroup,
+  type ProjectionOptions,
+} from './projection'
+export {
+  defaultLayoutEngine,
+  layoutPedigree,
+  layoutSync,
+  type LayoutOptions,
+  type LayoutResult,
+  type PedigreeLayoutEngine,
+  type Point,
+  type PositionedEdge,
+  type PositionedNode,
+} from './layout'

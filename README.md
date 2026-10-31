@@ -10,7 +10,7 @@ layout, server-renderable React components and a Payload CMS plugin.
 | Package | Purpose |
 |---|---|
 | `@captiveorigins/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
-| `@captiveorigins/onepedigree-react` | Server-renderable SVG views, headless hooks, interaction, styling hooks. *(in progress)* |
+| `@captiveorigins/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
 | `@captiveorigins/payload-plugin-onepedigree` | Payload plugin: fields, collections, hooks, endpoints, Admin components. *(in progress)* |
 
 ## Principles
@@ -56,12 +56,23 @@ const ancestors = getAncestors(indexPedigree(pedigree), 'ember', { maxGeneration
 Large datasets: implement `PedigreeRepository` (`getByIds`, `findChildrenOf`) and call
 `loadNeighborhood()`; it loads a bounded neighborhood one query per generation.
 
+## Views
+
+`pedigree`, `fan`, `ahnentafel`, `descendants`, `hourglass`, `cohort`, `relationship`,
+`timeline`, `inbreeding`, `population`, `compact`, `maternal`, `paternal`: each with a
+projection (`projectPedigree`), a built-in deterministic layout (`layoutPedigree`; tree,
+layered or radial, vertical or horizontal) and a React renderer. Custom layout engines (e.g.
+ELK) plug in through `PedigreeLayoutEngine`.
+
 ## Development
 
 ```bash
 pnpm install
-pnpm typecheck && pnpm test && pnpm build
+pnpm typecheck && pnpm test && pnpm build   # build also writes apps/playground/dist (gallery.html, index.html)
 ```
+
+`apps/playground` shows every view for every fixture: `dist/gallery.html` (static, server-
+rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m http.server`).
 
 ## License
 

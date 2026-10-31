@@ -1,0 +1,103 @@
+/*
+ * OnePedigree default styles. Optional: skip this file for unstyled mode and
+ * style the stable .op-* classes and data-* attributes yourself, or override
+ * the custom properties below.
+ */
+.op-root {
+  --op-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --op-node-background: #ffffff;
+  --op-node-border: #6b7a90;
+  --op-node-border-width: 1.5px;
+  --op-node-border-style: solid;
+  --op-label: #1d2330;
+  --op-sublabel: #5b6577;
+  --op-connector: #8892a6;
+  --op-connector-width: 1.5px;
+  --op-focal-border: #2f7d5c;
+  --op-selected-ring: #f0b35a;
+  --op-highlight: #d97706;
+  --op-cohort-border: #9aa5b8;
+  --op-cohort-label: #5b6577;
+  --op-junction: #5b6577;
+  --op-fan-fill: #eef2f7;
+  --op-fan-fill-alt: #e3e9f1;
+  font-family: var(--op-font);
+  overflow: visible;
+}
+@media (prefers-color-scheme: dark) {
+  .op-root {
+    --op-node-background: #161a22;
+    --op-node-border: #7dc4a5;
+    --op-label: #eef1f6;
+    --op-sublabel: #a7b0c0;
+    --op-connector: #8892a6;
+    --op-cohort-border: #4b5567;
+    --op-cohort-label: #a7b0c0;
+    --op-junction: #c3cad6;
+    --op-fan-fill: #1d2330;
+    --op-fan-fill-alt: #232a37;
+  }
+}
+.op-node-box {
+  fill: var(--op-node-background);
+  stroke: var(--op-node-border);
+  stroke-width: var(--op-node-border-width);
+  stroke-dasharray: var(--op-node-border-dash, none);
+}
+.op-label { fill: var(--op-label); font-size: 13px; font-weight: 600; }
+.op-sublabel { fill: var(--op-sublabel); font-size: 11px; }
+.op-repeat-marker { fill: var(--op-highlight); font-size: 13px; }
+.op-connector { fill: none; stroke: var(--op-connector); stroke-width: var(--op-connector-width); }
+/* Reproductive mode by line pattern (never color alone). */
+.op-connector[data-reproductive-mode='parthenogenesis'] { stroke-dasharray: 6 4; }
+.op-connector[data-reproductive-mode='self'] { stroke-dasharray: 2 3; }
+.op-connector[data-reproductive-mode='asexual'],
+.op-connector[data-reproductive-mode='cloning'] { stroke-dasharray: 1 4; stroke-linecap: round; }
+.op-connector[data-completeness='incomplete'] { stroke-opacity: 0.6; }
+.op-connector[data-highlighted] { stroke: var(--op-highlight); stroke-width: 2.5px; }
+.op-junction { fill: var(--op-junction); stroke: var(--op-junction); stroke-width: 1.5px; }
+.op-junction[data-completeness='incomplete'] { fill: var(--op-node-background); }
+.op-individual[data-repeated] { --op-node-border-dash: 5 3; }
+.op-individual[data-focal] .op-node-box { stroke: var(--op-focal-border); stroke-width: 2.5px; }
+.op-individual[data-highlighted] .op-node-box,
+.op-individual[data-highlighted] .op-fan-segment { stroke: var(--op-highlight); stroke-width: 2.5px; }
+.op-individual[data-selected] .op-node-box,
+.op-individual[data-selected] .op-fan-segment { stroke: var(--op-selected-ring); stroke-width: 3.5px; }
+.op-individual[data-collapsed] { opacity: 0.75; }
+.op-individual[role='button'] { cursor: pointer; }
+.op-individual:focus { outline: none; }
+.op-individual:focus-visible .op-node-box,
+.op-individual:focus-visible .op-fan-segment { stroke: var(--op-selected-ring); stroke-width: 3px; stroke-dasharray: 3 2; }
+.op-individual a:focus-visible .op-node-box { stroke: var(--op-selected-ring); stroke-width: 3px; }
+.op-fan-segment { fill: var(--op-fan-fill); stroke: var(--op-node-border); stroke-width: 1px; }
+.op-individual[data-generation='1'] .op-fan-segment,
+.op-individual[data-generation='3'] .op-fan-segment,
+.op-individual[data-generation='5'] .op-fan-segment { fill: var(--op-fan-fill-alt); }
+.op-cohort-box { fill: none; stroke: var(--op-cohort-border); stroke-dasharray: 4 4; }
+.op-cohort-label { fill: var(--op-cohort-label); font-size: 11px; }
+
+.op-explorer { position: relative; overflow: hidden; touch-action: none; border-radius: 12px; }
+.op-explorer > svg { display: block; width: 100%; height: 100%; cursor: grab; }
+.op-explorer > svg:active { cursor: grabbing; }
+.op-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 1; }
+.op-toolbar button {
+  min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--op-node-border, #6b7a90);
+  background: var(--op-node-background, #fff); color: inherit; font: inherit; cursor: pointer;
+}
+.op-toolbar button:focus-visible { outline: 2px solid #f0b35a; outline-offset: 2px; }
+.op-quick-view {
+  position: absolute; left: 8px; bottom: 8px; max-width: 18rem; padding: 12px 14px; border-radius: 10px;
+  background: var(--op-node-background, #fff); border: 1px solid var(--op-node-border, #6b7a90);
+  font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+.op-quick-view p { margin: 0 0 4px; }
+.op-quick-view-title { font-weight: 600; }
+.op-quick-view-actions { display: flex; gap: 8px; margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .op-root * { transition: none !important; animation: none !important; }
+}
+@media print {
+  .op-toolbar, .op-quick-view { display: none; }
+  .op-explorer { height: auto !important; overflow: visible; }
+  .op-root { --op-node-background: #fff; --op-label: #000; --op-connector: #555; }
+}

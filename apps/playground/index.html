@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OnePedigree playground</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 24px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+      .op-explorer { border: 1px solid #ccd; }
+      [data-theme='dark'] { background: #0e1117; color: #eef1f6; }
+      [data-theme='dark'] .op-root { --op-node-background: #161a22; --op-node-border: #7dc4a5; --op-label: #eef1f6; --op-sublabel: #a7b0c0; --op-fan-fill: #1d2330; --op-fan-fill-alt: #232a37; }
+      [data-theme='light'] .op-root { --op-node-background: #fff; --op-label: #1d2330; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

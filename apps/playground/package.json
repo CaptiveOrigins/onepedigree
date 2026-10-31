@@ -1,0 +1,15 @@
+{
+  "name": "onepedigree-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild app.tsx --bundle --format=esm --outfile=dist/app.js --jsx=automatic --alias:@captiveorigins/onepedigree-core=../../packages/core/src/index.ts && cp index.html dist/ && cp ../../packages/react/src/styles.css dist/ && esbuild gallery.tsx --bundle --platform=node --format=esm --outfile=dist/gallery.mjs --jsx=automatic --packages=external --alias:@captiveorigins/onepedigree-core=../../packages/core/src/index.ts && node dist/gallery.mjs"
+  },
+  "dependencies": {
+    "@captiveorigins/onepedigree-core": "workspace:^",
+    "@captiveorigins/onepedigree-react": "workspace:^",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": { "esbuild": "^0.25.0" }
+}
