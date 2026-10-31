@@ -117,9 +117,18 @@ export const onePedigree =
     const onInit: Config['onInit'] = async (payload) => {
       await config.onInit?.(payload)
       if (opts.disabled) return
-      const current = (await payload.findGlobal({ slug: opts.graphGlobal as never, depth: 0, overrideAccess: true })) as { revision?: number; createdAt?: string }
-      if (!current?.createdAt)
-        await payload.updateGlobal({ slug: opts.graphGlobal as never, data: { revision: current?.revision ?? 0 } as never, overrideAccess: true, context: { onepedigreeInternal: true } })
+      // Retried: on a fresh database this can race other startup writes creating the same
+      // MongoDB collection (a transient transaction error). Startup is never blocked by it.
+      for (let attempt = 1; attempt <= 5; attempt++)
+        try {
+          const current = (await payload.findGlobal({ slug: opts.graphGlobal as never, depth: 0, overrideAccess: true })) as { revision?: number; createdAt?: string }
+          if (!current?.createdAt)
+            await payload.updateGlobal({ slug: opts.graphGlobal as never, data: { revision: current?.revision ?? 0 } as never, overrideAccess: true, context: { onepedigreeInternal: true } })
+          return
+        } catch (error) {
+          if (attempt === 5) payload.logger.error({ err: error }, 'OnePedigree: could not create the pedigree graph revision document; it is created on the next start')
+          else await new Promise((r) => setTimeout(r, 200 * attempt))
+        }
     }
     return { ...config, collections, globals, onInit, custom: { ...config.custom, onepedigree: opts } }
   }
