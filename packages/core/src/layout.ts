@@ -120,24 +120,52 @@ function place(projection: PedigreeViewProjection, slots: Map<string, Slot>, kin
       return { occurrenceId: occ.occurrenceId, x: vertical ? a : b, y: vertical ? b : a, width: o.nodeWidth, height: o.nodeHeight }
     })
   const at = new Map(nodes.map((n) => [n.occurrenceId, n]))
-  const edges: PositionedEdge[] = projection.edges.flatMap((e) => {
-    const s = at.get(e.source)
-    const t = at.get(e.target)
-    if (!s || !t) return []
-    const [p, c] = vertical ? (s.y <= t.y ? [s, t] : [t, s]) : s.x <= t.x ? [s, t] : [t, s]
+  // One connector line per parent group: children with the same shown parents (full siblings)
+  // share a line; half-siblings get their own line at a different height in the same gap.
+  const lower = (e: { source: string; target: string }): [PositionedNode, PositionedNode] => {
+    const s = at.get(e.source)!
+    const t = at.get(e.target)!
+    return vertical ? (s.y <= t.y ? [s, t] : [t, s]) : s.x <= t.x ? [s, t] : [t, s]
+  }
+  const drawable = projection.edges.filter((e) => at.has(e.source) && at.has(e.target))
+  const upperOf = new Map<string, string[]>()
+  for (const e of drawable) {
+    const [p, c] = lower(e)
+    upperOf.set(c.occurrenceId, [...(upperOf.get(c.occurrenceId) ?? []), p.occurrenceId])
+  }
+  const gapKey = (p: PositionedNode) => (vertical ? p.y + p.height : p.x + p.width)
+  const familyOf = (child: string, p: PositionedNode) => `${gapKey(p)}|${[...(upperOf.get(child) ?? [])].sort().join('+')}`
+  const lanes = new Map<string, Map<string, number>>()
+  for (const e of drawable) {
+    const [p, c] = lower(e)
+    const gap = String(gapKey(p))
+    const fams = lanes.get(gap) ?? new Map<string, number>()
+    const fam = familyOf(c.occurrenceId, p)
+    if (!fams.has(fam)) fams.set(fam, vertical ? c.x : c.y)
+    lanes.set(gap, fams)
+  }
+  const laneIndex = new Map<string, { index: number; count: number }>()
+  for (const fams of lanes.values()) {
+    const ordered = [...fams].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))
+    ordered.forEach(([fam], i) => laneIndex.set(fam, { index: i, count: ordered.length }))
+  }
+  const edges: PositionedEdge[] = drawable.map((e) => {
+    const [p, c] = lower(e)
+    const lane = laneIndex.get(familyOf(c.occurrenceId, p)) ?? { index: 0, count: 1 }
+    const share = (lane.index + 1) / (lane.count + 1)
     let points: Point[]
     if (vertical) {
       const start = { x: p.x + p.width / 2, y: p.y + p.height }
       const end = { x: c.x + c.width / 2, y: c.y }
-      const mid = start.y + (end.y - start.y) / 2
+      const mid = start.y + (end.y - start.y) * share
       points = [start, { x: start.x, y: mid }, { x: end.x, y: mid }, end]
     } else {
       const start = { x: p.x + p.width, y: p.y + p.height / 2 }
       const end = { x: c.x, y: c.y + c.height / 2 }
-      const mid = start.x + (end.x - start.x) / 2
+      const mid = start.x + (end.x - start.x) * share
       points = [start, { x: mid, y: start.y }, { x: mid, y: end.y }, end]
     }
-    return [{ id: e.id, source: e.source, target: e.target, role: e.role, points }]
+    return { id: e.id, source: e.source, target: e.target, role: e.role, points }
   })
   const width = Math.max(0, ...nodes.map((n) => n.x + n.width))
   const height = Math.max(0, ...nodes.map((n) => n.y + n.height))

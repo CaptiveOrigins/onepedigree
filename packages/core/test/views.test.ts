@@ -175,6 +175,14 @@ describe('layout', () => {
         }
   })
 
+  it('gives each parent group its own connector line, so half-siblings are distinguishable', () => {
+    const l = layoutSync(projectPedigree(humanFamily, { focalId: 'carlos', view: 'population' }))
+    const laneY = (target: string) => l.edges.find((e) => e.target === target)!.points[1]!.y
+    // Gwen and Hugo (Ellen + Frank) share a line; Iris (Ellen + Carlos) gets another.
+    expect(laneY('gwen#0')).toBe(laneY('hugo#0'))
+    expect(laneY('iris#0')).not.toBe(laneY('gwen#0'))
+  })
+
   it('lays ancestors above the focal individual (vertical) or to one side (horizontal)', () => {
     const p = projectPedigree(humanFamily, { focalId: 'gwen', view: 'pedigree', ancestorDepth: 1 })
     const v = layoutSync(p)
