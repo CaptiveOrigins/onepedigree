@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/payload-plugin-onepedigree",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.6",
   "description": "OnePedigree for Payload CMS: parentage fields for existing or managed collections, cycle-safe serialized parentage writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin preview, relatives and color settings.",
   "keywords": [
     "payload",
@@ -40,7 +40,8 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@captiveorigins/onepedigree-core": "workspace:^",

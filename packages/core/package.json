@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/onepedigree-core",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.6",
   "description": "OnePedigree core: species-neutral pedigree data model, validation, bounded traversal, view projections and layout. No React, Payload or database dependency.",
   "keywords": [
     "pedigree",
@@ -41,6 +41,7 @@
   "scripts": {
     "build": "tsup src/index.ts src/schema.ts --format esm --dts --clean --target node22",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm run build"
   }
 }

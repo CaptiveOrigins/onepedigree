@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/onepedigree-react",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.6",
   "description": "OnePedigree for React: server-renderable SVG pedigree views (all 13), interactive explorer, headless hooks and CSS-variable styling.",
   "keywords": [
     "pedigree",
@@ -44,7 +44,8 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && cp src/styles.css dist/styles.css",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@captiveorigins/onepedigree-core": "workspace:^"
