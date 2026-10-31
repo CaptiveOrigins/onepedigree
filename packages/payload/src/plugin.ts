@@ -77,7 +77,7 @@ export const onePedigree =
       if (!collections.some((c) => c.slug === opts.collection))
         collections.push(
           (options.overrides?.individuals ?? ((c) => c))(
-            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles }),
+            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles, selectors: opts.selectors }),
           ),
         )
     }
@@ -87,7 +87,7 @@ export const onePedigree =
       if (c.slug === opts.collection) {
         const inject =
           opts.mode === 'standard-fields' && !c.fields.some((f) => 'name' in f && f.name === 'parentage')
-            ? [(options.overrides?.parentageField ?? ((f) => f))(createParentageField({ individuals: opts.collection, cohorts: opts.cohorts?.collection, roles: opts.roles, defaultMode: opts.reproductiveModes?.default }))]
+            ? [(options.overrides?.parentageField ?? ((f) => f))(createParentageField({ individuals: opts.collection, cohorts: opts.cohorts?.collection, roles: opts.roles, defaultMode: opts.reproductiveModes?.default, selectors: opts.selectors }))]
             : []
         if (opts.disabled) return { ...c, fields: [...c.fields, ...inject] }
         return {

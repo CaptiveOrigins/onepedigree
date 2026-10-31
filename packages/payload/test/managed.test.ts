@@ -94,12 +94,38 @@ describe('managed collections', () => {
     expect(await revision()).toBe(before + 1)
   })
 
+  it('edits mother and father through the pickers, backed by the one parents array', async () => {
+    const read = async () =>
+      (await payload.findByID({ collection: 'individuals' as never, id: doc('pico'), depth: 0 })) as unknown as {
+        parentage: { mother: string; father: string; parents: { individual: string; role: string }[] }
+      }
+    const before = await read()
+    expect(String(before.parentage.mother)).toBe(doc('rf-dam'))
+    expect(String(before.parentage.father)).toBe(doc('rf-sire'))
+    // Change only the father: the mother row stays, the father row is replaced, other rows stay.
+    await payload.update({
+      collection: 'individuals' as never,
+      id: doc('pico'),
+      data: { parentage: { ...before.parentage, parents: [...before.parentage.parents, { individual: doc('luna'), role: 'contributor' }], father: doc('tinta') } } as never,
+    })
+    const after = await read()
+    expect(after.parentage.parents.map((p) => [String(p.individual), p.role])).toEqual([
+      [doc('tinta'), 'father'],
+      [doc('rf-dam'), 'mother'],
+      [doc('luna'), 'contributor'],
+    ])
+    // Clearing a picker removes that role's row.
+    await payload.update({ collection: 'individuals' as never, id: doc('pico'), data: { parentage: { ...after.parentage, father: null } } as never })
+    expect((await read()).parentage.parents.map((p) => p.role)).toEqual(['mother', 'contributor'])
+  })
+
   it('lists cohort members and relatives', async () => {
     const members = await callEndpoint(payload, 'cohorts', '/:id/members', { id: doc('clutch-2022') }, { user: null })
     expect(members.body.members.map((m: { label: string }) => m.label).sort()).toEqual(['Pico', 'Tinta'])
     const rel = await callEndpoint(payload, 'individuals', '/:id/relatives', { id: doc('tinta') }, { user: null })
     expect(rel.body.parents.map((p: { role: string }) => p.role)).toEqual(['mother', 'father'])
-    expect(rel.body.siblings.full.map((s: { label: string }) => s.label).sort()).toEqual(['Luna', 'Pico'])
+    // Pico's parents were edited above, so only Luna is still a full sibling.
+    expect(rel.body.siblings.full.map((s: { label: string }) => s.label).sort()).toEqual(['Luna'])
     expect(rel.body.cohort.mates.map((s: { label: string }) => s.label)).toEqual(['Pico'])
   })
 

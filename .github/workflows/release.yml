@@ -1,0 +1,31 @@
+# Publish the three packages to npm when a version tag (v*) is pushed.
+# npm trusted publishing (OIDC): no token is stored. Each package must list this
+# repository and workflow as a trusted publisher on npmjs.com (Settings → Trusted publishing).
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm test && pnpm build
+      # pnpm pack turns workspace:^ into real versions; npm publishes with provenance via OIDC.
+      - name: Publish
+        run: |
+          TAG=$(node -p "require('./packages/core/package.json').version.includes('-') ? 'alpha' : 'latest'")
+          for p in core react payload; do
+            (cd packages/$p && pnpm pack --pack-destination ../../dist-packages)
+          done
+          for f in dist-packages/*.tgz; do npm publish "$f" --access public --provenance --tag "$TAG"; done

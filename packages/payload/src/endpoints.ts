@@ -92,107 +92,123 @@ async function canUpdate(req: PayloadRequest, opts: ResolvedOptions, id: string)
 
 const DOWN_VIEWS = new Set<PedigreeViewId>(['descendants', 'hourglass', 'population', 'timeline'])
 
+export type PedigreeQuery = Partial<Record<'view' | 'ancestorDepth' | 'descendantDepth' | 'maxNodes' | 'relatedId' | 'cohortId' | 'occurrenceMode' | 'includeSiblings' | 'orientation' | 'layout', string>>
+
+/**
+ * A permission-filtered projection (and layout) of one view, read as the
+ * request's user. The endpoint uses it; host pages call it too (with a
+ * request from `createLocalReq`). Null when the focal record is not readable.
+ */
+export async function getPedigree(req: PayloadRequest, opts: ResolvedOptions, id: string, query: PedigreeQuery = {}) {
+  if (!(await readable(req, opts.collection, id))) return null
+  const q = { get: (k: keyof PedigreeQuery) => query[k] ?? null }
+  const enabled = opts.views?.enabled ?? PEDIGREE_VIEWS
+  const view = (q.get('view') ?? opts.views?.default ?? 'pedigree') as PedigreeViewId
+  if (!enabled.includes(view)) throw new APIError('Unknown or disabled view.', 400)
+  const max = opts.limits.maxDepth
+  const ancestorDepth = int(q.get('ancestorDepth'), 4, max)
+  const descendantDepth = int(q.get('descendantDepth'), 3, max)
+  const maxNodes = int(q.get('maxNodes'), opts.limits.maxNodes, opts.limits.maxNodes)
+  const relatedId = q.get('relatedId') && (await readable(req, opts.collection, q.get('relatedId')!)) ? q.get('relatedId')! : undefined
+  const modeParam = q.get('occurrenceMode')
+  const occurrenceMode = modeParam === 'merge' || modeParam === 'separate' || modeParam === 'hybrid' ? (modeParam as OccurrenceMode) : undefined
+
+  const focalIds = [id, ...(relatedId ? [relatedId] : [])]
+  let cohortId: string | undefined
+  if (view === 'cohort' && opts.cohorts) {
+    cohortId = q.get('cohortId') ?? undefined
+    const self = (await readable(req, opts.collection, id)) as Doc
+    cohortId ??= String(toIndividual(self, opts).parentage?.cohort ?? '') || undefined
+    if (cohortId) {
+      const { docs } = await req.payload.find({
+        collection: opts.collection as CollectionSlug,
+        where: { [opts.fields.parentage.cohort!]: { equals: cohortId } },
+        depth: 0,
+        limit: maxNodes,
+        pagination: false,
+        select: {} as never,
+        overrideAccess: false,
+        req,
+      })
+      focalIds.push(...(docs as unknown as { id: string }[]).map((d) => String(d.id)))
+    }
+  }
+  const both = view === 'population' || view === 'timeline'
+  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), {
+    focalIds,
+    ancestorDepth: view === 'cohort' ? 1 : view === 'descendants' ? 0 : relatedId ? max : ancestorDepth,
+    descendantDepth: DOWN_VIEWS.has(view) ? descendantDepth : 0,
+    includeSiblings: both || q.get('includeSiblings') === 'true',
+    maxNodes,
+  })
+  const { individuals, beyond, hiddenSeen } = redact([...n.document.individuals], new Set(n.unavailable), opts)
+  const document: PedigreeDocument = { schemaVersion: 1, individuals }
+  const projection = projectPedigree(document, {
+    focalId: id,
+    view,
+    ancestorDepth,
+    descendantDepth,
+    relatedId,
+    cohortId,
+    maxNodes,
+    includeSiblings: q.get('includeSiblings') === 'true',
+    includeCohortMembers: true,
+    lineageRoles: opts.lineageRoles,
+    ...(occurrenceMode ? { occurrenceMode } : {}),
+  })
+  const issues: PedigreeIssue[] = [...projection.issues]
+  if (hiddenSeen) issues.push({ severity: 'notice', code: 'HIDDEN_RECORD', message: 'Some related records are private and not shown.' })
+  const result = { ...projection, issues, truncated: projection.truncated || n.truncated || beyond }
+  const revision = ((await req.payload.findGlobal({ slug: opts.graphGlobal as GlobalSlug, depth: 0, overrideAccess: true, req })) as { revision?: number })?.revision ?? 0
+  const orientation = q.get('orientation') === 'horizontal' ? 'horizontal' : 'vertical'
+  return {
+    schemaVersion: 1 as const,
+    revision,
+    projection: result,
+    layout: q.get('layout') === 'false' ? null : layoutSync(result, { orientation }),
+  }
+}
+
 /** GET /:id/pedigree?view=…: a permission-filtered projection (and layout) for one view. */
 export const pedigreeEndpoint = (opts: ResolvedOptions): Endpoint => ({
   path: '/:id/pedigree',
   method: 'get',
   handler: async (req) => {
-    const id = String(req.routeParams?.id)
-    if (!(await readable(req, opts.collection, id))) return Response.json({ error: 'Not found' }, { status: 404 })
-    const q = new URL(req.url ?? 'http://local', 'http://local').searchParams
-    const enabled = opts.views?.enabled ?? PEDIGREE_VIEWS
-    const view = (q.get('view') ?? opts.views?.default ?? 'pedigree') as PedigreeViewId
-    if (!enabled.includes(view)) throw new APIError('Unknown or disabled view.', 400)
-    const max = opts.limits.maxDepth
-    const ancestorDepth = int(q.get('ancestorDepth'), view === 'compact' ? 4 : 4, max)
-    const descendantDepth = int(q.get('descendantDepth'), 3, max)
-    const maxNodes = int(q.get('maxNodes'), opts.limits.maxNodes, opts.limits.maxNodes)
-    const relatedId = q.get('relatedId') && (await readable(req, opts.collection, q.get('relatedId')!)) ? q.get('relatedId')! : undefined
-    const modeParam = q.get('occurrenceMode')
-    const occurrenceMode = modeParam === 'merge' || modeParam === 'separate' || modeParam === 'hybrid' ? (modeParam as OccurrenceMode) : undefined
-
-    const focalIds = [id, ...(relatedId ? [relatedId] : [])]
-    let cohortId: string | undefined
-    if (view === 'cohort' && opts.cohorts) {
-      cohortId = q.get('cohortId') ?? undefined
-      const self = (await readable(req, opts.collection, id)) as Doc
-      cohortId ??= String(toIndividual(self, opts).parentage?.cohort ?? '') || undefined
-      if (cohortId) {
-        const cohortPath = opts.fields.parentage.cohort!
-        const { docs } = await req.payload.find({
-          collection: opts.collection as CollectionSlug,
-          where: { [cohortPath]: { equals: cohortId } },
-          depth: 0,
-          limit: maxNodes,
-          pagination: false,
-          select: {} as never,
-          overrideAccess: false,
-          req,
-        })
-        focalIds.push(...(docs as unknown as { id: string }[]).map((d) => String(d.id)))
-      }
-    }
-    const both = view === 'population' || view === 'timeline'
-    const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), {
-      focalIds,
-      ancestorDepth: view === 'cohort' ? 1 : view === 'descendants' ? 0 : relatedId ? max : ancestorDepth,
-      descendantDepth: DOWN_VIEWS.has(view) ? descendantDepth : 0,
-      includeSiblings: both || q.get('includeSiblings') === 'true',
-      maxNodes,
-    })
-    const { individuals, beyond, hiddenSeen } = redact([...n.document.individuals], new Set(n.unavailable), opts)
-    const document: PedigreeDocument = { schemaVersion: 1, individuals }
-    const projection = projectPedigree(document, {
-      focalId: id,
-      view,
-      ancestorDepth,
-      descendantDepth,
-      relatedId,
-      cohortId,
-      maxNodes,
-      includeSiblings: q.get('includeSiblings') === 'true',
-      includeCohortMembers: true,
-      lineageRoles: opts.lineageRoles,
-      ...(occurrenceMode ? { occurrenceMode } : {}),
-    })
-    const issues: PedigreeIssue[] = [...projection.issues]
-    if (hiddenSeen) issues.push({ severity: 'notice', code: 'HIDDEN_RECORD', message: 'Some related records are private and not shown.' })
-    const result = { ...projection, issues, truncated: projection.truncated || n.truncated || beyond }
-    const revision = ((await req.payload.findGlobal({ slug: opts.graphGlobal as GlobalSlug, depth: 0, overrideAccess: true, req })) as { revision?: number })?.revision ?? 0
-    const orientation = q.get('orientation') === 'horizontal' ? 'horizontal' : 'vertical'
-    return Response.json({
-      schemaVersion: 1,
-      revision,
-      projection: result,
-      layout: q.get('layout') === 'false' ? null : layoutSync(result, { orientation }),
-    })
+    const params = new URL(req.url ?? 'http://local', 'http://local').searchParams
+    const result = await getPedigree(req, opts, String(req.routeParams?.id), Object.fromEntries(params) as PedigreeQuery)
+    return result ? Response.json(result) : Response.json({ error: 'Not found' }, { status: 404 })
   },
 })
 
-type Summary = { id: string; label: string | null; sex: string | null; href: string | null } | { private: true }
+export type Summary = { id: string; label: string | null; sex: string | null; href: string | null } | { private: true }
 const summary = (ind: Individual, opts: ResolvedOptions): Summary => ({ id: ind.id, label: ind.label ?? null, sex: ind.sex ?? null, href: hrefFor(opts, ind.id) })
 
-/** GET /:id/relatives: parents, offspring, siblings (full / partial / unresolved) and cohort mates the requester may see. */
+/** Parents, offspring, siblings (full / partial / unresolved) and cohort mates the request's user may see. Null when not readable. */
+export async function getRelatives(req: PayloadRequest, opts: ResolvedOptions, id: string) {
+  if (!(await readable(req, opts.collection, id))) return null
+  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), { focalIds: [id], ancestorDepth: 1, descendantDepth: 1, includeSiblings: true, maxNodes: opts.limits.maxNodes })
+  const { individuals } = redact([...n.document.individuals], new Set(n.unavailable), opts)
+  const index = indexPedigree({ schemaVersion: 1, individuals })
+  const at = (x: string): Summary => (index.individuals.get(x)?.data?.private ? { private: true } : summary(index.individuals.get(x)!, opts))
+  const self = index.individuals.get(id)!
+  const s = getSiblings(index, id)
+  const cohort = self.parentage?.cohort
+  const cohortMates = cohort ? [...(index.membersOf.get(cohort) ?? [])].filter((m) => m !== id) : []
+  return {
+    parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, individual: at(p.individual) })),
+    children: [...(index.childrenOf.get(id) ?? [])].map(at),
+    siblings: { full: s.full.map(at), partial: s.partial.map(at), unresolved: s.unresolved.map(at) },
+    cohort: cohort ? { id: cohort, mates: cohortMates.map(at) } : null,
+  }
+}
+
+/** GET /:id/relatives */
 export const relativesEndpoint = (opts: ResolvedOptions): Endpoint => ({
   path: '/:id/relatives',
   method: 'get',
   handler: async (req) => {
-    const id = String(req.routeParams?.id)
-    if (!(await readable(req, opts.collection, id))) return Response.json({ error: 'Not found' }, { status: 404 })
-    const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), { focalIds: [id], ancestorDepth: 1, descendantDepth: 1, includeSiblings: true, maxNodes: opts.limits.maxNodes })
-    const { individuals } = redact([...n.document.individuals], new Set(n.unavailable), opts)
-    const index = indexPedigree({ schemaVersion: 1, individuals })
-    const at = (x: string): Summary => (index.individuals.get(x)?.data?.private ? { private: true } : summary(index.individuals.get(x)!, opts))
-    const self = index.individuals.get(id)!
-    const s = getSiblings(index, id)
-    const cohort = self.parentage?.cohort
-    const cohortMates = cohort ? [...(index.membersOf.get(cohort) ?? [])].filter((m) => m !== id) : []
-    return Response.json({
-      parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, individual: at(p.individual) })),
-      children: [...(index.childrenOf.get(id) ?? [])].map(at),
-      siblings: { full: s.full.map(at), partial: s.partial.map(at), unresolved: s.unresolved.map(at) },
-      cohort: cohort ? { id: cohort, mates: cohortMates.map(at) } : null,
-    })
+    const result = await getRelatives(req, opts, String(req.routeParams?.id))
+    return result ? Response.json(result) : Response.json({ error: 'Not found' }, { status: 404 })
   },
 })
 

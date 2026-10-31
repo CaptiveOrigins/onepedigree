@@ -42,6 +42,8 @@ export type OnePedigreePluginOptions = {
   /** Cohort collection (clutches, litters …). `managed: true` creates it. False: no cohorts. */
   cohorts?: { collection: string; label?: string; managed?: boolean } | false
   reproductiveModes?: { default?: ReproductiveModeId | null }
+  /** Mother/Father pickers above the parents list (standard fields); false hides them. Labels e.g. Dam/Sire. */
+  selectors?: { maternal: { role: string; label: string }; paternal: { role: string; label: string } } | false
   /** Role options in the parent editor (extend the built-ins). */
   roles?: readonly string[]
   lineageRoles?: LineageRoleConfig
