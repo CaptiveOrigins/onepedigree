@@ -1,0 +1,54 @@
+/** JSON Schema (draft 2020-12) for the schema-version-1 pedigree document. */
+const nullableString = { type: ['string', 'null'] } as const
+
+export const parentReferenceSchema = {
+  type: 'object',
+  required: ['individual'],
+  additionalProperties: false,
+  properties: { individual: { type: 'string', minLength: 1 }, role: nullableString },
+} as const
+
+export const parentageSchema = {
+  type: 'object',
+  required: ['parents'],
+  additionalProperties: false,
+  properties: {
+    parents: { type: 'array', items: parentReferenceSchema },
+    reproductiveMode: { enum: ['sexual', 'parthenogenesis', 'self', 'asexual', 'cloning', 'other', null] },
+    cohort: nullableString,
+  },
+} as const
+
+export const individualSchema = {
+  type: 'object',
+  required: ['id'],
+  additionalProperties: false,
+  properties: {
+    id: { type: 'string', minLength: 1 },
+    label: nullableString,
+    sex: nullableString,
+    parentage: { oneOf: [parentageSchema, { type: 'null' }] },
+    data: { type: 'object' },
+  },
+} as const
+
+export const cohortSchema = {
+  type: 'object',
+  required: ['id'],
+  additionalProperties: false,
+  properties: { id: { type: 'string', minLength: 1 }, label: nullableString, data: { type: 'object' } },
+} as const
+
+export const pedigreeDocumentSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $id: 'https://github.com/mgilardi/onepedigree/schema/pedigree-document-1.json',
+  title: 'OnePedigree document (schema version 1)',
+  type: 'object',
+  required: ['schemaVersion', 'individuals'],
+  additionalProperties: false,
+  properties: {
+    schemaVersion: { const: 1 },
+    individuals: { type: 'array', items: individualSchema },
+    cohorts: { type: 'array', items: cohortSchema },
+  },
+} as const
