@@ -17,7 +17,7 @@ import {
   type PayloadRequest,
 } from 'payload'
 
-import { childrenWhere, getAt, graphSelect, idOf, readCohort, readMode, readParents, toIndividual } from './mapping.js'
+import { childrenWhere, getAt, graphSelect, idOf, maternalRoles, readCohort, readMode, readParents, toIndividual } from './mapping.js'
 import type { ResolvedOptions } from './types.js'
 
 /** Context flag for the plugin's own writes (detaching references, internal updates). */
@@ -102,6 +102,22 @@ export async function checkParentage(
     }
   }
 
+  // A cohort is one birthing event: the member's recorded mother must be the cohort's birthing parent.
+  if (proposal.cohort && opts.cohorts?.birthParentField) {
+    const cohort = await req.payload.findByID({
+      collection: opts.cohorts.collection as CollectionSlug,
+      id: proposal.cohort,
+      depth: 0,
+      overrideAccess: true,
+      disableErrors: true,
+      req,
+    })
+    const birthParent = idOf(cohort ? getAt(cohort, opts.cohorts.birthParentField) : null)
+    const mothers = proposal.parents.filter((p) => p.role && maternalRoles(opts).includes(p.role)).map((p) => p.individual)
+    if (birthParent && mothers.some((m) => m !== birthParent))
+      issues.push(err('COHORT_BIRTH_PARENT_MISMATCH', 'This mother differs from the mother of the selected birthing event (cohort).', opts.fields.parentage.cohort ?? path))
+  }
+
   // Host rules and structural notices on the proposed record with its visible parents.
   const self: Individual = {
     ...(proposal.doc ? toIndividual({ ...proposal.doc, id: proposal.id ?? '(new)' }, opts) : { id: proposal.id ?? '(new)' }),
@@ -110,7 +126,7 @@ export async function checkParentage(
   // The record itself is never one of its own parents here (reported above as SELF_PARENT).
   const others = visible.filter((d) => String(d.id) !== self.id).map((d) => toIndividual(d as Record<string, unknown>, opts))
   const document = { schemaVersion: 1 as const, individuals: [self, ...others] }
-  const result = validatePedigree(document, { complete: false, rules: opts.rules })
+  const result = validatePedigree(document, { complete: false, rules: opts.rules, birthParentRoles: maternalRoles(opts) })
   for (const i of result.issues)
     if (i.individualId === self.id && !['SELF_PARENT', 'DUPLICATE_PARENT', 'ANCESTRY_CYCLE'].includes(i.code)) issues.push({ ...i, path: i.path ?? path })
   // Rules may report on other records too; only errors about this write block it.
@@ -201,3 +217,34 @@ export const parentBeforeDelete =
 /** Structure of a document's recorded parentage (for Admin notices). */
 export const structureOf = (doc: Record<string, unknown>, opts: ResolvedOptions) => reproductiveStructure(toIndividual(doc, opts))
 
+
+/**
+ * Cohorts: setting or changing the birthing parent is refused while members
+ * record a different mother (fix the members first, or move them to their own cohort).
+ */
+export const cohortBirthParentBeforeChange =
+  (opts: ResolvedOptions): CollectionBeforeChangeHook =>
+  async ({ data, originalDoc, req, operation, context }) => {
+    const field = opts.cohorts?.birthParentField
+    if (!field || operation !== 'update' || context[SKIP]) return data
+    const next = idOf(getAt({ ...originalDoc, ...data }, field))
+    if (!next || next === idOf(getAt(originalDoc, field))) return data
+    const { docs } = await req.payload.find({
+      collection: opts.collection as CollectionSlug,
+      where: { [opts.fields.parentage.cohort!]: { equals: originalDoc!.id } },
+      depth: 0,
+      pagination: false,
+      select: graphSelect(opts) as never,
+      overrideAccess: true,
+      req,
+    })
+    const conflicting = (docs as unknown as Record<string, unknown>[]).filter((d) =>
+      readParents(d, opts).some((p) => p.role && maternalRoles(opts).includes(p.role) && p.individual !== next),
+    ).length
+    if (conflicting)
+      throw new ValidationError({
+        collection: opts.cohorts!.collection,
+        errors: [{ path: field, message: `${conflicting} member(s) of this birthing event record a different mother.` }],
+      })
+    return data
+  }

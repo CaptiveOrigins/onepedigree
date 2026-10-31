@@ -246,3 +246,30 @@ describe('repository-backed traversal', () => {
     expect(n.document.individuals).toHaveLength(3)
   })
 })
+
+describe('parent terms and birthing events', () => {
+  it('resolves presets, custom terms and fallbacks; stored roles are untouched', async () => {
+    const { resolveParentTerms, roleLabel } = await import('../src')
+    expect(resolveParentTerms(undefined)).toEqual({ maternal: 'Mother', paternal: 'Father' })
+    expect(resolveParentTerms('dam-sire')).toEqual({ maternal: 'Dam', paternal: 'Sire' })
+    expect(resolveParentTerms({ preset: 'female-male-parent' })).toEqual({ maternal: 'Female parent', paternal: 'Male parent' })
+    expect(resolveParentTerms({ maternal: 'Queen', paternal: '' }, 'dam-sire')).toEqual({ maternal: 'Queen', paternal: 'Sire' })
+    expect(resolveParentTerms('nonsense')).toEqual({ maternal: 'Mother', paternal: 'Father' })
+    const terms = resolveParentTerms('dam-sire')
+    expect([roleLabel('mother', terms), roleLabel('father', terms), roleLabel('donor', terms), roleLabel(null, terms)]).toEqual(['Dam', 'Sire', 'Donor', 'Parent'])
+  })
+
+  it('treats a cohort as one birthing event: different mothers are noticed, different fathers are fine', () => {
+    expect(validatePedigree(multiplePaternityClutch).issues).toEqual([])
+    const twoMothers: PedigreeDocument = {
+      schemaVersion: 1,
+      individuals: [
+        { id: 'm1' },
+        { id: 'm2' },
+        { id: 'a', parentage: { parents: [{ individual: 'm1', role: 'mother' }], cohort: 'k' } },
+        { id: 'b', parentage: { parents: [{ individual: 'm2', role: 'mother' }], cohort: 'k' } },
+      ],
+    }
+    expect(validatePedigree(twoMothers).issues.map((i) => i.code)).toEqual(['COHORT_MIXED_BIRTH_PARENTS', 'COHORT_WITHOUT_SHARED_PARENT'])
+  })
+})

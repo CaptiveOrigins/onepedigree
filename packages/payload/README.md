@@ -32,6 +32,20 @@ export default buildConfig({
 
 The plugin never creates collections for parents, roles, modes, graph edges or occurrences.
 
+## Parent labels
+
+Stored roles stay `mother` / `father`; only the words change. `terminology.parents` sets the
+default (`'mother-father'` (default), `'dam-sire'`, `'female-male-parent'`, or custom
+`{ maternal, paternal }`). Add `createParentTermsPreferenceField()` to your users collection
+and pass its path as `terminology.userPreference`: each user then sees their own choice in the
+Mother/Father pickers and in relatives.
+
+## Cohorts are birthing events
+
+A cohort is one birthing event (a clutch, a litter, twins): one mother, fathers may differ per
+member. With `cohorts.birthParentField` (the cohort's field naming the mother), a member whose
+recorded mother differs is refused, and so is changing the cohort's mother while members disagree.
+
 ## Integrity
 
 On every write (Admin, REST, GraphQL, Local API, imports):

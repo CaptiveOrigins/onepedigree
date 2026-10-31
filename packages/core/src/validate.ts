@@ -8,6 +8,8 @@ export type ValidationRule = {
 }
 
 export type ValidationOptions = {
+  /** Roles of the birthing parent (default mother/dam/egg), for cohort checks. */
+  birthParentRoles?: readonly string[]
   /**
    * The document holds every referenced parent (default true). False for a
    * partial neighborhood loaded from a repository: unresolved parents are then
@@ -120,6 +122,20 @@ export function validatePedigree(document: PedigreeDocument, options: Validation
 
   for (const cycle of findCycles(index))
     issues.push(issue('error', 'ANCESTRY_CYCLE', 'Parentage forms a cycle: an individual would be its own ancestor.', { individualId: cycle[0], relatedIds: cycle }))
+
+  // A cohort is one birthing event: one birthing parent (fathers may differ per member).
+  const birthRoles = options.birthParentRoles ?? ['mother', 'dam', 'egg']
+  for (const [cohort, members] of index.membersOf) {
+    const mothers = new Set(
+      members.flatMap((m) => (index.parentsOf.get(m) ?? []).filter((p) => p.role && birthRoles.includes(p.role)).map((p) => p.individual)),
+    )
+    if (mothers.size > 1)
+      issues.push(
+        issue('notice', 'COHORT_MIXED_BIRTH_PARENTS', 'Cohort members have different recorded mothers; a cohort is one birthing event.', {
+          relatedIds: [cohort, ...[...mothers].sort()],
+        }),
+      )
+  }
 
   for (const [cohort, members] of index.membersOf) {
     if (members.length < 2) continue

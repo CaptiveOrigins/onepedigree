@@ -1,4 +1,4 @@
-import type { LineageRoleConfig, PedigreeViewId, ReproductiveModeId, ValidationRule } from '@captiveorigins/onepedigree-core'
+import type { LineageRoleConfig, ParentTerms, ParentTermsPreset, PedigreeViewId, ReproductiveModeId, ValidationRule } from '@captiveorigins/onepedigree-core'
 import type { Access, CollectionConfig, Field } from 'payload'
 
 /** How parentage is stored on the host collection. */
@@ -39,11 +39,15 @@ export type OnePedigreePluginOptions = {
     /** Extra fields copied into projections as display data (explicitly approved; never everything). */
     display?: readonly string[]
   }
-  /** Cohort collection (clutches, litters …). `managed: true` creates it. False: no cohorts. */
-  cohorts?: { collection: string; label?: string; managed?: boolean } | false
+  /**
+   * Cohort collection: birthing events (a clutch, a litter, twins). `managed: true` creates it.
+   * `birthParentField`: the cohort's field naming the birthing parent; members whose recorded
+   * mother (maternal role) differs are refused. Fathers may differ per member. False: no cohorts.
+   */
+  cohorts?: { collection: string; label?: string; managed?: boolean; birthParentField?: string } | false
   reproductiveModes?: { default?: ReproductiveModeId | null }
-  /** Mother/Father pickers above the parents list (standard fields); false hides them. Labels e.g. Dam/Sire. */
-  selectors?: { maternal: { role: string; label: string }; paternal: { role: string; label: string } } | false
+  /** Mother/Father pickers above the parents list (standard fields; labels from `terminology.parents`). False hides them. */
+  selectors?: boolean
   /** Role options in the parent editor (extend the built-ins). */
   roles?: readonly string[]
   lineageRoles?: LineageRoleConfig
@@ -61,7 +65,16 @@ export type OnePedigreePluginOptions = {
   /** Host biological rules (e.g. taxonomy). Errors block the write. */
   rules?: readonly ValidationRule[]
   /** Labels only; stored keys never change. */
-  terminology?: { individual?: string; individuals?: string; cohort?: string; cohorts?: string }
+  terminology?: {
+    individual?: string
+    individuals?: string
+    cohort?: string
+    cohorts?: string
+    /** Default words for the parent roles: a preset ('mother-father', 'dam-sire', 'female-male-parent') or custom. Default Mother/Father. */
+    parents?: ParentTermsPreset | ParentTerms
+    /** Path on the signed-in user's document holding their own choice (see `createParentTermsPreferenceField`). */
+    userPreference?: string
+  }
   admin?: {
     /** Pedigree preview, relatives and notices on the individual's edit view (default true). */
     panel?: boolean
@@ -83,7 +96,7 @@ export type OnePedigreePluginOptions = {
 export type ResolvedOptions = Required<Pick<OnePedigreePluginOptions, 'collection' | 'mode' | 'hiddenRecords' | 'onReferencedIndividualDelete'>> &
   Omit<OnePedigreePluginOptions, 'fields' | 'cohorts' | 'limits'> & {
     fields: { label: string; sex: string | null; parentage: Required<Extract<ParentageMapping, { kind: 'parent-array' }>> | Extract<ParentageMapping, { kind: 'role-fields' }>; display: readonly string[] }
-    cohorts: { collection: string; label: string; managed: boolean } | null
+    cohorts: { collection: string; label: string; managed: boolean; birthParentField: string | null } | null
     limits: { maxDepth: number; maxNodes: number }
     graphGlobal: string
     settingsGlobal: string

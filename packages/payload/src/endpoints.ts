@@ -13,11 +13,12 @@ import {
   type PedigreeRepository,
   type PedigreeViewId,
   type ReproductiveModeId,
+  roleLabel,
 } from '@captiveorigins/onepedigree-core'
 import { addDataAndFileToRequest, APIError, type CollectionSlug, type Endpoint, type GlobalSlug, type PayloadRequest, type Where } from 'payload'
 
 import { checkParentage } from './integrity.js'
-import { childrenWhere, documentAdapter, graphSelect, toIndividual } from './mapping.js'
+import { childrenWhere, documentAdapter, graphSelect, termsFor, toIndividual } from './mapping.js'
 import type { ResolvedOptions } from './types.js'
 
 type Doc = Record<string, unknown>
@@ -209,8 +210,9 @@ export async function getRelatives(req: PayloadRequest, opts: ResolvedOptions, i
   const s = getSiblings(index, id)
   const cohort = self.parentage?.cohort
   const cohortMates = cohort ? [...(index.membersOf.get(cohort) ?? [])].filter((m) => m !== id) : []
+  const terms = await termsFor(opts, req.user)
   return {
-    parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, individual: at(p.individual) })),
+    parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, label: roleLabel(p.role, terms, opts.lineageRoles), individual: at(p.individual) })),
     children: [...(index.childrenOf.get(id) ?? [])].map(at),
     siblings: { full: s.full.map(at), partial: s.partial.map(at), unresolved: s.unresolved.map(at) },
     cohort: cohort ? { id: cohort, mates: cohortMates.map(at) } : null,

@@ -28,7 +28,9 @@ export function resolveOptions(o: OnePedigreePluginOptions): ResolvedOptions {
     hiddenRecords: o.hiddenRecords ?? 'omit',
     onReferencedIndividualDelete: o.onReferencedIndividualDelete ?? 'restrict',
     fields: { label: o.fields?.label ?? 'name', sex: o.fields?.sex ?? 'sex', parentage, display: o.fields?.display ?? [] },
-    cohorts: o.cohorts ? { collection: o.cohorts.collection, label: o.cohorts.label ?? 'name', managed: o.cohorts.managed ?? false } : null,
+    cohorts: o.cohorts
+      ? { collection: o.cohorts.collection, label: o.cohorts.label ?? 'name', managed: o.cohorts.managed ?? false, birthParentField: o.cohorts.birthParentField ?? null }
+      : null,
     limits: { maxDepth: o.limits?.maxDepth ?? 10, maxNodes: o.limits?.maxNodes ?? 500 },
     graphGlobal: `${o.collection}-pedigree-graph`,
     settingsGlobal: 'pedigree-settings',
@@ -104,3 +106,13 @@ export function documentAdapter(opts: ResolvedOptions): PedigreeAdapter<Record<s
 }
 
 export const toIndividual = (doc: Record<string, unknown>, opts: ResolvedOptions): Individual => adaptIndividual(doc, documentAdapter(opts))
+
+/** Maternal (birthing) roles. */
+export const maternalRoles = (opts: ResolvedOptions) => opts.lineageRoles?.maternal ?? ['mother', 'dam', 'egg']
+
+/** Parent terms for a request: the user's preference (if configured), else the installation default. */
+export async function termsFor(opts: ResolvedOptions, user: unknown) {
+  const { resolveParentTerms } = await import('@captiveorigins/onepedigree-core')
+  const pref = opts.terminology?.userPreference && user ? getAt(user, opts.terminology.userPreference) : undefined
+  return resolveParentTerms(pref, opts.terminology?.parents ?? 'mother-father')
+}

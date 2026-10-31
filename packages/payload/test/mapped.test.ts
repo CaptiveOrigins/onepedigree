@@ -26,7 +26,14 @@ const animals: CollectionConfig = {
     { name: 'clutch', type: 'relationship', relationTo: 'clutches', index: true },
   ],
 }
-const clutches: CollectionConfig = { slug: 'clutches', access: { read: () => true }, fields: [{ name: 'name', type: 'text' }] }
+const clutches: CollectionConfig = {
+  slug: 'clutches',
+  access: { read: () => true },
+  fields: [
+    { name: 'name', type: 'text' },
+    { name: 'mother', type: 'relationship', relationTo: 'animals' },
+  ],
+}
 
 let payload: Payload
 let stop: () => Promise<void>
@@ -46,7 +53,8 @@ beforeAll(async () => {
         collection: 'animals',
         mode: 'mapped',
         fields: { label: 'name', sex: 'sex', parentage: { kind: 'role-fields', roles: { mother: 'dam', father: 'sire' }, cohort: 'clutch' } },
-        cohorts: { collection: 'clutches' },
+        cohorts: { collection: 'clutches', birthParentField: 'mother' },
+        terminology: { parents: 'dam-sire', userPreference: 'parentTerms' },
         hiddenRecords: 'placeholder',
         navigation: { individualUrl: '/animals/{id}' },
         limits: { maxDepth: 3, maxNodes: 200 },
@@ -89,6 +97,35 @@ describe('existing collection mapping', () => {
     const { body } = await pedigree(a.Ember!, users.editor!, { view: 'ahnentafel', ancestorDepth: 1 })
     const numbers = Object.fromEntries((body.projection.occurrences as { individualId: string; ahnentafel: number }[]).map((o) => [o.individualId, o.ahnentafel]))
     expect(numbers).toEqual({ [a.Ember!]: 1, [a['Public Sire']!]: 2, [a.Tinta!]: 3 })
+  })
+})
+
+describe('birthing events and parent labels', () => {
+  const clutchId = async () => String((await payload.find({ collection: 'clutches' as never })).docs[0]!.id)
+
+  it('allows different fathers in one birthing event but only its mother', async () => {
+    const id = await clutchId()
+    // Members (Ember, Sol, Hidden Hatchling) were born to Tinta: another mother is refused.
+    await expect(payload.update({ collection: 'clutches' as never, id, data: { mother: a['Founder Dam'] } as never })).rejects.toMatchObject({
+      data: { errors: [{ path: 'mother', message: expect.stringMatching(/different mother/) }] },
+    })
+    await payload.update({ collection: 'clutches' as never, id, data: { mother: a.Tinta } as never })
+    // Sol keeps a different (or no) father: fine. Changing a member's mother is refused.
+    await payload.update({ collection: 'animals' as never, id: a.Sol!, data: { sire: a.Pico } as never })
+    await expect(payload.update({ collection: 'animals' as never, id: a.Ember!, data: { dam: a['Founder Dam'] } as never })).rejects.toMatchObject({
+      data: { errors: [{ path: 'clutch', message: expect.stringMatching(/birthing event/) }] },
+    })
+    await payload.update({ collection: 'animals' as never, id: a.Sol!, data: { sire: a['Public Sire'] } as never })
+  })
+
+  it('labels parents in the site default terms, or the user’s own', async () => {
+    const labels = async (user: TypedUser | null) =>
+      (await callEndpoint(payload, 'animals', '/:id/relatives', { id: a.Ember! }, { user })).body.parents.map((p: { label: string }) => p.label)
+    expect(await labels(null)).toEqual(['Dam', 'Sire'])
+    const own = (await payload.update({ collection: 'users', id: users.viewer!.id, data: { parentTerms: { preset: 'mother-father' } } as never })) as TypedUser
+    expect(await labels(own)).toEqual(['Mother', 'Father'])
+    const custom = (await payload.update({ collection: 'users', id: users.viewer!.id, data: { parentTerms: { preset: 'custom', maternal: 'Hen', paternal: '' } } as never })) as TypedUser
+    expect(await labels(custom)).toEqual(['Hen', 'Sire'])
   })
 })
 

@@ -1,4 +1,4 @@
-import { REPRODUCTIVE_MODES, type ReproductiveModeId } from '@captiveorigins/onepedigree-core'
+import { PARENT_TERM_PRESETS, REPRODUCTIVE_MODES, resolveParentTerms, type ParentTerms, type ParentTermsPreset, type ReproductiveModeId } from '@captiveorigins/onepedigree-core'
 import type { CollectionSlug, Field } from 'payload'
 
 const BUILT_IN_ROLES = ['mother', 'father', 'dam', 'sire', 'egg', 'sperm', 'donor', 'parent', 'contributor']
@@ -52,12 +52,10 @@ export const createCohortField = (o: { cohorts: string }): Field => ({
   type: 'relationship',
   relationTo: o.cohorts as CollectionSlug,
   index: true,
-  admin: { description: 'Clutch, litter or other group born from the same occurrence.' },
+  admin: { description: 'The birthing event: a clutch, litter or other group born to the same mother at the same time. Fathers may differ.' },
 })
 
-export type RoleSelector = { role: string; label: string }
-export type ParentSelectors = { maternal: RoleSelector; paternal: RoleSelector }
-export const DEFAULT_SELECTORS: ParentSelectors = { maternal: { role: 'mother', label: 'Mother' }, paternal: { role: 'father', label: 'Father' } }
+const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
 
 const rowId = (v: unknown) => (v && typeof v === 'object' && 'id' in v ? String((v as { id: unknown }).id) : v ? String(v) : null)
 type Row = { individual?: unknown; role?: string | null }
@@ -67,28 +65,69 @@ type Row = { individual?: unknown; role?: string | null }
  * shows the first parent with the role, and on save replaces the rows with
  * that role when the picker changed. Not stored itself (virtual).
  */
-export const createRoleSelectorField = (o: { individuals: string; selector: RoleSelector }): Field => ({
-  name: o.selector.role,
-  label: o.selector.label,
+export const createRoleSelectorField = (o: {
+  individuals: string
+  side: 'maternal' | 'paternal'
+  terms?: ParentTermsPreset | ParentTerms
+  userPreference?: string
+}): Field => {
+  const role = o.side === 'maternal' ? 'mother' : 'father'
+  const terms = resolveParentTerms(o.terms)
+  return {
+  name: role,
+  label: terms[o.side],
   type: 'relationship',
   relationTo: o.individuals as CollectionSlug,
   virtual: true,
-  // Payload makes virtual fields read-only unless told otherwise.
-  admin: { width: '50%', readOnly: false },
+  admin: {
+    width: '50%',
+    // Payload makes virtual fields read-only unless told otherwise.
+    readOnly: false,
+    // The label follows the signed-in user's preferred terms (e.g. Dam/Sire).
+    components: { Label: { path: `${CLIENT}#ParentRoleLabel`, clientProps: { side: o.side, defaultTerms: terms, userPreference: o.userPreference ?? null } } },
+  },
   hooks: {
-    afterRead: [({ siblingData }) => rowId(((siblingData?.parents ?? []) as Row[]).find((r) => r.role === o.selector.role)?.individual)],
+    afterRead: [({ siblingData }) => rowId(((siblingData?.parents ?? []) as Row[]).find((r) => r.role === role)?.individual)],
     beforeChange: [
       ({ value, siblingData, previousSiblingDoc }) => {
         if (value === undefined) return undefined
-        const before = rowId(((previousSiblingDoc?.parents ?? []) as Row[]).find((r) => r.role === o.selector.role)?.individual)
+        const before = rowId(((previousSiblingDoc?.parents ?? []) as Row[]).find((r) => r.role === role)?.individual)
         const next = rowId(value)
         if (next === before) return undefined
-        const rows = ((siblingData.parents ?? []) as Row[]).filter((r) => r.role !== o.selector.role)
-        siblingData.parents = next ? [{ individual: next, role: o.selector.role }, ...rows] : rows
+        const rows = ((siblingData.parents ?? []) as Row[]).filter((r) => r.role !== role)
+        siblingData.parents = next ? [{ individual: next, role }, ...rows] : rows
         return undefined
       },
     ],
   },
+  }
+}
+
+/**
+ * A user's own words for the parent roles (add to your users collection and
+ * pass its path as `terminology.userPreference`). Display only.
+ */
+export const createParentTermsPreferenceField = (o: { name?: string } = {}): Field => ({
+  name: o.name ?? 'parentTerms',
+  label: 'Parent labels',
+  type: 'group',
+  admin: { description: 'How pedigrees name the two parents for you. Stored data is the same either way.' },
+  fields: [
+    {
+      name: 'preset',
+      type: 'select',
+      options: [...Object.entries(PARENT_TERM_PRESETS).map(([value, p]) => ({ label: p.label, value })), { label: 'Custom', value: 'custom' }],
+      admin: { description: 'Empty: the site default.' },
+    },
+    {
+      type: 'row',
+      admin: { condition: (_, sibling) => sibling?.preset === 'custom' },
+      fields: [
+        { name: 'maternal', type: 'text', maxLength: 40, admin: { width: '50%', placeholder: 'Mother' } },
+        { name: 'paternal', type: 'text', maxLength: 40, admin: { width: '50%', placeholder: 'Father' } },
+      ],
+    },
+  ],
 })
 
 /** The standard `parentage` group (parents, reproductive mode, cohort), with Mother/Father pickers unless `selectors` is false. */
@@ -97,7 +136,9 @@ export const createParentageField = (o: {
   cohorts?: string | null
   roles?: readonly string[]
   defaultMode?: ReproductiveModeId | null
-  selectors?: ParentSelectors | false
+  selectors?: boolean
+  terms?: ParentTermsPreset | ParentTerms
+  userPreference?: string
 }): Field => ({
   name: 'parentage',
   type: 'group',
@@ -107,10 +148,9 @@ export const createParentageField = (o: {
       : [
           {
             type: 'row' as const,
-            fields: [
-              createRoleSelectorField({ individuals: o.individuals, selector: (o.selectors ?? DEFAULT_SELECTORS).maternal }),
-              createRoleSelectorField({ individuals: o.individuals, selector: (o.selectors ?? DEFAULT_SELECTORS).paternal }),
-            ],
+            fields: (['maternal', 'paternal'] as const).map((side) =>
+              createRoleSelectorField({ individuals: o.individuals, side, terms: o.terms, userPreference: o.userPreference }),
+            ),
           },
         ]),
     createParentsField({ individuals: o.individuals, roles: o.roles }),

@@ -58,3 +58,11 @@ export {
   type PositionedEdge,
   type PositionedNode,
 } from './layout'
+export {
+  DEFAULT_PARENT_TERMS,
+  PARENT_TERM_PRESETS,
+  resolveParentTerms,
+  roleLabel,
+  type ParentTerms,
+  type ParentTermsPreset,
+} from './terminology'

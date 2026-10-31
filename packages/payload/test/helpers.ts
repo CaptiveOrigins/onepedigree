@@ -1,5 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { createParentTermsPreferenceField } from '../src'
 import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type Config, type Payload, type TypedUser } from 'payload'
 
 /** A real Payload instance on an in-memory MongoDB replica set (transactions on). */
@@ -26,7 +27,7 @@ export async function startPayload(config: Omit<Config, 'db' | 'secret'>) {
 export const usersCollection: CollectionConfig = {
   slug: 'users',
   auth: true,
-  fields: [{ name: 'role', type: 'select', options: ['admin', 'editor', 'viewer', 'public-editor'], defaultValue: 'viewer' }],
+  fields: [{ name: 'role', type: 'select', options: ['admin', 'editor', 'viewer', 'public-editor'], defaultValue: 'viewer' }, createParentTermsPreferenceField()],
 }
 
 /** Calls a collection endpoint the way the REST API would, as `user` (null = anonymous). */

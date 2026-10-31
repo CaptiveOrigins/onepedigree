@@ -4,7 +4,7 @@ import type { CollectionConfig, Config, Field, GlobalConfig, Plugin } from 'payl
 import { createCohortsCollection, createIndividualsCollection } from './collections.js'
 import { cohortMembersEndpoint, pedigreeEndpoint, relativesEndpoint, validateEndpoint } from './endpoints.js'
 import { createParentageField } from './fields.js'
-import { parentageBeforeChange, parentBeforeDelete, rememberAccessMode } from './integrity.js'
+import { cohortBirthParentBeforeChange, parentageBeforeChange, parentBeforeDelete, rememberAccessMode } from './integrity.js'
 import { resolveOptions } from './mapping.js'
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
 
@@ -77,7 +77,7 @@ export const onePedigree =
       if (!collections.some((c) => c.slug === opts.collection))
         collections.push(
           (options.overrides?.individuals ?? ((c) => c))(
-            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles, selectors: opts.selectors }),
+            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles, selectors: opts.selectors, terms: opts.terminology?.parents, userPreference: opts.terminology?.userPreference }),
           ),
         )
     }
@@ -87,7 +87,15 @@ export const onePedigree =
       if (c.slug === opts.collection) {
         const inject =
           opts.mode === 'standard-fields' && !c.fields.some((f) => 'name' in f && f.name === 'parentage')
-            ? [(options.overrides?.parentageField ?? ((f) => f))(createParentageField({ individuals: opts.collection, cohorts: opts.cohorts?.collection, roles: opts.roles, defaultMode: opts.reproductiveModes?.default, selectors: opts.selectors }))]
+            ? [(options.overrides?.parentageField ?? ((f) => f))(createParentageField({
+                individuals: opts.collection,
+                cohorts: opts.cohorts?.collection,
+                roles: opts.roles,
+                defaultMode: opts.reproductiveModes?.default,
+                selectors: opts.selectors,
+                terms: opts.terminology?.parents,
+                userPreference: opts.terminology?.userPreference,
+              }))]
             : []
         if (opts.disabled) return { ...c, fields: [...c.fields, ...inject] }
         return {
@@ -103,7 +111,11 @@ export const onePedigree =
         }
       }
       if (opts.cohorts && c.slug === opts.cohorts.collection && !opts.disabled)
-        return { ...c, endpoints: [...(Array.isArray(c.endpoints) ? c.endpoints : []), cohortMembersEndpoint(opts)] }
+        return {
+          ...c,
+          endpoints: [...(Array.isArray(c.endpoints) ? c.endpoints : []), cohortMembersEndpoint(opts)],
+          hooks: { ...c.hooks, beforeChange: [...(c.hooks?.beforeChange ?? []), cohortBirthParentBeforeChange(opts)] },
+        }
       return c
     })
 
