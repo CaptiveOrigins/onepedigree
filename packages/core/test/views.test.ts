@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { cloning, humanFamily, incomplete, multiplePaternityClutch, parthenogenesis, reptileBreeding, selfing, sharedAncestors, synthetic } from '../../../fixtures'
-import { layoutSync, PEDIGREE_VIEWS, projectPedigree, type PedigreeDocument, type PedigreeViewProjection } from '../src'
+import { generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
 
 const who = (p: PedigreeViewProjection) => p.occurrences.map((o) => o.individualId).sort()
 const codes = (p: PedigreeViewProjection) => p.issues.map((i) => i.code)
@@ -68,6 +68,28 @@ describe('views', () => {
     const y = (id: string) => l.nodes.find((n) => n.occurrenceId === `${id}#0`)!.y
     expect(y('carlos')).toBeLessThan(y('frank'))
     expect(y('gwen')).toBeGreaterThan(y('frank'))
+  })
+
+  it('relatives by generation: every relative once, ancestors first, focal left out', () => {
+    const p = projectPedigree(humanFamily, { focalId: 'frank', view: 'hourglass', ancestorDepth: 2, descendantDepth: 2, includeSiblings: true })
+    const groups = relativesByGeneration(p)
+    expect(groups.map((g) => g.generation)).toEqual([...groups.map((g) => g.generation)].sort((a, b) => b - a))
+    expect(groups.flatMap((g) => g.individualIds)).not.toContain('frank')
+    const ids = groups.flatMap((g) => g.individualIds)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(groups.find((g) => g.generation === 1)).toMatchObject({ kind: 'parents', individualIds: expect.arrayContaining(['carlos', 'dana']) })
+    expect(groups.find((g) => g.generation === -1)).toMatchObject({ kind: 'offspring', individualIds: expect.arrayContaining(['gwen', 'hugo']) })
+    expect([1, 2, 3, 5, 0, -1, -2, -3, -4].map(generationLabel)).toEqual([
+      'Parents',
+      'Grandparents',
+      'Great-grandparents',
+      '3× great-grandparents',
+      'Siblings',
+      'Offspring',
+      'Grand-offspring',
+      'Great-grand-offspring',
+      '2× great-grand-offspring',
+    ])
   })
 
   it('cohort: members with their own (possibly different) parents', () => {

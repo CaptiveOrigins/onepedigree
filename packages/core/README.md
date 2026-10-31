@@ -64,6 +64,11 @@ projection (`projectPedigree`), a built-in deterministic layout (`layoutPedigree
 layered or radial, vertical or horizontal) and a React renderer. Custom layout engines (e.g.
 ELK) plug in through `PedigreeLayoutEngine`.
 
+For a list instead of a chart ("show all relatives"), `relativesByGeneration(projection)`
+groups an hourglass projection's relatives by generation (parents, grandparents, …, siblings,
+offspring, …); `generationKind()` gives hosts the kind and number of "great"s to translate, and
+`generationLabel()` an English label.
+
 ## Development
 
 ```bash

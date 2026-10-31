@@ -66,3 +66,10 @@ export {
   type ParentTerms,
   type ParentTermsPreset,
 } from './terminology'
+export {
+  generationKind,
+  generationLabel,
+  relativesByGeneration,
+  type GenerationKind,
+  type RelativesGeneration,
+} from './relatives'
