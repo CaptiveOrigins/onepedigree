@@ -1,5 +1,5 @@
 import { layoutSync, PEDIGREE_VIEWS, projectPedigree, type OccurrenceMode, type PedigreeViewId } from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, VIEW_LABELS } from '@captiveorigins/onepedigree-react'
+import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS } from '@captiveorigins/onepedigree-react'
 import { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -8,11 +8,12 @@ import { DATASETS, type DatasetName } from './fixtures'
 /** Development playground: every view for every fixture (no application logic). */
 function Playground() {
   const [dataset, setDataset] = useState<DatasetName>('Reptile breeding (red-footed tortoises)')
-  const [view, setView] = useState<PedigreeViewId>('pedigree')
+  const [view, setView] = useState<PedigreeViewId>((new URLSearchParams(location.search).get('view') as PedigreeViewId) || 'pedigree')
   const [depth, setDepth] = useState(4)
   const [orientation, setOrientation] = useState<'vertical' | 'horizontal'>('vertical')
   const [mode, setMode] = useState<OccurrenceMode | ''>('')
-  const [theme, setTheme] = useState<'auto' | 'light' | 'dark'>('auto')
+  const params = new URLSearchParams(location.search)
+  const [theme, setTheme] = useState(params.get('theme') ?? 'classic')
   const d = DATASETS[dataset]
   const projection = useMemo(
     () => projectPedigree(d.doc, { focalId: view === 'descendants' || view === 'hourglass' ? d.founder : d.focal, relatedId: d.related, view, ancestorDepth: depth, descendantDepth: depth, includeSiblings: true, ...(mode ? { occurrenceMode: mode } : {}) }),
@@ -32,7 +33,7 @@ function Playground() {
     </label>
   )
   return (
-    <div data-theme={theme}>
+    <div>
       <h1>OnePedigree playground</h1>
       <div className="controls">
         {select('Dataset', dataset, Object.keys(DATASETS) as DatasetName[], setDataset)}
@@ -42,7 +43,7 @@ function Playground() {
         </label>
         {select('Orientation', orientation, ['vertical', 'horizontal'] as const, setOrientation)}
         {select('Repeated individuals', mode, ['', 'separate', 'merge', 'hybrid'] as const, setMode, { '': 'view default' })}
-        {select('Theme', theme, ['auto', 'light', 'dark'] as const, setTheme)}
+        {select('Theme', theme, THEME_PRESETS.map((t) => t.id), setTheme, Object.fromEntries(THEME_PRESETS.map((t) => [t.id, t.label])))}
       </div>
       {projection.issues.length > 0 && (
         <ul className="notices">
@@ -53,7 +54,8 @@ function Playground() {
           ))}
         </ul>
       )}
-      <PedigreeExplorer projection={projection} layout={layout} height="70vh" />
+      {/* key: a new preset restarts the explorer's editable theme */}
+      <PedigreeExplorer key={theme} projection={projection} layout={layout} height="70vh" theme={theme} themeEditor />
     </div>
   )
 }

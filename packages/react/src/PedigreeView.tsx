@@ -10,6 +10,7 @@ import type {
 import type { KeyboardEvent, MouseEvent, ReactNode, SVGProps } from 'react'
 
 import { arcPath, DEFAULT_TERMS, describeProjection, describeStructure, labelOf, VIEW_LABELS, type Terminology } from './describe.js'
+import { themeStyle, type PedigreeTheme } from './themes.js'
 
 export type IndividualSlotProps = {
   individual: Individual | undefined
@@ -50,6 +51,8 @@ export type PedigreeViewProps = {
   /** Unique prefix for element IDs when several views share a page. */
   idPrefix?: string
   svgProps?: Omit<SVGProps<SVGSVGElement>, 'viewBox' | 'children'>
+  /** A preset id ('classic', 'midnight', 'forest', 'ocean', 'terracotta', 'high-contrast', 'print') or a custom theme. */
+  theme?: PedigreeTheme | string
 }
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
@@ -135,6 +138,8 @@ export function PedigreeView(props: PedigreeViewProps) {
     <svg
       {...props.svgProps}
       className={cx('op-root', `op-view-${p.view}`, props.className, c.root)}
+      style={{ ...themeStyle(props.theme, p.view), ...props.svgProps?.style }}
+      data-theme={typeof props.theme === 'string' ? props.theme : props.theme?.id}
       viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
       role="group"
       aria-labelledby={`${id}-title`}

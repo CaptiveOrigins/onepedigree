@@ -6,6 +6,8 @@ import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type Pointe
 import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
+import { ThemeEditor } from './ThemeEditor.js'
+import { presetTheme, THEME_PRESETS, themeStyle, type PedigreeTheme } from './themes.js'
 
 export type QuickViewProps = {
   individual: Individual | undefined
@@ -22,11 +24,25 @@ export type PedigreeExplorerProps = Omit<PedigreeViewProps, 'interactive' | 'vie
   onSelectIndividual?: (individualId: string | null) => void
   /** Extra toolbar content (e.g. a view switcher). */
   toolbar?: ReactNode
+  /** Show the Colors button: pick a preset and adjust colors with hex codes. */
+  themeEditor?: boolean
+  /** Called with the edited theme (e.g. to save it). */
+  onThemeChange?: (theme: PedigreeTheme) => void
   /** Accessible labels for the controls. */
-  labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls', string>>
+  labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls' | 'colors', string>>
 }
 
-const LABELS = { zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit to view', download: 'Download SVG', print: 'Print', close: 'Close', open: 'Open profile', controls: 'Pedigree controls' }
+const LABELS = {
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  fit: 'Fit to view',
+  download: 'Download SVG',
+  print: 'Print',
+  close: 'Close',
+  open: 'Open profile',
+  controls: 'Pedigree controls',
+  colors: 'Colors',
+}
 const KEY_DIRECTION: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }
 
 /**
@@ -51,6 +67,13 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
   const [selectedOccurrence, setSelectedOccurrence] = useState<string | null>(null)
   const highlighted = useOccurrenceHighlighting(projection, selectedId)
   const root = useRef<HTMLDivElement>(null)
+  const initialTheme = typeof props.theme === 'string' ? presetTheme(props.theme) : props.theme
+  const [theme, setTheme] = useState<PedigreeTheme | undefined>(initialTheme)
+  const [editing, setEditing] = useState(false)
+  const changeTheme = (t: PedigreeTheme) => {
+    setTheme(t)
+    props.onThemeChange?.(t)
+  }
   const drag = useRef<{ x: number; y: number; box: typeof box } | null>(null)
 
   const choose = useCallback(
@@ -154,7 +177,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     <div
       ref={root}
       className="op-explorer"
-      style={{ height: props.height ?? '32rem' }}
+      style={{ height: props.height ?? '32rem', ...(theme ? { ...themeStyle(theme, projection.view), background: 'var(--op-background)' } : {}) }}
       onKeyDown={onKeyDown}
       onWheel={onWheel}
       onPointerDown={onPointerDown}
@@ -178,10 +201,21 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
         <button type="button" onClick={() => window.print()} aria-label={labels.print} title={labels.print}>
           ⎙
         </button>
+        {props.themeEditor && (
+          <button type="button" onClick={() => setEditing((v) => !v)} aria-label={labels.colors} title={labels.colors} aria-expanded={editing}>
+            ◐
+          </button>
+        )}
         {props.toolbar}
       </div>
+      {props.themeEditor && editing && (
+        <div className="op-theme-panel">
+          <ThemeEditor value={theme ?? structuredClone(THEME_PRESETS[0]!)} view={projection.view} onChange={changeTheme} />
+        </div>
+      )}
       <PedigreeView
         {...props}
+        theme={theme}
         interactive
         viewBox={box}
         selectedIndividualId={selectedId}

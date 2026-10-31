@@ -26,6 +26,23 @@ All 13 views of the core: `pedigree`, `fan`, `ahnentafel`, `descendants`, `hourg
 `paternal`. Repeated individuals follow the projection's `merge`, `separate` or `hybrid` mode;
 selecting one occurrence highlights every occurrence of that individual.
 
+## Themes and colors
+
+Seven presets, each with its own per-view accents (e.g. warm maternal and cool paternal
+lines, distinct highlights for the relationship and inbreeding views, fan ring shading):
+`classic`, `midnight`, `forest`, `ocean`, `terracotta`, `high-contrast`, `print`.
+
+```tsx
+<PedigreeView projection={projection} layout={layout} theme="forest" />
+<PedigreeExplorer projection={projection} layout={layout} theme="ocean" themeEditor onThemeChange={save} />
+```
+
+`themeEditor` adds a Colors button: choose a preset and adjust any color with a color picker
+or hex code, for all views or only the current one, with a warning when text contrast drops
+below WCAG AA. `onThemeChange` receives the edited theme (a plain object) to store; pass it
+back as `theme`. `ThemeEditor` is also exported for use in your own settings pages. Themes are
+rendered as inline custom properties, so they work in server rendering.
+
 ## Styling
 
 - Default stylesheet `styles.css` (optional; leave it out for unstyled mode).
