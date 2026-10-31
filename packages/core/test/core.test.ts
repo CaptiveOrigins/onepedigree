@@ -162,8 +162,8 @@ describe('traversal', () => {
 
   it('tells full, partial and unresolved siblings apart', () => {
     expect(getSiblings(human, 'gwen')).toEqual({ full: ['hugo'], partial: ['iris'], unresolved: [] })
-    // Same mother only: could be full or half siblings.
-    expect(getSiblings(indexPedigree(incomplete), 'x')).toEqual({ full: [], partial: ['z'], unresolved: ['y'] })
+    // Same mother only: could be full or half siblings. (z is x's own offspring, so not a sibling.)
+    expect(getSiblings(indexPedigree(incomplete), 'x')).toEqual({ full: [], partial: [], unresolved: ['y'] })
     // Clutch mates with multiple paternity are not all full siblings.
     expect(getSiblings(indexPedigree(multiplePaternityClutch), 'egg-1')).toEqual({ full: ['egg-3'], partial: ['egg-2'], unresolved: [] })
   })
