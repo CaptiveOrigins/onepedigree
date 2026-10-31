@@ -43,6 +43,17 @@ const update = (key: string, parents: { individual: string; role?: string }[], e
   payload.update({ collection: 'individuals' as never, id: doc(key), data: { parentage: { parents, ...extra } } as never })
 
 describe('managed collections', () => {
+  it('keeps the Mother/Father pickers editable in the Admin (virtual fields default to read-only)', () => {
+    const group = payload.collections['individuals' as never]!.config.fields.find((f) => 'name' in f && f.name === 'parentage') as unknown as {
+      fields: { type: string; fields?: { name: string; admin?: { readOnly?: boolean } }[] }[]
+    }
+    const pickers = group.fields.find((f) => f.type === 'row')!.fields!
+    expect(pickers.map((f) => [f.name, f.admin?.readOnly])).toEqual([
+      ['mother', false],
+      ['father', false],
+    ])
+  })
+
   it('creates only the individuals and cohorts collections (no edge, role or occurrence collections)', () => {
     const slugs = payload.config.collections.map((c) => c.slug).filter((s) => !s.startsWith('payload-'))
     expect(slugs.sort()).toEqual(['cohorts', 'individuals', 'users'])

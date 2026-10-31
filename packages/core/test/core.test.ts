@@ -168,6 +168,11 @@ describe('traversal', () => {
     expect(getSiblings(indexPedigree(multiplePaternityClutch), 'egg-1')).toEqual({ full: ['egg-3'], partial: ['egg-2'], unresolved: [] })
   })
 
+  it('never lists an ancestor as a sibling (backcross)', () => {
+    // Ember's mother Tinta is also a daughter of Ember's father Atlas.
+    expect(getSiblings(indexPedigree(reptileBreeding), 'ember')).toEqual({ full: [], partial: ['luna', 'pico', 'sol'], unresolved: [] })
+  })
+
   it('keeps cohorts separate from siblings', () => {
     const r = indexPedigree(reptileBreeding)
     expect(getCohortMembers(r, 'clutch-2022')).toEqual(['pico', 'tinta'])

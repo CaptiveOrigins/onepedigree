@@ -73,7 +73,8 @@ export const createRoleSelectorField = (o: { individuals: string; selector: Role
   type: 'relationship',
   relationTo: o.individuals as CollectionSlug,
   virtual: true,
-  admin: { width: '50%' },
+  // Payload makes virtual fields read-only unless told otherwise.
+  admin: { width: '50%', readOnly: false },
   hooks: {
     afterRead: [({ siblingData }) => rowId(((siblingData?.parents ?? []) as Row[]).find((r) => r.role === o.selector.role)?.individual)],
     beforeChange: [
