@@ -1,7 +1,7 @@
 {
   "name": "onepedigree-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "OnePedigree for Mac: open GEDCOM, CSV or OnePedigree JSON files, view and edit pedigrees in every view.",
   "scripts": {

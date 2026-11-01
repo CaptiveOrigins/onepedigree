@@ -2,3 +2,4 @@ export { PedigreeView, type CohortMarkerSlotProps, type IndividualSlotProps, typ
 export { PedigreeExplorer, type PedigreeExplorerProps, type QuickViewProps } from './PedigreeExplorer.js'
 export * from './headless.js'
 export { ThemeEditor, type ThemeEditorProps } from './ThemeEditor.js'
+export { AhnentafelList, ahnentafelRelation, type AhnentafelListProps } from './AhnentafelList.js'

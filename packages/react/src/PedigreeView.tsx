@@ -1,3 +1,4 @@
+import { estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel } from '@captiveorigins/onepedigree-core'
 import type {
   Individual,
   IndividualOccurrence,
@@ -86,8 +87,20 @@ function Junction({ s, x, y }: { s: ReproductiveStructure; x: number; y: number 
 
 function DefaultIndividual({ individual, occurrence, node, structure, terms }: IndividualSlotProps) {
   const label = labelOf(individual, terms)
-  const sub = [individual?.sex, occurrence.ahnentafel !== undefined ? `#${occurrence.ahnentafel}` : null].filter(Boolean).join(' · ')
-  const chars = Math.max(6, Math.floor(node.width / 7.5))
+  // Sex mark and life years ("♂ 1950 – 2010"), plus the Ahnentafel number where it applies.
+  const sub = [nodeSublabel(individual), occurrence.ahnentafel !== undefined ? `#${occurrence.ahnentafel}` : null].filter(Boolean).join(' · ')
+  // Nodes are sized to their names; names are only shortened when a host made the node narrower (or past the widest node).
+  const fits = node.width >= estimateNodeWidth(label, sub) - 1
+  const chars = fits ? Infinity : Math.max(6, Math.floor((node.width - 20) / 7.4))
+  if (node.life)
+    return (
+      <>
+        <rect className="op-node-box op-life-bar" width={node.width} height={node.height} rx={6} ry={6} data-open={node.life.open || undefined} />
+        <text className="op-label" x={node.life.undated || node.width >= label.length * 7.4 + 16 ? 8 : node.width + 6} y={node.height / 2 + 4}>
+          {label}
+        </text>
+      </>
+    )
   return (
     <>
       <rect className="op-node-box" width={node.width} height={node.height} rx={8} ry={8} />
@@ -106,6 +119,104 @@ function DefaultIndividual({ individual, occurrence, node, structure, terms }: I
       )}
       {structure && <Junction s={structure} x={node.width / 2} y={0} />}
     </>
+  )
+}
+
+const RAD = 180 / Math.PI
+
+/**
+ * Fan labels follow the fan: along the arc in the wide inner rings (with life
+ * years when there is room), along the radius in the narrow outer ones; always
+ * upright, never upside down.
+ */
+function FanLabel({ arc, label, years, id }: { arc: NonNullable<PositionedNode['arc']>; label: string; years: string; id: string }) {
+  const { cx: x0, cy: y0, innerRadius: r0, outerRadius: r1, startAngle: a0, endAngle: a1 } = arc
+  if (r0 <= 0)
+    return (
+      <text className="op-label op-fan-label" x={x0} y={y0 + (years ? -2 : 4)} textAnchor="middle">
+        {short(label, Math.floor((2 * r1) / 7))}
+        {years && (
+          <tspan className="op-sublabel" x={x0} dy={15}>
+            {years}
+          </tspan>
+        )}
+      </text>
+    )
+  const mid = (a0 + a1) / 2
+  const r = (r0 + r1) / 2
+  const ring = r1 - r0
+  const arcLength = r * (a1 - a0)
+  const pt = (radius: number, t: number) => `${(x0 + radius * Math.sin(t)).toFixed(2)} ${(y0 - radius * Math.cos(t)).toFixed(2)}`
+  if (arcLength >= ring * 1.2) {
+    // Along the arc; on the lower half the path runs the other way so the text stays upright.
+    const lower = Math.cos(mid) < 0
+    const path = (radius: number) =>
+      lower ? `M ${pt(radius, a1)} A ${radius} ${radius} 0 0 0 ${pt(radius, a0)}` : `M ${pt(radius, a0)} A ${radius} ${radius} 0 0 1 ${pt(radius, a1)}`
+    const yearsR = r + (Math.cos(mid) < 0 ? 9 : -9)
+    // Years only where they fit in the segment (never spilling into the next one).
+    const showYears = Boolean(years) && ring >= 46 && years.length * 6.4 + 8 <= yearsR * (a1 - a0)
+    const nameR = showYears ? r + (lower ? -7 : 7) : r + (lower ? -4 : 4)
+    return (
+      <>
+        <defs>
+          <path id={`${id}-n`} d={path(nameR)} />
+          {showYears && <path id={`${id}-y`} d={path(yearsR)} />}
+        </defs>
+        <text className="op-label op-fan-label">
+          <textPath href={`#${id}-n`} startOffset="50%" textAnchor="middle">
+            {short(label, Math.floor((nameR * (a1 - a0)) / 7.2))}
+          </textPath>
+        </text>
+        {showYears && (
+          <text className="op-sublabel op-fan-label">
+            <textPath href={`#${id}-y`} startOffset="50%" textAnchor="middle">
+              {years}
+            </textPath>
+          </text>
+        )}
+      </>
+    )
+  }
+  // Along the radius, reading outward on the right half and inward on the left.
+  const left = Math.sin(mid) < 0
+  const [px, py] = pt(r, mid).split(' ').map(Number) as [number, number]
+  const rotate = mid * RAD - 90 + (left ? 180 : 0)
+  const size = Math.min(13, Math.max(8, arcLength * 0.6))
+  return (
+    <text
+      className="op-label op-fan-label"
+      x={px}
+      y={py}
+      textAnchor="middle"
+      dominantBaseline="central"
+      transform={`rotate(${rotate.toFixed(2)} ${px} ${py})`}
+      style={{ fontSize: size }}
+    >
+      {short(label, Math.floor((ring - 8) / (size * 0.56)))}
+    </text>
+  )
+}
+
+/** The timeline's year axis: ticks every 1, 2, 5, 10, 25, 50 or 100 years, whichever keeps them readable. */
+function TimelineAxis({ axis, width }: { axis: NonNullable<LayoutResult['axis']>; width: number }) {
+  const step = [1, 2, 5, 10, 25, 50, 100, 250].find((s) => s * axis.pxPerYear >= 60) ?? 500
+  const ticks: number[] = []
+  for (let y = Math.ceil(axis.from / step) * step; y <= axis.to; y += step) ticks.push(y)
+  return (
+    <g className="op-timeline-axis" aria-hidden="true">
+      <line className="op-axis-line" x1={0} x2={width} y1={22} y2={22} />
+      {ticks.map((y) => {
+        const x = (y - axis.from) * axis.pxPerYear
+        return (
+          <g key={y}>
+            <line className="op-axis-tick" x1={x} x2={x} y1={18} y2={axis.undatedY ?? 100000} />
+            <text className="op-sublabel" x={x} y={12} textAnchor="middle">
+              {y}
+            </text>
+          </g>
+        )
+      })}
+    </g>
   )
 }
 
@@ -174,6 +285,8 @@ export function PedigreeView(props: PedigreeViewProps) {
           )
         })}
 
+      {layout.axis && <TimelineAxis axis={layout.axis} width={layout.bounds.width} />}
+
       <g className="op-connectors">
         {layout.edges.map((e) => {
           const child = occById.get(e.target)
@@ -206,6 +319,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const aria = [
             label,
             individual?.sex,
+            lifeLabel(lifeSpan(individual)) || null,
             occurrence.ahnentafel !== undefined ? `Ahnentafel ${occurrence.ahnentafel}` : null,
             occurrence.repeated ? terms.repeated : null,
             describeStructure(structure),
@@ -216,9 +330,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const content = node.arc ? (
             <>
               <path className={cx('op-fan-segment', c.fanSegment)} d={arcPath(node.arc)} />
-              <text className="op-label" x={node.x + node.width / 2} y={node.y + node.height / 2 + 4} textAnchor="middle">
-                {short(label, Math.max(4, Math.floor((node.arc.outerRadius - node.arc.innerRadius) / 7)))}
-              </text>
+              <FanLabel arc={node.arc} label={label} years={nodeSublabel(individual)} id={`${id}-arc-${node.occurrenceId.replace(/[^a-zA-Z0-9_-]/g, '_')}`} />
             </>
           ) : (
             <g transform={`translate(${node.x} ${node.y})`}>{props.renderIndividual ? props.renderIndividual(slot) : <DefaultIndividual {...slot} />}</g>

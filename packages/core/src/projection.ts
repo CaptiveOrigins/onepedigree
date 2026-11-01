@@ -402,7 +402,8 @@ export function projectPedigree(source: PedigreeDocument | PedigreeIndex, option
     }
     case 'hourglass': {
       const f = focal()
-      addAncestors(b, f, depth(3))
+      // A short look up and down: ancestors default to two generations (an hourglass, not a full pedigree).
+      addAncestors(b, f, depth(2))
       addDescendants(b, f, Math.max(0, options.descendantDepth ?? 3))
       if (options.includeSiblings) addSiblings(b)
       break

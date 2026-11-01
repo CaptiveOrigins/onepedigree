@@ -1,4 +1,6 @@
+import { lifeLabel, lifeSpan, type LifeSpan } from './life'
 import type { IndividualOccurrence, PedigreeViewId, PedigreeViewProjection } from './projection'
+import type { Individual } from './types'
 
 export type LayoutOptions = {
   orientation?: 'vertical' | 'horizontal'
@@ -9,6 +11,25 @@ export type LayoutOptions = {
   /** Space between generations. */
   rankGap?: number
   fan?: { sweepDegrees?: number; innerRadius?: number; ringWidth?: number }
+  /** Width of each node (e.g. measured text). Default: estimated from the name and life years, so names fit. */
+  nodeWidthFor?: (occurrence: IndividualOccurrence, individual: Individual | undefined) => number
+  /** Birth/death for the timeline (default `lifeSpan`). */
+  lifeSpanOf?: (individual: Individual | undefined) => LifeSpan
+  /** Timeline scale (default: fits about 1400 px). */
+  timeline?: { pxPerYear?: number }
+}
+
+/** Rough text width (13 px labels, 11 px sublabels) for sizing nodes without a DOM. */
+export function estimateNodeWidth(label: string, sublabel = ''): number {
+  const w = (s: string, px: number) =>
+    [...s].reduce((n, ch) => n + (/[\u1100-\u9fff\uac00-\ud7af]/.test(ch) ? 2 : /[A-Z@MW]/.test(ch) ? 1.25 : /[ilj.,'’ ]/.test(ch) ? 0.55 : 1) * px, 0)
+  return Math.round(Math.min(420, Math.max(120, Math.max(w(label, 7.4), w(sublabel, 6.2)) + 28)))
+}
+
+const SEX_MARK: Record<string, string> = { female: '♀', f: '♀', male: '♂', m: '♂' }
+/** The default node sublabel: sex mark and life years ("♂ 1950 – 2010"). */
+export function nodeSublabel(individual: Individual | undefined, span = lifeSpan(individual)): string {
+  return [SEX_MARK[(individual?.sex ?? '').toLowerCase()] ?? '', lifeLabel(span)].filter(Boolean).join(' ')
 }
 
 export type Point = { x: number; y: number }
@@ -22,16 +43,20 @@ export type PositionedNode = {
   height: number
   /** Fan view: the ring segment (radians, 0 = up, clockwise), centered on (0, 0) before translation into `bounds`. */
   arc?: { cx: number; cy: number; innerRadius: number; outerRadius: number; startAngle: number; endAngle: number }
+  /** Timeline: the box is the lifespan bar; `open` when the end isn't recorded; `undated` when nothing is. */
+  life?: { open: boolean; undated: boolean }
 }
 
 export type PositionedEdge = { id: string; source: string; target: string; role: string | null; points: readonly Point[] }
 
 export type LayoutResult = {
-  kind: 'tree' | 'layered' | 'radial'
+  kind: 'tree' | 'layered' | 'radial' | 'timeline'
   orientation: 'vertical' | 'horizontal'
   nodes: readonly PositionedNode[]
   edges: readonly PositionedEdge[]
   bounds: { width: number; height: number }
+  /** Timeline: the year scale (x = (year - from) * pxPerYear) and where undated individuals start. */
+  axis?: { from: number; to: number; pxPerYear: number; undatedY: number | null }
 }
 
 /** Replaceable layout (e.g. an ELK adapter); the built-in engine is `defaultLayoutEngine`. */
@@ -41,7 +66,7 @@ export interface PedigreeLayoutEngine {
 
 const TREE_VIEWS = new Set<PedigreeViewId>(['pedigree', 'compact', 'ahnentafel', 'maternal', 'paternal', 'hourglass', 'descendants'])
 /** Views whose `generation` is a top-down layer (founders first) rather than distance from the focal individual. */
-const TOP_DOWN = new Set<PedigreeViewId>(['relationship', 'timeline', 'population'])
+const TOP_DOWN = new Set<PedigreeViewId>(['relationship', 'population'])
 
 type Slot = { id: string; rank: number; order: number }
 
@@ -49,19 +74,23 @@ type Slot = { id: string; rank: number; order: number }
 function treeSlots(rootId: string, branches: (id: string) => string[], rankOf: (id: string) => number): Map<string, Slot> {
   const slots = new Map<string, Slot>()
   let next = 0
-  const stack: { id: string; done: boolean }[] = [{ id: rootId, done: false }]
+  let lastParent: string | null | undefined
+  const stack: { id: string; done: boolean; parent: string | null }[] = [{ id: rootId, done: false, parent: null }]
   while (stack.length) {
     const top = stack.pop()!
     const kids = branches(top.id).filter((k) => !slots.has(k))
     if (!top.done && kids.length) {
-      stack.push({ id: top.id, done: true })
-      for (const k of [...kids].reverse()) stack.push({ id: k, done: false })
+      stack.push({ ...top, done: true })
+      for (const k of [...kids].reverse()) stack.push({ id: k, done: false, parent: top.id })
       continue
     }
     const placed = branches(top.id)
       .map((k) => slots.get(k))
       .filter((s): s is Slot => Boolean(s))
+    // A little more room between families than between siblings (reads more naturally).
+    if (!placed.length && lastParent !== undefined && top.parent !== lastParent) next += 0.35
     const order = placed.length ? (Math.min(...placed.map((s) => s.order)) + Math.max(...placed.map((s) => s.order))) / 2 : next++
+    if (!placed.length) lastParent = top.parent
     slots.set(top.id, { id: top.id, rank: rankOf(top.id), order })
   }
   return slots
@@ -104,21 +133,49 @@ function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: Pedig
   return slots
 }
 
-function place(projection: PedigreeViewProjection, slots: Map<string, Slot>, kind: LayoutResult['kind'], o: Required<Omit<LayoutOptions, 'fan'>>): LayoutResult {
+type Resolved = Required<Omit<LayoutOptions, 'fan' | 'nodeWidthFor' | 'lifeSpanOf' | 'timeline'>> & { widths: Map<string, number> }
+
+/** Spreads one row's centers so nodes of different widths never overlap (average of a left and a right sweep: stays centered). */
+function spread(row: { id: string; c: number; w: number }[], gap: number) {
+  const left = row.map((r) => r.c)
+  for (let i = 1; i < row.length; i++) left[i] = Math.max(left[i]!, left[i - 1]! + (row[i - 1]!.w + row[i]!.w) / 2 + gap)
+  const right = row.map((r) => r.c)
+  for (let i = row.length - 2; i >= 0; i--) right[i] = Math.min(right[i]!, right[i + 1]! - (row[i]!.w + row[i + 1]!.w) / 2 - gap)
+  row.forEach((r, i) => (r.c = (left[i]! + right[i]!) / 2))
+}
+
+function place(projection: PedigreeViewProjection, slots: Map<string, Slot>, kind: LayoutResult['kind'], o: Resolved): LayoutResult {
   const vertical = o.orientation === 'vertical'
-  const orderStep = vertical ? o.nodeWidth + o.gap : o.nodeHeight + o.gap
-  const rankStep = vertical ? o.nodeHeight + o.rankGap : o.nodeWidth + o.rankGap
+  const widthOf = (id: string) => o.widths.get(id) ?? o.nodeWidth
   const all = [...slots.values()]
   const minOrder = Math.min(...all.map((s) => s.order))
-  const minRank = Math.min(...all.map((s) => s.rank))
-  const nodes: PositionedNode[] = projection.occurrences
-    .filter((occ) => slots.has(occ.occurrenceId))
-    .map((occ) => {
+  const ranks = [...new Set(all.map((s) => s.rank))].sort((a, b) => a - b)
+  const sorted = [...o.widths.values()].sort((a, b) => a - b)
+  const typical = sorted.length ? sorted[Math.floor(sorted.length / 2)]! : o.nodeWidth
+  const maxWidth = sorted.length ? sorted.at(-1)! : o.nodeWidth
+  const shown = projection.occurrences.filter((occ) => slots.has(occ.occurrenceId))
+  const pos = new Map<string, { x: number; y: number; w: number }>()
+  if (vertical) {
+    // Rows: centers from the slot order, then spread so differently sized nodes keep their gap.
+    for (const r of ranks) {
+      const row = shown
+        .filter((occ) => slots.get(occ.occurrenceId)!.rank === r)
+        .map((occ) => ({ id: occ.occurrenceId, c: (slots.get(occ.occurrenceId)!.order - minOrder) * (typical + o.gap), w: widthOf(occ.occurrenceId) }))
+        .sort((a, b) => a.c - b.c)
+      spread(row, o.gap)
+      for (const n of row) pos.set(n.id, { x: n.c - n.w / 2, y: ranks.indexOf(r) * (o.nodeHeight + o.rankGap), w: n.w })
+    }
+  } else {
+    for (const occ of shown) {
       const s = slots.get(occ.occurrenceId)!
-      const a = (s.order - minOrder) * orderStep
-      const b = (s.rank - minRank) * rankStep
-      return { occurrenceId: occ.occurrenceId, x: vertical ? a : b, y: vertical ? b : a, width: o.nodeWidth, height: o.nodeHeight }
-    })
+      pos.set(occ.occurrenceId, { x: ranks.indexOf(s.rank) * (maxWidth + o.rankGap), y: (s.order - minOrder) * (o.nodeHeight + o.gap), w: widthOf(occ.occurrenceId) })
+    }
+  }
+  const minX = Math.min(...[...pos.values()].map((p) => p.x))
+  const nodes: PositionedNode[] = shown.map((occ) => {
+    const p = pos.get(occ.occurrenceId)!
+    return { occurrenceId: occ.occurrenceId, x: p.x - minX, y: p.y, width: p.w, height: o.nodeHeight }
+  })
   const at = new Map(nodes.map((n) => [n.occurrenceId, n]))
   // One connector line per parent group: children with the same shown parents (full siblings)
   // share a line; half-siblings get their own line at a different height in the same gap.
@@ -218,6 +275,81 @@ function radial(projection: PedigreeViewProjection, options: LayoutOptions): Lay
   return { kind: 'radial', orientation: 'vertical', nodes, edges: [], bounds: { width: 2 * R, height: 2 * R } }
 }
 
+/**
+ * Timeline: one bar per individual from birth to death (open-ended when the
+ * end isn't recorded), on a shared year axis; bars share rows when they don't
+ * overlap. A thin line drops from each parent to the child at its birth.
+ * Individuals without any dates are listed below the axis.
+ */
+function timeline(projection: PedigreeViewProjection, o: Resolved, lifeOf: (i: Individual | undefined) => LifeSpan, pxPerYear?: number): LayoutResult {
+  const now = new Date().getFullYear() + new Date().getMonth() / 12
+  const spans = new Map(projection.occurrences.map((occ) => [occ.occurrenceId, lifeOf(projection.individuals[occ.individualId])]))
+  const dated = projection.occurrences.filter((occ) => {
+    const s = spans.get(occ.occurrenceId)!
+    return s.born !== null || s.died !== null
+  })
+  const lengths = [...spans.values()]
+    .filter((s) => s.born !== null && s.died !== null)
+    .map((s) => s.died! - s.born!)
+    .sort((a, b) => a - b)
+  const knownYears = [...spans.values()].flatMap((s) => [s.born, s.died]).filter((y): y is number => y !== null)
+  const range = knownYears.length ? Math.max(...knownYears) - Math.min(...knownYears) : 0
+  const typical = lengths.length ? lengths[Math.floor(lengths.length / 2)]! : Math.max(1, range * 0.25)
+  const ends = new Map(
+    dated.map((occ) => {
+      const s = spans.get(occ.occurrenceId)!
+      const start = s.born ?? s.died! - typical
+      const end = s.died ?? (s.living ? now : Math.min(now, start + typical))
+      return [occ.occurrenceId, { start, end: Math.max(end, start + 0.1), open: s.died === null }]
+    }),
+  )
+  const from = Math.floor(Math.min(...[...ends.values()].map((e) => e.start), now) - 1)
+  const to = Math.ceil(Math.max(...[...ends.values()].map((e) => e.end), from + 1) + 1)
+  const ppy = pxPerYear ?? Math.min(200, Math.max(3, 1400 / Math.max(1, to - from)))
+  const bar = 26
+  const top = 36
+  const lanes: number[] = []
+  const nodes: PositionedNode[] = []
+  const labelWidth = (id: string) => o.widths.get(id) ?? o.nodeWidth
+  for (const occ of [...dated].sort((a, b) => ends.get(a.occurrenceId)!.start - ends.get(b.occurrenceId)!.start)) {
+    const e = ends.get(occ.occurrenceId)!
+    const x = (e.start - from) * ppy
+    const width = Math.max(8, (e.end - e.start) * ppy)
+    // A row is free again once the previous bar, and its label when it sits after the bar, have ended.
+    const extent = x + (width >= labelWidth(occ.occurrenceId) ? width : width + labelWidth(occ.occurrenceId)) + 12
+    let lane = lanes.findIndex((free) => free <= x)
+    if (lane < 0) lane = lanes.push(0) - 1
+    lanes[lane] = extent
+    nodes.push({ occurrenceId: occ.occurrenceId, x, y: top + lane * (bar + 10), width, height: bar, life: { open: e.open, undated: false } })
+  }
+  const undatedY = projection.occurrences.length > dated.length ? top + lanes.length * (bar + 10) + 40 : null
+  const rowWidth = Math.max(800, (to - from) * ppy)
+  let cx = 0
+  let cy = undatedY ?? 0
+  for (const occ of projection.occurrences.filter((x) => !ends.has(x.occurrenceId))) {
+    const w = labelWidth(occ.occurrenceId)
+    if (cx && cx + w > rowWidth) {
+      cx = 0
+      cy += bar + 10
+    }
+    nodes.push({ occurrenceId: occ.occurrenceId, x: cx, y: cy, width: w, height: bar, life: { open: false, undated: true } })
+    cx += w + 10
+  }
+  const at = new Map(nodes.map((n) => [n.occurrenceId, n]))
+  const edges: PositionedEdge[] = projection.edges.flatMap((e) => {
+    const parent = at.get(e.source)
+    const child = at.get(e.target)
+    if (!parent || !child || parent.life?.undated || child.life?.undated) return []
+    const x = child.x
+    const py = parent.y + parent.height / 2
+    const points: Point[] = parent.x <= x && x <= parent.x + parent.width ? [{ x, y: py }] : [{ x: parent.x + parent.width, y: py }, { x, y: py }]
+    return [{ id: e.id, source: e.source, target: e.target, role: e.role, points: [...points, { x, y: child.y + child.height / 2 }] }]
+  })
+  const width = Math.max(rowWidth, ...nodes.map((n) => n.x + (n.life?.undated || n.width >= labelWidth(n.occurrenceId) ? n.width : n.width + labelWidth(n.occurrenceId))))
+  const height = Math.max(top, ...nodes.map((n) => n.y + n.height))
+  return { kind: 'timeline', orientation: 'horizontal', nodes, edges, bounds: { width, height }, axis: { from, to, pxPerYear: ppy, undatedY } }
+}
+
 /** Renderer-neutral geometry for a projection (no React, no host records). */
 export async function layoutPedigree(projection: PedigreeViewProjection, options: LayoutOptions = {}): Promise<LayoutResult> {
   return layoutSync(projection, options)
@@ -225,15 +357,20 @@ export async function layoutPedigree(projection: PedigreeViewProjection, options
 
 /** Same as `layoutPedigree`, synchronously (the built-in engine needs no I/O). */
 export function layoutSync(projection: PedigreeViewProjection, options: LayoutOptions = {}): LayoutResult {
-  const o = {
+  const lifeOf = options.lifeSpanOf ?? lifeSpan
+  const widthFor =
+    options.nodeWidthFor ?? ((occ: IndividualOccurrence, ind: Individual | undefined) => estimateNodeWidth(ind?.label ?? occ.individualId, nodeSublabel(ind, lifeOf(ind))))
+  const o: Resolved = {
     orientation: options.orientation ?? 'vertical',
     nodeWidth: options.nodeWidth ?? 160,
     nodeHeight: options.nodeHeight ?? 56,
     gap: options.gap ?? 24,
-    rankGap: options.rankGap ?? 48,
-  } as const
+    rankGap: options.rankGap ?? 56,
+    widths: new Map(projection.occurrences.map((occ) => [occ.occurrenceId, options.nodeWidth ?? widthFor(occ, projection.individuals[occ.individualId])])),
+  }
   if (!projection.occurrences.length) return { kind: 'tree', orientation: o.orientation, nodes: [], edges: [], bounds: { width: 0, height: 0 } }
   if (projection.view === 'fan') return radial(projection, options)
+  if (projection.view === 'timeline') return timeline(projection, o, lifeOf, options.timeline?.pxPerYear)
 
   const topDown = TOP_DOWN.has(projection.view)
   const rankOfGen = (g: number) => (topDown ? g : -g)

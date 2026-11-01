@@ -49,7 +49,9 @@ export {
 } from './projection'
 export {
   defaultLayoutEngine,
+  estimateNodeWidth,
   layoutPedigree,
+  nodeSublabel,
   layoutSync,
   type LayoutOptions,
   type LayoutResult,
@@ -76,3 +78,4 @@ export {
 export { parseGedcom, serializeGedcom, type GedcomData, type GedcomEvent, type GedcomParseResult } from './formats/gedcom'
 export { guessCsvMapping, parseCsv, parseCsvRows, type CsvMapping, type CsvParseResult } from './formats/csv'
 export { applyCompanion, companionMatches, emptyCompanion, isCompanion, type Companion } from './formats/companion'
+export { lifeLabel, lifeSpan, yearOf, type LifeSpan, type LifeWords } from './life'

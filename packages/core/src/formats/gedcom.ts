@@ -83,27 +83,52 @@ export function parseGedcom(text: string): GedcomParseResult {
     info.set(id(r.xref!), data)
     people.set(id(r.xref!), { id: id(r.xref!), label, sex, parentage: null, data: { gedcom: data } })
   }
+  // Families: who the parents are, and who is listed as a child.
+  const families = new Map<string, { father?: string; mother?: string }>()
+  const listedIn = new Map<string, string[]>()
   for (const f of records.filter((r) => r.tag === 'FAM' && r.xref)) {
     const father = child(f, 'HUSB')?.value
     const mother = child(f, 'WIFE')?.value
+    families.set(id(f.xref!), { ...(father ? { father: id(father) } : {}), ...(mother ? { mother: id(mother) } : {}) })
     for (const c of children(f, 'CHIL')) {
-      const kid = people.get(id(c.value))
-      if (!kid) {
+      if (!people.has(id(c.value))) {
         warnings.push(`Family ${id(f.xref!)} names a missing child ${c.value}`)
         continue
       }
-      const other = info.get(kid.id)?.otherFamilies?.some((o) => o.family === id(f.xref!))
-      if (other) continue // adopted/foster: not biological parentage
-      const parents = [
-        ...(mother && people.has(id(mother)) ? [{ individual: id(mother), role: 'mother' }] : []),
-        ...(father && people.has(id(father)) ? [{ individual: id(father), role: 'father' }] : []),
-      ]
-      if (!parents.length) continue
-      const existing = kid.parentage?.parents ?? []
-      if (existing.length) warnings.push(`${kid.label} is a birth child of more than one family; parents were combined`)
-      ;(kid as { parentage: Individual['parentage'] }).parentage = { parents: [...existing, ...parents.filter((p) => !existing.some((e) => e.individual === p.individual))], reproductiveMode: 'sexual' }
+      listedIn.set(id(c.value), [...(listedIn.get(id(c.value)) ?? []), id(f.xref!)])
     }
   }
+  // Birth parents come from one family: the person's first FAMC that isn't adopted/foster/sealing,
+  // else the first family listing them as a child. Exact duplicates are ignored; other families
+  // stay as data (`otherFamilies`), never combined into extra parents.
+  const indi = new Map(records.filter((r) => r.tag === 'INDI' && r.xref).map((r) => [id(r.xref!), r]))
+  let several = 0
+  for (const [personId, kid] of people) {
+    const nonBirth = new Set((info.get(personId)?.otherFamilies ?? []).map((o) => o.family))
+    const ordered = [...new Set([...children(indi.get(personId)!, 'FAMC').map((f) => id(f.value)), ...(listedIn.get(personId) ?? [])])].filter(
+      (f) => families.has(f) && !nonBirth.has(f),
+    )
+    const birth = ordered[0]
+    if (!birth) continue
+    const fam = families.get(birth)!
+    const key = (f: { father?: string; mother?: string }) => `${f.father ?? ''}|${f.mother ?? ''}`
+    const others = ordered.slice(1).filter((f) => key(families.get(f)!) !== key(fam))
+    if (others.length) {
+      several++
+      const data = info.get(personId)!
+      data.otherFamilies = [...(data.otherFamilies ?? []), ...others.map((family) => ({ family, relation: 'unrecorded' }))]
+    }
+    const parents = [
+      ...(fam.mother && people.has(fam.mother) ? [{ individual: fam.mother, role: 'mother' }] : []),
+      ...(fam.father && people.has(fam.father) ? [{ individual: fam.father, role: 'father' }] : []),
+    ]
+    // How they were conceived isn't recorded in GEDCOM: unknown stays unknown.
+    if (parents.length) (kid as { parentage: Individual['parentage'] }).parentage = { parents }
+  }
+  if (several)
+    warnings.push(
+      `${several} ${several === 1 ? 'person is a child' : 'people are children'} of more than one family; the first family is used as birth parents (the others are kept with the person).`,
+    )
   return { document: { schemaVersion: 1, individuals: [...people.values()] }, warnings }
 }
 

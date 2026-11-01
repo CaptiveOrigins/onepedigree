@@ -1,20 +1,23 @@
+import { ask } from '@tauri-apps/plugin-dialog'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { load } from '@tauri-apps/plugin-store'
 import { check } from '@tauri-apps/plugin-updater'
 
-/** App settings (stored on this Mac). */
-export type Settings = { autoUpdate: boolean }
+/** App settings (stored on this Mac). Appearance: follow the system, or always light/dark. */
+export type Appearance = 'auto' | 'light' | 'dark'
+export type Settings = { autoUpdate: boolean; appearance: Appearance }
 
-const store = () => load('settings.json', { autoSave: true, defaults: { autoUpdate: true } })
+const store = () => load('settings.json', { autoSave: true, defaults: { autoUpdate: true, appearance: 'auto' } })
 
 export async function loadSettings(): Promise<Settings> {
   const s = await store()
-  return { autoUpdate: (await s.get<boolean>('autoUpdate')) ?? true }
+  return { autoUpdate: (await s.get<boolean>('autoUpdate')) ?? true, appearance: (await s.get<Appearance>('appearance')) ?? 'auto' }
 }
 
 export async function saveSettings(settings: Settings) {
   const s = await store()
   await s.set('autoUpdate', settings.autoUpdate)
+  await s.set('appearance', settings.appearance)
 }
 
 /**
@@ -26,7 +29,9 @@ export async function checkForUpdates(manual: boolean): Promise<string | null> {
   try {
     const update = await check()
     if (!update) return manual ? 'You have the latest version.' : null
-    if (!confirm(`OnePedigree ${update.version} is available. Install it now? The app restarts afterwards.`)) return `Update ${update.version} is available.`
+    // The web view ignores window.confirm on macOS: ask with a native dialog.
+    if (!(await ask(`OnePedigree ${update.version} is available. Install it now? The app restarts afterwards.`, { title: 'Update available', okLabel: 'Install', cancelLabel: 'Later' })))
+      return `Update ${update.version} is available.`
     await update.downloadAndInstall()
     await relaunch()
     return null

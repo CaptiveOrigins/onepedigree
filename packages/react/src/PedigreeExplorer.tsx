@@ -3,6 +3,7 @@
 import type { Individual, IndividualOccurrence } from '@captiveorigins/onepedigree-core'
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
+import { AhnentafelList } from './AhnentafelList.js'
 import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
@@ -28,6 +29,10 @@ export type PedigreeExplorerProps = Omit<PedigreeViewProps, 'interactive' | 'vie
   themeEditor?: boolean
   /** Called with the edited theme (e.g. to save it). */
   onThemeChange?: (theme: PedigreeTheme) => void
+  /** Print the chart (default: the browser's print, showing only the chart). Desktop shells can supply their own. */
+  onPrint?: () => void
+  /** Ahnentafel words for the two parents (default Father/Mother). */
+  parentWords?: { paternal: string; maternal: string }
   /** Accessible labels for the controls. */
   labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls' | 'colors', string>>
 }
@@ -42,6 +47,22 @@ const LABELS = {
   open: 'Open profile',
   controls: 'Pedigree controls',
   colors: 'Colors',
+}
+/** Properties copied into downloaded SVGs (they have no stylesheet). */
+const INLINE = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity', 'opacity', 'font-family', 'font-size', 'font-weight', 'font-style', 'visibility', 'display']
+
+/** Prints only this chart: everything else on the page is hidden while printing. */
+function printChart(el: HTMLElement | null) {
+  if (!el) return window.print()
+  el.setAttribute('data-op-printing', '')
+  document.documentElement.setAttribute('data-op-printing', '')
+  const done = () => {
+    el.removeAttribute('data-op-printing')
+    document.documentElement.removeAttribute('data-op-printing')
+    window.removeEventListener('afterprint', done)
+  }
+  window.addEventListener('afterprint', done)
+  window.print()
 }
 const KEY_DIRECTION: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }
 
@@ -160,6 +181,21 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     if (!svg) return
     const clone = svg.cloneNode(true) as SVGSVGElement
     clone.setAttribute('viewBox', `${full.x} ${full.y} ${full.width} ${full.height}`)
+    clone.setAttribute('width', String(full.width))
+    clone.setAttribute('height', String(full.height))
+    // A downloaded file has no stylesheet: copy each element's computed colors and fonts into it.
+    const source = [svg, ...svg.querySelectorAll('*')]
+    const target = [clone, ...clone.querySelectorAll('*')]
+    source.forEach((el, i) => {
+      const cs = getComputedStyle(el)
+      target[i]?.setAttribute('style', INLINE.map((prop) => `${prop}:${cs.getPropertyValue(prop)}`).join(';'))
+    })
+    const bg = getComputedStyle(root.current!).backgroundColor
+    if (bg && bg !== 'rgba(0, 0, 0, 0)') {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      for (const [k, v] of Object.entries({ x: full.x, y: full.y, width: full.width, height: full.height, fill: bg })) rect.setAttribute(k, String(v))
+      clone.insertBefore(rect, clone.firstChild)
+    }
     const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -198,7 +234,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
         <button type="button" onClick={download} aria-label={labels.download} title={labels.download}>
           ⤓
         </button>
-        <button type="button" onClick={() => window.print()} aria-label={labels.print} title={labels.print}>
+        <button type="button" onClick={() => (props.onPrint ? props.onPrint() : printChart(root.current))} aria-label={labels.print} title={labels.print}>
           ⎙
         </button>
         {props.themeEditor && (
@@ -213,17 +249,28 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
           <ThemeEditor value={theme ?? structuredClone(THEME_PRESETS[0]!)} view={projection.view} onChange={changeTheme} />
         </div>
       )}
-      <PedigreeView
-        {...props}
-        theme={theme}
-        interactive
-        viewBox={box}
-        selectedIndividualId={selectedId}
-        highlightedOccurrenceIds={highlighted}
-        onNodeClick={(occ) => choose(selectedOccurrence === occ.occurrenceId ? null : occ)}
-        onNodeKeyDown={onNodeKeyDown}
-        svgProps={{ ...props.svgProps, width: '100%', height: '100%', preserveAspectRatio: 'xMidYMid meet' }}
-      />
+      {projection.view === 'ahnentafel' ? (
+        <AhnentafelList
+          projection={projection}
+          terminology={props.terminology}
+          parentWords={props.parentWords}
+          getIndividualHref={props.getIndividualHref}
+          selectedIndividualId={selectedId}
+          onSelect={(individualId) => choose(projection.occurrences.find((o) => o.individualId === individualId) ?? null)}
+        />
+      ) : (
+        <PedigreeView
+          {...props}
+          theme={theme}
+          interactive
+          viewBox={box}
+          selectedIndividualId={selectedId}
+          highlightedOccurrenceIds={highlighted}
+          onNodeClick={(occ) => choose(selectedOccurrence === occ.occurrenceId ? null : occ)}
+          onNodeKeyDown={onNodeKeyDown}
+          svgProps={{ ...props.svgProps, width: '100%', height: '100%', preserveAspectRatio: 'xMidYMid meet' }}
+        />
+      )}
       {occurrence && (
         <div className="op-quick-view" role="dialog" aria-label={labelOf(individual, terms)}>
           {props.renderQuickView ? (

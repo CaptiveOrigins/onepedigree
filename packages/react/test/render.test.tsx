@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { humanFamily, multiplePaternityClutch, parthenogenesis, reptileBreeding, sharedAncestors } from '../../../fixtures'
-import { describeProjection, PedigreeView } from '../src'
+import { ahnentafelRelation, AhnentafelList, describeProjection, PedigreeView } from '../src'
 
 const render = (doc: Parameters<typeof projectPedigree>[0], options: Parameters<typeof projectPedigree>[1], extra: Partial<Parameters<typeof PedigreeView>[0]> = {}) => {
   const projection = projectPedigree(doc, options)
@@ -88,3 +88,59 @@ describe('server rendering', () => {
     expect(describeProjection(p)).toBe('Inbreeding of Ember: 4 individuals across 3 generations. 1 individual appears more than once.')
   })
 })
+
+describe('labels, fan text, timeline and Ahnentafel (2026-11-01 feedback)', () => {
+  const family = {
+    schemaVersion: 1 as const,
+    individuals: [
+      { id: 'gran', label: 'Grandmother Anneliese Wilhelmina Bergström-Johansson', sex: 'female', data: { born: '1921', died: '1999-05-02' } },
+      { id: 'grandpa', label: 'Grandpa', sex: 'male', data: { born: 1919 } },
+      { id: 'mom', label: 'Mom', sex: 'female', data: { born: 1950, living: true }, parentage: { parents: [{ individual: 'gran', role: 'mother' }, { individual: 'grandpa', role: 'father' }] } },
+      { id: 'me', label: 'Me', parentage: { parents: [{ individual: 'mom', role: 'mother' }] } },
+    ],
+  }
+
+  it('sizes nodes to their names and shows sex and life years', () => {
+    const projection = projectPedigree(family, { focalId: 'me', view: 'pedigree' })
+    const layout = layoutSync(projection)
+    const gran = layout.nodes.find((n) => n.occurrenceId.startsWith('gran'))!
+    const me = layout.nodes.find((n) => n.occurrenceId.startsWith('me'))!
+    expect(gran.width).toBeGreaterThan(me.width)
+    const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layout} />)
+    expect(html).toContain('Grandmother Anneliese Wilhelmina Bergström-Johansson</text>')
+    expect(html).toContain('♀ 1921 – 1999')
+    expect(html).toContain('♂ 1919 – unknown')
+    expect(html).toContain('♀ 1950 – present')
+    // No overlaps within a row.
+    const rows = new Map<number, typeof layout.nodes>()
+    for (const n of layout.nodes) rows.set(n.y, [...(rows.get(n.y) ?? []), n])
+    for (const row of rows.values()) {
+      const sorted = [...row].sort((a, b) => a.x - b.x)
+      for (let i = 1; i < sorted.length; i++) expect(sorted[i]!.x).toBeGreaterThanOrEqual(sorted[i - 1]!.x + sorted[i - 1]!.width)
+    }
+  })
+
+  it('writes fan labels along the arc', () => {
+    const html = render(family, { focalId: 'me', view: 'fan' })
+    expect(html).toContain('<textPath')
+  })
+
+  it('draws a timeline of lifespans on a year axis', () => {
+    const projection = projectPedigree(family, { focalId: 'me', view: 'timeline' })
+    const layout = layoutSync(projection)
+    expect(layout.kind).toBe('timeline')
+    const x = (id: string) => layout.nodes.find((n) => n.occurrenceId.startsWith(id))!
+    expect(x('grandpa').x).toBeLessThan(x('mom').x)
+    expect(x('me').life).toEqual({ open: false, undated: true })
+    const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layout} />)
+    expect(html).toContain('op-timeline-axis')
+  })
+
+  it('lists the Ahnentafel by generation with relationships', () => {
+    expect([ahnentafelRelation(2), ahnentafelRelation(3), ahnentafelRelation(6)]).toEqual(['Father', 'Mother', 'Mother’s father'])
+    const html = renderToStaticMarkup(<AhnentafelList projection={projectPedigree(family, { focalId: 'me', view: 'ahnentafel' })} />)
+    expect(html).toContain('Generation 3')
+    expect(html).toMatch(/6\.<\/span> <span>Grandpa<\/span>/)
+  })
+})
+

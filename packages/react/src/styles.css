@@ -73,6 +73,11 @@
 .op-individual[data-generation='1'] .op-fan-segment,
 .op-individual[data-generation='3'] .op-fan-segment,
 .op-individual[data-generation='5'] .op-fan-segment { fill: var(--op-fan-fill-alt); }
+.op-fan-label { pointer-events: none; }
+.op-life-bar[data-open] { stroke-dasharray: 4 3; }
+.op-axis-line { stroke: var(--op-connector); stroke-width: 1px; }
+.op-axis-tick { stroke: var(--op-connector); stroke-opacity: 0.18; stroke-width: 1px; }
+.op-view-timeline .op-connector { stroke-opacity: 0.55; }
 .op-cohort-box { fill: none; stroke: var(--op-cohort-border); stroke-dasharray: 4 4; }
 .op-cohort-label { fill: var(--op-cohort-label); font-size: 11px; }
 
@@ -98,6 +103,14 @@
   padding: 12px; border-radius: 10px; background: var(--op-node-background, #fff); color: var(--op-label, #1d2330);
   border: 1px solid var(--op-node-border, #6b7a90); font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
 }
+.op-ahnentafel { padding: 56px 20px 20px; overflow: auto; height: 100%; box-sizing: border-box; color: var(--op-label, #1d2330); font: 14px/1.5 var(--op-font, system-ui, sans-serif); }
+.op-ahnentafel h3 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--op-sublabel, #5b6577); }
+.op-ahnentafel ol { list-style: none; margin: 0; padding: 0; columns: 18rem; column-gap: 24px; }
+.op-ahnentafel li { break-inside: avoid; padding: 2px 0; }
+.op-ahnentafel li[data-selected] { font-weight: 600; }
+.op-ahnentafel button { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.op-ahnentafel-number { display: inline-block; min-width: 2.5em; text-align: end; color: var(--op-sublabel, #5b6577); font-variant-numeric: tabular-nums; }
+.op-ahnentafel-years, .op-ahnentafel-relation, .op-ahnentafel-note { color: var(--op-sublabel, #5b6577); font-size: 13px; }
 .op-theme-editor-title { font-weight: 600; margin: 0 0 8px; }
 .op-theme-row { display: grid; grid-template-columns: 1fr 2.25rem 5.5rem; align-items: center; gap: 6px; margin: 4px 0; }
 .op-theme-row select { grid-column: 2 / 4; }
@@ -111,6 +124,9 @@
   .op-root * { transition: none !important; animation: none !important; }
 }
 @media print {
+  html[data-op-printing] body * { visibility: hidden; }
+  html[data-op-printing] [data-op-printing], html[data-op-printing] [data-op-printing] * { visibility: visible; }
+  html[data-op-printing] [data-op-printing] { position: fixed; inset: 0; height: 100% !important; border-radius: 0; }
   .op-toolbar, .op-quick-view, .op-theme-panel { display: none; }
   .op-explorer { height: auto !important; overflow: visible; }
   .op-root { --op-node-background: #fff; --op-label: #000; --op-connector: #555; }

@@ -22,6 +22,8 @@ export type Display = {
   /** What the project is about, e.g. "Chelonoidis carbonarius" or "Humans". */
   species?: string
   focal?: string
+  /** Second individual of the Relationship view. */
+  related?: string
   generations?: number
 }
 
