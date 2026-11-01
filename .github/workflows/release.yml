@@ -28,4 +28,5 @@ jobs:
           for p in core react payload; do
             (cd packages/$p && pnpm pack --pack-destination ../../dist-packages)
           done
-          for f in dist-packages/*.tgz; do npm publish "$f" --access public --provenance --tag "$TAG"; done
+          # "./" matters: without it npm reads "dist-packages/x.tgz" as a GitHub repository shorthand.
+          for f in dist-packages/*.tgz; do npm publish "./$f" --access public --provenance --tag "$TAG"; done
