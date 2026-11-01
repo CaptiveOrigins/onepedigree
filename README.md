@@ -69,6 +69,21 @@ groups an hourglass projection's relatives by generation (parents, grandparents,
 offspring, …); `generationKind()` gives hosts the kind and number of "great"s to translate, and
 `generationLabel()` an English label.
 
+## OnePedigree for Mac
+
+A desktop app (`apps/desktop`, Tauri) for anyone, any species:
+
+- **Open** a GEDCOM family tree (people), a OnePedigree `.json` file (any species), or a
+  spreadsheet (CSV/TSV with ID, mother/dam and father/sire columns).
+- **A GEDCOM is never changed.** Your extra fields and view settings live in a companion
+  file beside it (`family.companion.json`), which follows the GEDCOM by its fingerprint.
+- **Build your own tree** for any species and save it as plain OnePedigree JSON (no special
+  file type); export to GEDCOM or JSON at any time.
+- Every pedigree view, colours, Mother/Father or Dam/Sire wording.
+- **Updates itself** from GitHub releases (signed); turn it off in Settings.
+
+Builds: push a `desktop-v*` tag (`.github/workflows/desktop.yml`).
+
 ## Development
 
 ```bash

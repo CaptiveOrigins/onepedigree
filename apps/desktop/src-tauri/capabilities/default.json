@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the OnePedigree window may do",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "fs:allow-exists",
+    { "identifier": "fs:scope", "allow": [{ "path": "$HOME/**" }, { "path": "/Volumes/**" }] },
+    "store:default",
+    "process:allow-restart",
+    "updater:default"
+  ]
+}

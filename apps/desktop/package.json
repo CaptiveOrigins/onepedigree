@@ -1,0 +1,34 @@
+{
+  "name": "onepedigree-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OnePedigree for Mac: open GEDCOM, CSV or OnePedigree JSON files, view and edit pedigrees in every view.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build"
+  },
+  "dependencies": {
+    "@captiveorigins/onepedigree-core": "workspace:^",
+    "@captiveorigins/onepedigree-react": "workspace:^",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-process": "^2",
+    "@tauri-apps/plugin-store": "^2",
+    "@tauri-apps/plugin-updater": "^2",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5",
+    "typescript": "^5.9.0",
+    "vite": "^7"
+  }
+}
