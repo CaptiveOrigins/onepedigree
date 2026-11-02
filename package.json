@@ -1,7 +1,21 @@
 {
   "name": "onepedigree",
   "private": true,
-  "description": "Species-neutral pedigree framework: data model, validation, traversal, views, layout, React and Payload.",
+  "description": "OnePedigree: a species-neutral pedigree framework, with a data model, validation, bounded traversal, 13 views and layout, plus packages for React and Payload.",
+  "keywords": [
+    "pedigree",
+    "genealogy",
+    "family-tree",
+    "breeding",
+    "animal-breeding",
+    "react",
+    "payload",
+    "payload-plugin"
+  ],
+  "homepage": "https://github.com/mgilardi/onepedigree#readme",
+  "bugs": {
+    "url": "https://github.com/mgilardi/onepedigree/issues"
+  },
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@11.2.2",

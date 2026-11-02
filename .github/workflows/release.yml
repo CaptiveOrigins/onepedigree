@@ -22,6 +22,12 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@^11.15.0
       - run: pnpm install --frozen-lockfile
+      - name: GitHub description matches package.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh api repos/${{ github.repository }} -q .description)" = "$(node -p "require('./package.json').description")" \
+            || { echo "::error::GitHub's description differs from package.json: sync it (npm run packages:sync in captive-origins) and re-tag."; exit 1; }
       - name: Tag matches every package
         run: for p in core react payload; do test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./packages/$p/package.json').version")"; done
       - run: pnpm typecheck && pnpm test && pnpm build

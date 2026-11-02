@@ -1,7 +1,11 @@
 {
   "name": "@captiveorigins/payload-plugin-onepedigree",
   "version": "0.1.0-alpha.8",
-  "description": "OnePedigree for Payload CMS: parentage fields for existing or managed collections, cycle-safe serialized parentage writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin preview, relatives and color settings.",
+  "description": "OnePedigree for Payload: parentage fields, cycle-safe parentage writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin previews.",
+  "homepage": "https://github.com/mgilardi/onepedigree#readme",
+  "bugs": {
+    "url": "https://github.com/mgilardi/onepedigree/issues"
+  },
   "keywords": [
     "payload",
     "payload-plugin",
