@@ -1,10 +1,9 @@
 # Releasing
 
-Every version is published to npm by the `captiveorigins` npm account, from a maintainer's machine, so npm lists `captiveorigins` as the publisher. Nothing publishes from CI (the desktop app workflow only builds the app).
+The same process as every Captive Origins package:
 
-1. Bump the same `version` in `packages/core`, `packages/react` and `packages/payload`, commit as `Release x.y.z`, tag `vx.y.z`, push the commit and the tag.
-2. Publish all three while signed in to npm as `captiveorigins` (2FA prompt):
+1. Bump the same `version` in `packages/core`, `packages/react` and `packages/payload`, commit as `Release x.y.z`, tag `vx.y.z`, and push the commit and the tag.
+2. The Release workflow builds, tests and **stages** all three on npm (trusted publishing, no stored token). Prereleases go to the `alpha` dist-tag.
+3. The `captiveorigins` npm account approves each with 2FA: npmjs.com → avatar → **Staged Packages** → **Approve**, or `npm stage list` then `npm stage approve <id>`. Only then are they public.
 
-   ```bash
-   git pull && sh scripts/publish.sh
-   ```
+(The desktop app has its own workflow, `desktop.yml`.)
