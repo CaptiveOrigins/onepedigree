@@ -290,23 +290,23 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
       data-reorderable={reorderable ? '' : undefined}
     >
       <div className="op-toolbar" role="toolbar" aria-label={labels.controls}>
-        <button type="button" onClick={() => zoom(0.8)} aria-label={labels.zoomIn} title={labels.zoomIn}>
-          <Icon name="plus" />
+        <button type="button" onClick={() => zoom(0.8)} aria-label={labels.zoomIn} data-tip={labels.zoomIn}>
+          <Icon name="zoomIn" />
         </button>
-        <button type="button" onClick={() => zoom(1.25)} aria-label={labels.zoomOut} title={labels.zoomOut}>
-          <Icon name="minus" />
+        <button type="button" onClick={() => zoom(1.25)} aria-label={labels.zoomOut} data-tip={labels.zoomOut}>
+          <Icon name="zoomOut" />
         </button>
-        <button type="button" onClick={() => setBox(full)} aria-label={labels.fit} title={labels.fit}>
+        <button type="button" onClick={() => setBox(full)} aria-label={labels.fit} data-tip={labels.fit}>
           <Icon name="fit" />
         </button>
-        <button type="button" onClick={download} aria-label={labels.download} title={labels.download}>
+        <button type="button" onClick={download} aria-label={labels.download} data-tip={labels.download}>
           <Icon name="download" />
         </button>
-        <button type="button" onClick={() => (props.onPrint ? props.onPrint() : printChart(root.current))} aria-label={labels.print} title={labels.print}>
+        <button type="button" onClick={() => (props.onPrint ? props.onPrint() : printChart(root.current))} aria-label={labels.print} data-tip={labels.print}>
           <Icon name="print" />
         </button>
         {props.themeEditor && (
-          <button type="button" onClick={() => setEditing((v) => !v)} aria-label={labels.colors} title={labels.colors} aria-expanded={editing}>
+          <button type="button" onClick={() => setEditing((v) => !v)} aria-label={labels.colors} data-tip={labels.colors} aria-expanded={editing}>
             <Icon name="palette" />
           </button>
         )}
