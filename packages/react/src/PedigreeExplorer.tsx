@@ -273,6 +273,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     <div
       ref={root}
       className="op-explorer"
+      data-legend={props.geneOverlay || props.genotypes ? '' : undefined}
       style={{ height: props.height ?? '32rem', ...(theme ? { ...themeStyle(theme, projection.view), background: 'var(--op-background)' } : {}) }}
       onKeyDown={onKeyDown}
       onWheel={onWheel}

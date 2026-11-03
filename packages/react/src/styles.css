@@ -142,11 +142,11 @@
 }
 
 /* Heritable trait overlay: genetic pedigree symbols (filled = visual, half = het, dot = possible het, open = not carrying). */
-.op-gene-outline { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.5px; }
+.op-gene-outline { fill: var(--op-node-background, #fff); stroke: var(--op-label, #4c312c); stroke-width: 1.5px; }
 .op-gene-outline[data-dashed] { stroke-dasharray: 2 2; }
-.op-gene-fill { fill: var(--op-label); }
-.op-gene-ring { fill: none; stroke: var(--op-label); stroke-width: 1.25px; }
-.op-gene-text { font-size: 9px; fill: var(--op-label); }
+.op-gene-fill { fill: var(--op-label, #4c312c); }
+.op-gene-ring { fill: none; stroke: var(--op-label, #4c312c); stroke-width: 1.25px; }
+.op-gene-text { font-size: 9px; fill: var(--op-label, #4c312c); }
 .op-gene[data-state='unknown'] .op-gene-outline { stroke: #9a8f8b; }
 .op-gene[data-state='unknown'] .op-gene-text { fill: #9a8f8b; }
 .op-gene-legends { position: absolute; left: 8px; bottom: 8px; z-index: 1; max-width: calc(100% - 16px); display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
@@ -162,10 +162,15 @@
 
 /* Allele dots: two per gene, one per copy. Filled = carries it (gene color), empty = normal copy,
    dashed = possible, grey dashed = not known. Shape carries the meaning, not color. */
-.op-dot { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.25px; }
+.op-dot { fill: var(--op-node-background, #fff); stroke: var(--op-label, #4c312c); stroke-width: 1.25px; }
 .op-dot[data-dot='possible'] { stroke-dasharray: 1.6 1.6; }
 /* Suggested from relatives (not proven): the copy is drawn with a dashed edge. */
 .op-dot[data-inferred] { stroke-dasharray: 2 1.4; stroke-width: 1.5px; }
 .op-dot[data-dot='unknown'] { stroke: #9a8f8b; stroke-dasharray: 1.6 1.6; }
-.op-gene-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--op-label); }
+.op-gene-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--op-label, #4c312c); }
 .op-genotype-key ul + ul { margin-top: 2px; }
+
+/* With a gene legend, the legend sits under the drawing instead of covering it. */
+.op-explorer[data-legend] { display: flex; flex-direction: column; }
+.op-explorer[data-legend] > svg { flex: 1; min-height: 0; height: auto; }
+.op-explorer[data-legend] .op-gene-legends { position: static; margin: 0 8px 8px; max-width: none; }

@@ -103,6 +103,8 @@ export type GenotypeDisplay = {
   records: ReadonlyMap<string, readonly GenotypeRecord[]>
   /** Needed for sex-linked genes: the heterogametic sex has one copy (one dot). */
   sexOf?: (individualId: string) => SexClass
+  /** Words for the key (translations). */
+  labels?: Partial<Record<'title' | 'two' | 'one' | 'none' | 'possible' | 'unknown' | 'suggested', string>>
 }
 
 /** How many of the two copies carry the variant: [filled, possible, unknown] out of `slots`. */
@@ -113,8 +115,8 @@ function copies(record: GenotypeRecord | undefined, mode: InheritanceMode | unde
   if (state === 'possible-het') return { filled: 0, possible: 1, unknown: 0 }
   if (state === 'het' || state === 'single') return { filled: 1, possible: 0, unknown: 0 }
   if (state === 'super') return { filled: slots, possible: 0, unknown: 0 }
-  // visual: two copies for a recessive (or one when hemizygous); one assumed otherwise
-  return { filled: slots === 1 || mode === 'recessive' ? slots : 1, possible: 0, unknown: 0 }
+  // visual: two copies for a recessive (or one when hemizygous); otherwise at least one, the other not known
+  return slots === 1 || mode === 'recessive' ? { filled: slots, possible: 0, unknown: 0 } : { filled: 1, possible: 0, unknown: 1 }
 }
 
 /** Allele dots for one gene (SVG, starting at 0,0, vertically centered on 0). */
@@ -166,7 +168,7 @@ export function genotypeText(display: GenotypeDisplay, individualId: string, wor
 }
 
 /** Key for allele dots: each gene's color, and what the dots mean. */
-export function GenotypeKey({ display, labels = {} }: { display: GenotypeDisplay; labels?: Partial<Record<'title' | 'two' | 'one' | 'none' | 'possible' | 'unknown' | 'suggested', string>> }) {
+export function GenotypeKey({ display, labels = display.labels ?? {} }: { display: GenotypeDisplay; labels?: Partial<Record<'title' | 'two' | 'one' | 'none' | 'possible' | 'unknown' | 'suggested', string>> }) {
   const l = { title: 'Genes', two: 'two copies', one: 'one copy', none: 'none', possible: 'possible (dashed)', unknown: 'not known', suggested: 'suggested from relatives', ...labels }
   const demo: GeneKey = { id: 'demo', label: '', color: '#7a625c', mode: 'recessive' }
   const sample = (record: GenotypeRecord | undefined, text: string) => (

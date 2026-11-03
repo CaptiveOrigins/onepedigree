@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
 import { layoutSync, projectPedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, PedigreeView, GeneLegend, type GenotypeMark } from '../src'
+import { GenotypeDots, PedigreeExplorer, PedigreeView, GeneLegend, type GenotypeMark } from '../src'
 
 afterEach(cleanup)
 
@@ -65,5 +65,16 @@ describe('allele dots', () => {
     expect([...mother.querySelectorAll('.op-dots[data-gene="r"] .op-dot')].map((d) => d.getAttribute('data-dot'))).toEqual(['possible', 'empty'])
     expect(html).toMatch(/Rec: Possible het \(chance shown\): 66%/)
     expect(html).toMatch(/Zed: Unknown/)
+  })
+})
+
+describe('honest copies', () => {
+  it('draws a visual non-recessive gene as one known copy and one unknown', () => {
+    const { container } = render(
+      <svg>
+        <GenotypeDots gene={{ id: 'd', label: 'Dom', color: '#000', mode: 'dominant' }} record={{ gene: 'd', state: 'visual' }} />
+      </svg>,
+    )
+    expect([...container.querySelectorAll('.op-dot')].map((d) => d.getAttribute('data-dot'))).toEqual(['filled', 'unknown'])
   })
 })
