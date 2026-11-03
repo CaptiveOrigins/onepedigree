@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/onepedigree-react",
-  "version": "0.1.0-alpha.9",
+  "version": "0.1.0-alpha.10",
   "description": "OnePedigree for React: server-renderable SVG pedigree views (all 13), an interactive explorer, headless hooks and CSS-variable styling.",
   "homepage": "https://github.com/mgilardi/onepedigree#readme",
   "bugs": {
