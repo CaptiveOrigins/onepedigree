@@ -80,3 +80,22 @@ export { parseGedcom, serializeGedcom, type GedcomData, type GedcomEvent, type G
 export { guessCsvMapping, parseCsv, parseCsvRows, type CsvMapping, type CsvParseResult } from './formats/csv'
 export { applyCompanion, companionMatches, emptyCompanion, isCompanion, type Companion } from './formats/companion'
 export { lifeLabel, lifeSpan, yearOf, type LifeSpan, type LifeWords } from './life'
+export {
+  carrierFromOffspring,
+  checkOffspring,
+  expectedNormalLookingRecord,
+  locusGenotype,
+  locusOf,
+  morphName,
+  pairingOdds,
+  type GenotypeAssumption,
+  type InheritanceMode,
+  type LocusOdds,
+  type OffspringClass,
+  type SexClass,
+  type TraitBasis,
+  type TraitDefinition,
+  type TraitIssue,
+  type TraitRecord,
+  type TraitState,
+} from './traits'

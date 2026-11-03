@@ -69,6 +69,26 @@ groups an hourglass projection's relatives by generation (parents, grandparents,
 offspring, …); `generationKind()` gives hosts the kind and number of "great"s to translate, and
 `generationLabel()` an English label.
 
+## Heritable traits
+
+Optional and separate from the pedigree document (schema 1 is unchanged): the host
+supplies a trait catalog (`TraitDefinition`: recessive, incomplete dominant,
+dominant, codominant, polygenic or unknown; allelic complexes via a shared `locus`;
+Z- or X-linked) and per-individual `TraitRecord`s (visual, single, super, het,
+possible het with a chance, non-carrier, unknown; with how it is known).
+
+- `pairingOdds` — expected offspring per locus (super forms, complexes, sex-linked
+  splits by offspring sex); unrecorded genes are assumed absent and reported as assumptions.
+- `expectedNormalLookingRecord` — e.g. 66% possible het from two hets.
+- `checkOffspring` — flags offspring the recorded parents can't produce (check parentage).
+- `carrierFromOffspring` — carriers proven by a visual recessive offspring; suggestions
+  only (`basis: 'inferred'`).
+- `morphName` — "Super Pastel 66% possible het Pied" from the records.
+
+Nothing is guessed: polygenic and unproven traits have no odds, and a sex-linked trait needs the sex.
+In `@captiveorigins/onepedigree-react`, `traitOverlay` draws the usual genetic pedigree symbols
+on every view, with `TraitLegend`.
+
 ## Development
 
 ```bash

@@ -12,6 +12,7 @@ import type { KeyboardEvent, MouseEvent, ReactNode, SVGProps } from 'react'
 
 import { arcPath, DEFAULT_TERMS, describeProjection, describeStructure, labelOf, VIEW_LABELS, type Terminology } from './describe.js'
 import { themeStyle, type PedigreeTheme } from './themes.js'
+import { TraitGlyph, traitWord, type TraitMark, type TraitOverlay } from './traits.js'
 
 export type IndividualSlotProps = {
   individual: Individual | undefined
@@ -21,6 +22,8 @@ export type IndividualSlotProps = {
   selected: boolean
   highlighted: boolean
   terms: Terminology
+  /** The shown trait's mark for this individual, when a trait overlay is on (null = unknown). */
+  trait?: TraitMark | null
 }
 
 export type CohortMarkerSlotProps = { group: ProjectionGroup; box: { x: number; y: number; width: number; height: number } }
@@ -52,6 +55,8 @@ export type PedigreeViewProps = {
   /** Unique prefix for element IDs when several views share a page. */
   idPrefix?: string
   svgProps?: Omit<SVGProps<SVGSVGElement>, 'viewBox' | 'children'>
+  /** Show one heritable trait on every node (genetic pedigree symbols; see TraitLegend). */
+  traitOverlay?: TraitOverlay
   /** A preset id ('classic', 'midnight', 'forest', 'ocean', 'terracotta', 'high-contrast', 'print') or a custom theme. */
   theme?: PedigreeTheme | string
 }
@@ -85,7 +90,7 @@ function Junction({ s, x, y }: { s: ReproductiveStructure; x: number; y: number 
   )
 }
 
-function DefaultIndividual({ individual, occurrence, node, structure, terms }: IndividualSlotProps) {
+function DefaultIndividual({ individual, occurrence, node, structure, terms, trait }: IndividualSlotProps) {
   const label = labelOf(individual, terms)
   // Sex mark and life years ("♂ 1950 – 2010"), plus the Ahnentafel number where it applies.
   const sub = [nodeSublabel(individual), occurrence.ahnentafel !== undefined ? `#${occurrence.ahnentafel}` : null].filter(Boolean).join(' · ')
@@ -118,6 +123,11 @@ function DefaultIndividual({ individual, occurrence, node, structure, terms }: I
         </text>
       )}
       {structure && <Junction s={structure} x={node.width / 2} y={0} />}
+      {trait !== undefined && (
+        <g transform={`translate(${node.width - 12} ${node.height - 12})`}>
+          <TraitGlyph mark={trait ?? undefined} />
+        </g>
+      )}
     </>
   )
 }
@@ -323,10 +333,11 @@ export function PedigreeView(props: PedigreeViewProps) {
             occurrence.ahnentafel !== undefined ? `Ahnentafel ${occurrence.ahnentafel}` : null,
             occurrence.repeated ? terms.repeated : null,
             describeStructure(structure),
+            props.traitOverlay ? `${props.traitOverlay.label}: ${traitWord(props.traitOverlay.marks.get(occurrence.individualId))}` : null,
           ]
             .filter(Boolean)
             .join(', ')
-          const slot: IndividualSlotProps = { individual, occurrence, node, structure, selected, highlighted, terms }
+          const slot: IndividualSlotProps = { individual, occurrence, node, structure, selected, highlighted, terms, ...(props.traitOverlay ? { trait: props.traitOverlay.marks.get(occurrence.individualId) ?? null } : {}) }
           const content = node.arc ? (
             <>
               <path className={cx('op-fan-segment', c.fanSegment)} d={arcPath(node.arc)} />

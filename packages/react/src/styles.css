@@ -140,3 +140,15 @@
   .op-explorer { height: auto !important; overflow: visible; }
   .op-root { --op-node-background: #fff; --op-label: #000; --op-connector: #555; }
 }
+
+/* Heritable trait overlay: genetic pedigree symbols (filled = visual, half = het, dot = possible het, open = not carrying). */
+.op-trait-outline { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.5px; }
+.op-trait-outline[data-dashed] { stroke-dasharray: 2 2; }
+.op-trait-fill { fill: var(--op-label); }
+.op-trait-ring { fill: none; stroke: var(--op-label); stroke-width: 1.25px; }
+.op-trait-text { font-size: 9px; fill: var(--op-label); }
+.op-trait[data-state='unknown'] .op-trait-outline { stroke: #9a8f8b; }
+.op-trait[data-state='unknown'] .op-trait-text { fill: #9a8f8b; }
+.op-trait-legend { position: absolute; left: 8px; bottom: 8px; z-index: 1; max-width: calc(100% - 16px); padding: 6px 10px; border: 1px solid #eaddd6; border-radius: 10px; background: rgba(255, 255, 255, 0.94); font-size: 12px; color: #4c312c; }
+.op-trait-legend ul { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 4px 0 0; padding: 0; }
+.op-trait-legend li { display: inline-flex; align-items: center; gap: 4px; }
