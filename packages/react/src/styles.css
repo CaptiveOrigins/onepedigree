@@ -142,19 +142,28 @@
 }
 
 /* Heritable trait overlay: genetic pedigree symbols (filled = visual, half = het, dot = possible het, open = not carrying). */
-.op-trait-outline { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.5px; }
-.op-trait-outline[data-dashed] { stroke-dasharray: 2 2; }
-.op-trait-fill { fill: var(--op-label); }
-.op-trait-ring { fill: none; stroke: var(--op-label); stroke-width: 1.25px; }
-.op-trait-text { font-size: 9px; fill: var(--op-label); }
-.op-trait[data-state='unknown'] .op-trait-outline { stroke: #9a8f8b; }
-.op-trait[data-state='unknown'] .op-trait-text { fill: #9a8f8b; }
-.op-trait-legend { position: absolute; left: 8px; bottom: 8px; z-index: 1; max-width: calc(100% - 16px); padding: 6px 10px; border: 1px solid #eaddd6; border-radius: 10px; background: rgba(255, 255, 255, 0.94); font-size: 12px; color: #4c312c; }
-.op-trait-legend ul { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 4px 0 0; padding: 0; }
-.op-trait-legend li { display: inline-flex; align-items: center; gap: 4px; }
+.op-gene-outline { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.5px; }
+.op-gene-outline[data-dashed] { stroke-dasharray: 2 2; }
+.op-gene-fill { fill: var(--op-label); }
+.op-gene-ring { fill: none; stroke: var(--op-label); stroke-width: 1.25px; }
+.op-gene-text { font-size: 9px; fill: var(--op-label); }
+.op-gene[data-state='unknown'] .op-gene-outline { stroke: #9a8f8b; }
+.op-gene[data-state='unknown'] .op-gene-text { fill: #9a8f8b; }
+.op-gene-legends { position: absolute; left: 8px; bottom: 8px; z-index: 1; max-width: calc(100% - 16px); display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
+.op-gene-legend { padding: 6px 10px; border: 1px solid #eaddd6; border-radius: 10px; background: rgba(255, 255, 255, 0.94); font-size: 12px; color: #4c312c; }
+.op-gene-legend ul { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 4px 0 0; padding: 0; }
+.op-gene-legend li { display: inline-flex; align-items: center; gap: 4px; }
 /* Visible tooltips for icon-only buttons, on hover and on keyboard focus (title= shows on hover only). */
 .op-toolbar [data-tip] { position: relative; }
 .op-toolbar [data-tip]:is(:hover, :focus-visible)::after {
   content: attr(data-tip); position: absolute; top: calc(100% + 6px); right: 0; z-index: 2; white-space: nowrap; pointer-events: none;
   padding: 4px 8px; border-radius: 6px; background: #4c312c; color: #fff; font-size: 12px; line-height: 1.3;
 }
+
+/* Allele dots: two per gene, one per copy. Filled = carries it (gene color), empty = normal copy,
+   dashed = possible, grey dashed = not known. Shape carries the meaning, not color. */
+.op-dot { fill: var(--op-node-background); stroke: var(--op-label); stroke-width: 1.25px; }
+.op-dot[data-dot='possible'] { stroke-dasharray: 1.6 1.6; }
+.op-dot[data-dot='unknown'] { stroke: #9a8f8b; stroke-dasharray: 1.6 1.6; }
+.op-gene-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--op-label); }
+.op-genotype-key ul + ul { margin-top: 2px; }

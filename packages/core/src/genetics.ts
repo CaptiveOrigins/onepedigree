@@ -1,11 +1,11 @@
 /**
- * Heritable traits: definitions, what is recorded per individual, and pure
+ * Genetics: gene definitions, each individual's genotype, and pure
  * inheritance arithmetic (offspring odds, possible-het percentages, consistency
  * checks, carrier inference). Species-neutral: the host supplies the catalog and
  * maps its own sex labels; OnePedigree never guesses a genotype it isn't given.
  *
- * Model: every trait sits at a locus (a gene). Traits sharing a locus are
- * alternative alleles of one gene (an allelic complex); a trait without `locus`
+ * Model: every gene variant sits at a locus (one gene). Variants sharing a locus are
+ * alternative alleles of one gene (an allelic complex); a variant without `locus`
  * has its own. Each individual carries two alleles per autosomal locus, or one
  * (hemizygous) or two per sex-linked locus depending on its sex.
  */
@@ -24,11 +24,11 @@ export type InheritanceMode =
   /** Reported as heritable; inheritance not established. */
   | 'unknown'
 
-export type TraitDefinition = {
+export type GeneDefinition = {
   id: string
   label: string
   mode: InheritanceMode
-  /** Traits with the same locus are alleles of one gene (e.g. a complex). Default: the trait's own id. */
+  /** Genes with the same locus are alleles of one gene (e.g. a complex). Default: the gene's own id. */
   locus?: string
   /** Sex-linked: on the Z (ZW systems: females have one copy) or X (XY: males have one). */
   linkage?: 'Z' | 'X'
@@ -38,8 +38,8 @@ export type TraitDefinition = {
   description?: string
 }
 
-export type TraitState =
-  /** Shows the trait; copy count not stated (a recessive or sex-linked hemizygote is certain anyway). */
+export type GenotypeState =
+  /** Shows it; copy count not stated (a recessive or sex-linked hemizygote is certain anyway). */
   | 'visual'
   /** One copy, shows (incomplete dominant / dominant). */
   | 'single'
@@ -53,17 +53,17 @@ export type TraitState =
   | 'non-carrier'
   | 'unknown'
 
-export type TraitBasis = 'reported' | 'proven-breeding' | 'genetic-test' | 'inferred'
+export type GenotypeBasis = 'reported' | 'proven-breeding' | 'genetic-test' | 'inferred'
 
-export type TraitRecord = {
-  trait: string
-  state: TraitState
+export type GenotypeRecord = {
+  gene: string
+  state: GenotypeState
   /** For `possible-het`: 0–1 (e.g. 0.66, 0.5). */
   probability?: number
-  basis?: TraitBasis
+  basis?: GenotypeBasis
 }
 
-/** How the host's sex labels map to the chromosome system (needed only for sex-linked traits). */
+/** How the host's sex labels map to the chromosome system (needed only for sex-linked genes). */
 export type SexClass = 'homogametic' | 'heterogametic' | 'unknown'
 
 const WILD = '+'
@@ -72,35 +72,35 @@ type Dist = Map<string, number> // pair key -> probability
 const key = (p: Pair) => p.join('|')
 const pair = (a: string, b: string): Pair => (a <= b ? [a, b] : [b, a]) as Pair
 
-export const locusOf = (t: TraitDefinition) => t.locus ?? t.id
-const calculable = (t: TraitDefinition) => t.mode !== 'polygenic' && t.mode !== 'unknown'
+export const locusOf = (t: GeneDefinition) => t.locus ?? t.id
+const calculable = (t: GeneDefinition) => t.mode !== 'polygenic' && t.mode !== 'unknown'
 
-export type GenotypeAssumption = { trait: string; note: string }
+export type GenotypeAssumption = { gene: string; note: string }
 
 /**
- * An individual's genotype distribution at one locus from its records. Traits at the
+ * An individual's genotype distribution at one locus from its records. Genes at the
  * locus without a record are taken as absent (wild type) and reported as an assumption,
  * the way breeders read an unlisted gene. Returns null when the records contradict
  * each other or a needed copy count is unknown.
  */
 export function locusGenotype(
-  catalog: readonly TraitDefinition[],
+  catalog: readonly GeneDefinition[],
   locus: string,
-  records: readonly TraitRecord[],
+  records: readonly GenotypeRecord[],
   sex: SexClass = 'unknown',
 ): { dist: Dist; assumptions: GenotypeAssumption[] } | { dist: null; reason: string } {
-  const traits = catalog.filter((t) => locusOf(t) === locus)
-  if (!traits.length) return { dist: null, reason: `Unknown locus ${locus}` }
-  if (!traits.every(calculable)) return { dist: null, reason: 'Polygenic or unproven inheritance has no simple odds' }
-  const linkage = traits[0]!.linkage
+  const genes = catalog.filter((t) => locusOf(t) === locus)
+  if (!genes.length) return { dist: null, reason: `Unknown locus ${locus}` }
+  if (!genes.every(calculable)) return { dist: null, reason: 'Polygenic or unproven inheritance has no simple odds' }
+  const linkage = genes[0]!.linkage
   // ZW: females are heterogametic; XY: males. Either way the heterogametic sex has one copy.
   const hemizygous = Boolean(linkage) && sex === 'heterogametic'
   if (linkage && sex === 'unknown') return { dist: null, reason: 'Sex-linked: the sex is needed' }
   const assumptions: GenotypeAssumption[] = []
-  // Each trait contributes a distribution over its copy count.
-  const copies: { trait: TraitDefinition; options: [number, number][] }[] = []
-  for (const t of traits) {
-    const r = records.find((x) => x.trait === t.id)
+  // Each gene contributes a distribution over its copy count.
+  const copies: { gene: GeneDefinition; options: [number, number][] }[] = []
+  for (const t of genes) {
+    const r = records.find((x) => x.gene === t.id)
     const state = r?.state ?? 'unknown'
     let options: [number, number][] | null
     switch (state) {
@@ -126,16 +126,16 @@ export function locusGenotype(
         else if (t.mode === 'recessive') options = [[2, 1]]
         else {
           options = [[1, 1]]
-          assumptions.push({ trait: t.id, note: `${t.label}: visual taken as one copy (not proven ${t.superLabel ?? 'super'}/homozygous)` })
+          assumptions.push({ gene: t.id, note: `${t.label}: visual taken as one copy (not proven ${t.superLabel ?? 'super'}/homozygous)` })
         }
         break
       default:
         options = [[0, 1]]
-        if (state === 'unknown' && r) assumptions.push({ trait: t.id, note: `${t.label}: unknown, taken as not carried` })
-        else if (!r) assumptions.push({ trait: t.id, note: `${t.label}: not recorded, taken as not carried` })
+        if (state === 'unknown' && r) assumptions.push({ gene: t.id, note: `${t.label}: unknown, taken as not carried` })
+        else if (!r) assumptions.push({ gene: t.id, note: `${t.label}: not recorded, taken as not carried` })
     }
     if (!options) return { dist: null, reason: `${t.label}: "${state}" is not possible for this sex or lacks a probability` }
-    copies.push({ trait: t, options })
+    copies.push({ gene: t, options })
   }
   const slots = hemizygous ? 1 : 2
   const dist: Dist = new Map()
@@ -148,11 +148,11 @@ export function locusGenotype(
       dist.set(k, (dist.get(k) ?? 0) + p)
       return
     }
-    for (const [n, q] of copies[i]!.options) walk(i + 1, [...alleles, ...Array(n).fill(copies[i]!.trait.id)], p * q)
+    for (const [n, q] of copies[i]!.options) walk(i + 1, [...alleles, ...Array(n).fill(copies[i]!.gene.id)], p * q)
   }
   walk(0, [], 1)
   const total = [...dist.values()].reduce((a, b) => a + b, 0)
-  if (total < 1e-9) return { dist: null, reason: 'The recorded traits at this locus need more than two copies' }
+  if (total < 1e-9) return { dist: null, reason: 'The recorded genes at this locus need more than two copies' }
   for (const [k, v] of dist) dist.set(k, v / total)
   return { dist, assumptions }
 }
@@ -168,14 +168,14 @@ const gametes = (k: string): Map<string, number> => {
   return out
 }
 
-/** One expected offspring class at a locus: the per-trait states it has and its probability. */
+/** One expected offspring class at a locus: the per-gene states it has and its probability. */
 export type OffspringClass = {
   probability: number
   /** Sex of this class, for sex-linked loci (`heterogametic` = ZW females / XY males). */
   sex?: Exclude<SexClass, 'unknown'>
-  /** States per trait at this locus (traits not listed are absent). */
-  traits: { trait: string; state: Exclude<TraitState, 'possible-het' | 'unknown' | 'non-carrier'> }[]
-  /** Shows any trait. */
+  /** States per gene at this locus (genes not listed are absent). */
+  genes: { gene: string; state: Exclude<GenotypeState, 'possible-het' | 'unknown' | 'non-carrier'> }[]
+  /** Shows any gene. */
   visual: boolean
 }
 
@@ -183,38 +183,38 @@ export type LocusOdds =
   | { locus: string; calculable: true; classes: OffspringClass[]; assumptions: GenotypeAssumption[] }
   | { locus: string; calculable: false; reason: string }
 
-function describePair(catalog: readonly TraitDefinition[], k: string): Pick<OffspringClass, 'traits' | 'visual'> {
+function describePair(catalog: readonly GeneDefinition[], k: string): Pick<OffspringClass, 'genes' | 'visual'> {
   const [a, b] = k.split('|') as [string, string]
   const alleles = [a, b].filter((x) => x && x !== WILD)
   const hemi = b === ''
-  const traits: OffspringClass['traits'] = []
+  const genes: OffspringClass['genes'] = []
   let visual = false
   for (const id of [...new Set(alleles)]) {
     const t = catalog.find((x) => x.id === id)!
     const n = alleles.filter((x) => x === id).length
-    let state: OffspringClass['traits'][number]['state']
+    let state: OffspringClass['genes'][number]['state']
     if (t.mode === 'recessive') {
       // A recessive shows when both alleles are recessive alleles of this locus (or hemizygous).
       const allRecessive = (hemi ? [a] : [a, b]).every((x) => x !== WILD && catalog.find((c) => c.id === x)?.mode === 'recessive')
       state = hemi || n === 2 || allRecessive ? 'visual' : 'het'
     } else state = n === 2 ? 'super' : 'single'
     if (state !== 'het') visual = true
-    traits.push({ trait: id, state })
+    genes.push({ gene: id, state })
   }
-  return { traits, visual }
+  return { genes, visual }
 }
 
 /**
- * Expected offspring at each locus of the given traits for one pairing. Sex-linked
+ * Expected offspring at each locus of the given genes for one pairing. Sex-linked
  * loci are split by offspring sex. Loci are independent (no linkage between genes).
  */
 export function pairingOdds(
-  catalog: readonly TraitDefinition[],
-  mother: { records: readonly TraitRecord[]; sex?: SexClass },
-  father: { records: readonly TraitRecord[]; sex?: SexClass },
-  traitIds: readonly string[] = [...new Set([...mother.records, ...father.records].map((r) => r.trait))],
+  catalog: readonly GeneDefinition[],
+  mother: { records: readonly GenotypeRecord[]; sex?: SexClass },
+  father: { records: readonly GenotypeRecord[]; sex?: SexClass },
+  geneIds: readonly string[] = [...new Set([...mother.records, ...father.records].map((r) => r.gene))],
 ): LocusOdds[] {
-  const loci = [...new Set(traitIds.flatMap((id) => {
+  const loci = [...new Set(geneIds.flatMap((id) => {
     const t = catalog.find((x) => x.id === id)
     return t ? [locusOf(t)] : []
   }))]
@@ -248,34 +248,34 @@ export function pairingOdds(
         add(key([g, ''] as Pair), mp * fp * pg * 0.5, 'heterogametic')
       }
     }
-    // Most likely first; ties: more traits, then visual, then by name (stable output).
-    const name = (c: OffspringClass) => `${c.sex ?? ''}${c.traits.map((t) => t.trait).join('+')}`
+    // Most likely first; ties: more genes, then visual, then by name (stable output).
+    const name = (c: OffspringClass) => `${c.sex ?? ''}${c.genes.map((t) => t.gene).join('+')}`
     const list = [...classes.values()]
       .filter((c) => c.probability > 1e-12)
-      .sort((a, b) => b.probability - a.probability || b.traits.length - a.traits.length || Number(b.visual) - Number(a.visual) || name(a).localeCompare(name(b)))
+      .sort((a, b) => b.probability - a.probability || b.genes.length - a.genes.length || Number(b.visual) - Number(a.visual) || name(a).localeCompare(name(b)))
     return { locus, calculable: true, classes: list, assumptions: [...m.assumptions, ...f.assumptions] }
   })
 }
 
 /**
  * What a not-yet-tested offspring of this pairing should be recorded as for one
- * recessive trait, given that it looks normal: e.g. 66% possible het from two hets,
+ * recessive gene, given that it looks normal: e.g. 66% possible het from two hets,
  * 50% from a het and a non-carrier, 100% het from a visual and a non-carrier.
  */
-export function expectedNormalLookingRecord(catalog: readonly TraitDefinition[], trait: string, odds: LocusOdds, sex?: Exclude<SexClass, 'unknown'>): TraitRecord | null {
+export function expectedNormalLookingRecord(catalog: readonly GeneDefinition[], gene: string, odds: LocusOdds, sex?: Exclude<SexClass, 'unknown'>): GenotypeRecord | null {
   if (!odds.calculable) return null
   const classes = odds.classes.filter((c) => !c.visual && (!sex || !c.sex || c.sex === sex))
   const total = classes.reduce((n, c) => n + c.probability, 0)
   if (total === 0) return null
-  const carrier = classes.filter((c) => c.traits.some((t) => t.trait === trait && t.state === 'het')).reduce((n, c) => n + c.probability, 0) / total
-  const def = catalog.find((t) => t.id === trait)
+  const carrier = classes.filter((c) => c.genes.some((t) => t.gene === gene && t.state === 'het')).reduce((n, c) => n + c.probability, 0) / total
+  const def = catalog.find((t) => t.id === gene)
   if (!def) return null
-  if (carrier > 1 - 1e-9) return { trait, state: 'het', basis: 'inferred' }
-  if (carrier < 1e-9) return { trait, state: 'non-carrier', basis: 'inferred' }
-  return { trait, state: 'possible-het', probability: Math.round(carrier * 100) / 100, basis: 'inferred' }
+  if (carrier > 1 - 1e-9) return { gene, state: 'het', basis: 'inferred' }
+  if (carrier < 1e-9) return { gene, state: 'non-carrier', basis: 'inferred' }
+  return { gene, state: 'possible-het', probability: Math.round(carrier * 100) / 100, basis: 'inferred' }
 }
 
-export type TraitIssue = { code: 'impossible-offspring'; trait: string; message: string }
+export type GenotypeIssue = { code: 'impossible-offspring'; gene: string; message: string }
 
 /**
  * Whether a recorded offspring state could come from the recorded parents. A
@@ -283,18 +283,18 @@ export type TraitIssue = { code: 'impossible-offspring'; trait: string; message:
  * never an automatic correction.
  */
 export function checkOffspring(
-  catalog: readonly TraitDefinition[],
-  mother: { records: readonly TraitRecord[]; sex?: SexClass },
-  father: { records: readonly TraitRecord[]; sex?: SexClass },
-  child: { records: readonly TraitRecord[]; sex?: SexClass },
-): TraitIssue[] {
-  const issues: TraitIssue[] = []
+  catalog: readonly GeneDefinition[],
+  mother: { records: readonly GenotypeRecord[]; sex?: SexClass },
+  father: { records: readonly GenotypeRecord[]; sex?: SexClass },
+  child: { records: readonly GenotypeRecord[]; sex?: SexClass },
+): GenotypeIssue[] {
+  const issues: GenotypeIssue[] = []
   for (const r of child.records) {
-    const t = catalog.find((x) => x.id === r.trait)
+    const t = catalog.find((x) => x.id === r.gene)
     if (!t || !calculable(t) || !['visual', 'single', 'super', 'het'].includes(r.state)) continue
     // Only judge parents whose records at this locus are definite (no unknowns assumed).
-    const definite = (recs: readonly TraitRecord[]) => catalog.filter((x) => locusOf(x) === locusOf(t)).every((x) => {
-      const s = recs.find((y) => y.trait === x.id)?.state
+    const definite = (recs: readonly GenotypeRecord[]) => catalog.filter((x) => locusOf(x) === locusOf(t)).every((x) => {
+      const s = recs.find((y) => y.gene === x.id)?.state
       return s !== undefined && s !== 'unknown'
     })
     if (!definite(mother.records) || !definite(father.records)) continue
@@ -303,51 +303,51 @@ export function checkOffspring(
     const sex = t.linkage && child.sex && child.sex !== 'unknown' ? child.sex : undefined
     const possible = odds.classes.filter((c) => !sex || !c.sex || c.sex === sex)
     const wanted = r.state === 'visual' ? (s: string) => s === 'visual' || s === 'single' || s === 'super' : (s: string) => s === r.state
-    if (!possible.some((c) => c.traits.some((x) => x.trait === t.id && wanted(x.state))))
-      issues.push({ code: 'impossible-offspring', trait: t.id, message: `${t.label}: the recorded parents can't produce a ${r.state} offspring. Check the parents or the genotypes.` })
+    if (!possible.some((c) => c.genes.some((x) => x.gene === t.id && wanted(x.state))))
+      issues.push({ code: 'impossible-offspring', gene: t.id, message: `${t.label}: the recorded parents can't produce a ${r.state} offspring. Check the parents or the genotypes.` })
   }
   return issues
 }
 
 /**
- * What offspring prove about a parent, for recessive traits: a visual offspring
+ * What offspring prove about a parent, for recessive genes: a visual offspring
  * proves each parent carries at least one copy. Suggestions only (`basis:
  * 'inferred'`); the host asks the keeper to confirm. Nothing is suggested when the
  * parent's record already says as much.
  */
 export function carrierFromOffspring(
-  catalog: readonly TraitDefinition[],
-  parent: { records: readonly TraitRecord[]; sex?: SexClass },
-  offspring: readonly { records: readonly TraitRecord[]; sex?: SexClass }[],
-): TraitRecord[] {
-  const out: TraitRecord[] = []
+  catalog: readonly GeneDefinition[],
+  parent: { records: readonly GenotypeRecord[]; sex?: SexClass },
+  offspring: readonly { records: readonly GenotypeRecord[]; sex?: SexClass }[],
+): GenotypeRecord[] {
+  const out: GenotypeRecord[] = []
   for (const t of catalog.filter((x) => x.mode === 'recessive')) {
     const shows = offspring.some((o) => {
-      const s = o.records.find((r) => r.trait === t.id)?.state
+      const s = o.records.find((r) => r.gene === t.id)?.state
       if (s !== 'visual') return false
       // Sex-linked: a hemizygous young got its only copy from the homogametic parent.
       if (t.linkage && o.sex === 'heterogametic') return parent.sex === 'homogametic'
       return true
     })
     if (!shows) continue
-    const current = parent.records.find((r) => r.trait === t.id)?.state
+    const current = parent.records.find((r) => r.gene === t.id)?.state
     if (current === 'visual' || current === 'het' || current === 'super' || current === 'single') continue
-    out.push({ trait: t.id, state: t.linkage && parent.sex === 'heterogametic' ? 'visual' : 'het', basis: 'inferred' })
+    out.push({ gene: t.id, state: t.linkage && parent.sex === 'heterogametic' ? 'visual' : 'het', basis: 'inferred' })
   }
   return out
 }
 
-/** The morph name an animal's traits add up to (e.g. "Pastel Clown", "Super Pastel het Pied 66%"). */
-export function morphName(catalog: readonly TraitDefinition[], records: readonly TraitRecord[], { normal = 'Normal', het = 'het', possible = 'possible het' }: { normal?: string; het?: string; possible?: string } = {}): string {
+/** The summary an animal's genotype adds up to (breeders call the visible part its morph) (e.g. "Pastel Clown", "Super Pastel het Pied 66%"). */
+export function genotypeSummary(catalog: readonly GeneDefinition[], records: readonly GenotypeRecord[], { normal = 'Normal', het = 'het', possible = 'possible het' }: { normal?: string; het?: string; possible?: string } = {}): string {
   const label = (id: string) => catalog.find((t) => t.id === id)?.label ?? id
   const shown: string[] = []
   const carried: string[] = []
   for (const r of records) {
-    const t = catalog.find((x) => x.id === r.trait)
-    if (r.state === 'super') shown.push(`${t?.superLabel ?? 'Super'} ${label(r.trait)}`)
-    else if (r.state === 'visual' || r.state === 'single') shown.push(label(r.trait))
-    else if (r.state === 'het') carried.push(`${het} ${label(r.trait)}`)
-    else if (r.state === 'possible-het') carried.push(`${r.probability !== undefined ? `${Math.round(r.probability * 100)}% ` : ''}${possible} ${label(r.trait)}`)
+    const t = catalog.find((x) => x.id === r.gene)
+    if (r.state === 'super') shown.push(`${t?.superLabel ?? 'Super'} ${label(r.gene)}`)
+    else if (r.state === 'visual' || r.state === 'single') shown.push(label(r.gene))
+    else if (r.state === 'het') carried.push(`${het} ${label(r.gene)}`)
+    else if (r.state === 'possible-het') carried.push(`${r.probability !== undefined ? `${Math.round(r.probability * 100)}% ` : ''}${possible} ${label(r.gene)}`)
   }
   return [...(shown.length ? shown : [normal]), ...carried].join(' ')
 }

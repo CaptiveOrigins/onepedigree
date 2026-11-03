@@ -7,7 +7,7 @@ import { AhnentafelList } from './AhnentafelList.js'
 import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
-import { TraitLegend } from './traits.js'
+import { GeneLegend, GenotypeKey } from './genetics.js'
 import { Icon } from './icons.js'
 import { dropNodeOrder } from './reorder.js'
 import { ThemeEditor } from './ThemeEditor.js'
@@ -365,7 +365,12 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
           )}
         </div>
       )}
-      {props.traitOverlay && <TraitLegend overlay={props.traitOverlay} />}
+      {(props.geneOverlay || props.genotypes) && (
+        <div className="op-gene-legends">
+          {props.genotypes && <GenotypeKey display={props.genotypes} />}
+          {props.geneOverlay && <GeneLegend overlay={props.geneOverlay} />}
+        </div>
+      )}
     </div>
   )
 }
