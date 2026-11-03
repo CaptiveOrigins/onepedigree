@@ -113,11 +113,11 @@ function DefaultIndividual({ individual, occurrence, node, structure, terms, gen
   return (
     <>
       <rect className="op-node-box" width={node.width} height={node.height} rx={8} ry={8} />
-      <text className="op-label" x={10} y={sub ? node.height / 2 - 3 : node.height / 2 + 4}>
+      <text className="op-label" x={10} y={genotypes ? (sub ? node.height / 2 - 9 : node.height / 2 - 3) : sub ? node.height / 2 - 3 : node.height / 2 + 4}>
         {short(label, chars)}
       </text>
       {sub && (
-        <text className="op-sublabel" x={10} y={node.height / 2 + 13}>
+        <text className="op-sublabel" x={10} y={genotypes ? node.height / 2 + 6 : node.height / 2 + 13}>
           {short(sub, chars)}
         </text>
       )}
@@ -288,7 +288,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const b = groupBox(g, nodes)
           if (!b) return null
           return (
-            <g key={g.id} className={cx('op-cohort', c.cohort)} data-cohort={g.id.replace(/^cohort:/, '')}>
+            <g key={g.id} className={cx('op-cohort', c.cohort)} data-cohort={g.id.replace(/^cohort:/, '').replace(/#.*$/, '')}>
               {props.renderCohortMarker ? (
                 props.renderCohortMarker({ group: g, box: b })
               ) : (

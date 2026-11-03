@@ -130,7 +130,7 @@ export function GenotypeDots({ gene, record, hemizygous = false, r = 4.5, words 
     <g className="op-dots" data-gene={gene.id} aria-hidden="true">
       <title>{`${gene.label}: ${genotypeWord(record ? { state: record.state, ...(record.probability !== undefined ? { probability: record.probability } : {}), ...(record.basis ? { basis: record.basis } : {}) } : undefined, words)}`}</title>
       {dots.map((d, i) => (
-        <circle key={i} className="op-dot" data-dot={d} cx={r + i * (2 * r + 2)} cy={0} r={r} style={d === 'filled' ? { fill: gene.color } : undefined} />
+        <circle key={i} className="op-dot" data-dot={d} data-inferred={d === 'filled' && record?.basis === 'inferred' ? '' : undefined} cx={r + i * (2 * r + 2)} cy={0} r={r} style={d === 'filled' ? { fill: gene.color } : undefined} />
       ))}
     </g>
   )
@@ -166,8 +166,8 @@ export function genotypeText(display: GenotypeDisplay, individualId: string, wor
 }
 
 /** Key for allele dots: each gene's color, and what the dots mean. */
-export function GenotypeKey({ display, labels = {} }: { display: GenotypeDisplay; labels?: Partial<Record<'title' | 'two' | 'one' | 'none' | 'possible' | 'unknown', string>> }) {
-  const l = { title: 'Genes', two: 'two copies', one: 'one copy', none: 'none', possible: 'possible (dashed)', unknown: 'not known', ...labels }
+export function GenotypeKey({ display, labels = {} }: { display: GenotypeDisplay; labels?: Partial<Record<'title' | 'two' | 'one' | 'none' | 'possible' | 'unknown' | 'suggested', string>> }) {
+  const l = { title: 'Genes', two: 'two copies', one: 'one copy', none: 'none', possible: 'possible (dashed)', unknown: 'not known', suggested: 'suggested from relatives', ...labels }
   const demo: GeneKey = { id: 'demo', label: '', color: '#7a625c', mode: 'recessive' }
   const sample = (record: GenotypeRecord | undefined, text: string) => (
     <li>
@@ -191,6 +191,7 @@ export function GenotypeKey({ display, labels = {} }: { display: GenotypeDisplay
       <ul>
         {sample({ gene: 'demo', state: 'super' }, l.two)}
         {sample({ gene: 'demo', state: 'het' }, l.one)}
+        {sample({ gene: 'demo', state: 'het', basis: 'inferred' }, l.suggested)}
         {sample({ gene: 'demo', state: 'non-carrier' }, l.none)}
         {sample({ gene: 'demo', state: 'possible-het' }, l.possible)}
         {sample(undefined, l.unknown)}

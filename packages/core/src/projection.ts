@@ -247,13 +247,31 @@ const otherParentGroups = (b: ProjectionBuilder, parentId: IndividualId) => {
     b.groups.push({ id: `other-parent:${key}`, kind: 'other-parent', label: key === '(unrecorded)' ? null : key, occurrenceIds: ids })
 }
 
+/**
+ * One frame per cohort per generation: a repeated individual drawn in two generations
+ * gets a frame in each, never one stretched across both. Idempotent (views may add
+ * cohort groups and then ask for them again). Extra frames of the same cohort get ids
+ * `cohort:<id>#<generation>`.
+ */
 const cohortGroups = (b: ProjectionBuilder) => {
-  const byCohort = new Map<string, string[]>()
+  const byCohort = new Map<string, Map<number, string[]>>()
   for (const o of b.occurrences) {
     const c = b.index.individuals.get(o.individualId)?.parentage?.cohort
-    if (c) byCohort.set(c, [...(byCohort.get(c) ?? []), o.occurrenceId])
+    if (!c) continue
+    const rows = byCohort.get(c) ?? new Map<number, string[]>()
+    rows.set(o.generation, [...(rows.get(o.generation) ?? []), o.occurrenceId])
+    byCohort.set(c, rows)
   }
-  for (const [c, ids] of byCohort) b.groups.push({ id: `cohort:${c}`, kind: 'cohort', label: b.index.cohorts.get(c)?.label ?? null, occurrenceIds: ids })
+  const existing = new Set(b.groups.filter((g) => g.kind === 'cohort').map((g) => g.id))
+  for (const [c, rows] of byCohort) {
+    const label = b.index.cohorts.get(c)?.label ?? null
+    ;[...rows.entries()]
+      .sort((x, y) => y[1].length - x[1].length || x[0] - y[0])
+      .forEach(([generation, ids], i) => {
+        const id = i === 0 ? `cohort:${c}` : `cohort:${c}#${generation}`
+        if (!existing.has(id)) b.groups.push({ id, kind: 'cohort', label, occurrenceIds: ids })
+      })
+  }
 }
 
 /** Topological layers (0 = no loaded parents), for date-optional timelines and population views. */

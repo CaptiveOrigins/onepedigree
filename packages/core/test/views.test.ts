@@ -238,3 +238,15 @@ describe('chosen display order (drag in the explorer)', () => {
     expect(REORDERABLE_VIEWS.has('pedigree')).toBe(false)
   })
 })
+
+describe('cohort frames', () => {
+  it('draws one frame per cohort per generation, never twice and never across generations', () => {
+    for (const includeCohortMembers of [false, true]) {
+      const p = projectPedigree(reptileBreeding, { focalId: 'rf-sire', view: 'descendants', includeCohortMembers, descendantDepth: 3 })
+      const frames = p.groups.filter((g) => g.kind === 'cohort')
+      expect(new Set(frames.map((g) => g.id)).size).toBe(frames.length)
+      const gen = new Map(p.occurrences.map((o) => [o.occurrenceId, o.generation]))
+      for (const f of frames) expect(new Set(f.occurrenceIds.map((id) => gen.get(id))).size).toBe(1)
+    }
+  })
+})
