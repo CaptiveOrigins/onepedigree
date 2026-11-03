@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="op-t">
+  <title id="op-t">OnePedigree</title>
+  <!-- Brand family tile (brand/README.md): 896 square, radius 200, pastel top-to-bottom gradient in the tool's hue;
+       cream blocks, connectors in the hue's ink, one amber accent. -->
+  <defs>
+    <linearGradient id="op-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c6e3cf" />
+      <stop offset="1" stop-color="#97c9aa" />
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#op-g)" />
+  <!-- Glyph centered on the tile (bounding box center = 512, 512). -->
+  <g transform="translate(0 -48)">
+    <path d="M332 430v130h360V430M512 560v130" fill="none" stroke="#25503d" stroke-width="34" stroke-linejoin="round" />
+    <g fill="#fbf8f2">
+      <rect x="222" y="300" width="220" height="130" rx="40" />
+      <rect x="582" y="300" width="220" height="130" rx="40" />
+      <rect x="402" y="690" width="220" height="130" rx="40" />
+    </g>
+    <circle cx="512" cy="755" r="26" fill="#e8913c" />
+  </g>
+</svg>
