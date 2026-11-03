@@ -39,7 +39,7 @@ describe('explorer', () => {
 
   it('zooms with the controls and fits back', () => {
     render(ui)
-    const svg = document.querySelector('svg')!
+    const svg = document.querySelector('svg.op-root')!
     const before = svg.getAttribute('viewBox')
     fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
     expect(svg.getAttribute('viewBox')).not.toBe(before)

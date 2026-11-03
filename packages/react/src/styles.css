@@ -86,10 +86,16 @@
 .op-explorer > svg:active { cursor: grabbing; }
 .op-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 1; }
 .op-toolbar button {
+  display: inline-flex; align-items: center; justify-content: center;
   min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--op-node-border, #6b7a90);
   background: var(--op-node-background, #fff); color: inherit; font: inherit; cursor: pointer;
 }
-.op-toolbar button:focus-visible { outline: 2px solid #f0b35a; outline-offset: 2px; }
+/* Brand family (brand/README.md): shared line icons, Captive Origins orange focus ring. */
+.op-icon { flex: none; }
+.op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid #cf8137; outline-offset: 2px; }
+@media (prefers-color-scheme: dark) {
+  .op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline-color: #e7a066; }
+}
 .op-quick-view {
   position: absolute; left: 8px; bottom: 8px; max-width: 18rem; padding: 12px 14px; border-radius: 10px;
   background: var(--op-node-background, #fff); border: 1px solid var(--op-node-border, #6b7a90);
@@ -98,6 +104,7 @@
 .op-quick-view p { margin: 0 0 4px; }
 .op-quick-view-title { font-weight: 600; }
 .op-quick-view-actions { display: flex; gap: 8px; margin-top: 8px; }
+.op-quick-view-actions :is(a, button) { display: inline-flex; align-items: center; gap: 4px; }
 .op-theme-panel {
   position: absolute; top: 48px; right: 8px; z-index: 2; max-height: calc(100% - 56px); overflow: auto; width: 20rem;
   padding: 12px; border-radius: 10px; background: var(--op-node-background, #fff); color: var(--op-label, #1d2330);

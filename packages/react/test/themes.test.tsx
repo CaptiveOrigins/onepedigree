@@ -66,6 +66,6 @@ describe('theme editor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Colors' }))
     fireEvent.change(screen.getByLabelText('Card'), { target: { value: '#fff8e7' } })
     expect(onThemeChange.mock.lastCall![0].colors.nodeBackground).toBe('#fff8e7')
-    expect(document.querySelector('svg')!.getAttribute('style')).toContain('--op-node-background: #fff8e7')
+    expect(document.querySelector('svg.op-root')!.getAttribute('style')).toContain('--op-node-background: #fff8e7')
   })
 })

@@ -3,3 +3,4 @@ export { PedigreeExplorer, type PedigreeExplorerProps, type QuickViewProps } fro
 export * from './headless.js'
 export { ThemeEditor, type ThemeEditorProps } from './ThemeEditor.js'
 export { AhnentafelList, ahnentafelRelation, type AhnentafelListProps } from './AhnentafelList.js'
+export { Icon, ICON_PATHS, type IconName } from './icons.js'

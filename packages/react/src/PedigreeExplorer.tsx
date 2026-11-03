@@ -7,6 +7,7 @@ import { AhnentafelList } from './AhnentafelList.js'
 import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
+import { Icon } from './icons.js'
 import { ThemeEditor } from './ThemeEditor.js'
 import { presetTheme, THEME_PRESETS, themeStyle, type PedigreeTheme } from './themes.js'
 
@@ -119,7 +120,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
   const pan = (dx: number, dy: number) => setBox((b) => ({ ...b, x: b.x + dx * b.width, y: b.y + dy * b.height }))
 
   const svgPoint = (e: { clientX: number; clientY: number }) => {
-    const svg = root.current?.querySelector('svg')
+    const svg = root.current?.querySelector('svg.op-root')
     const r = svg?.getBoundingClientRect()
     if (!r || !r.width || !r.height) return undefined
     return { x: box.x + ((e.clientX - r.left) / r.width) * box.width, y: box.y + ((e.clientY - r.top) / r.height) * box.height }
@@ -168,7 +169,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
   }
   const onPointerMove = (e: PointerEvent) => {
     const d = drag.current
-    const r = root.current?.querySelector('svg')?.getBoundingClientRect()
+    const r = root.current?.querySelector('svg.op-root')?.getBoundingClientRect()
     if (!d || !r?.width) return
     setBox({ ...d.box, x: d.box.x - ((e.clientX - d.x) / r.width) * d.box.width, y: d.box.y - ((e.clientY - d.y) / r.height) * d.box.height })
   }
@@ -177,7 +178,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
   }
 
   const download = () => {
-    const svg = root.current?.querySelector('svg')
+    const svg = root.current?.querySelector('svg.op-root')
     if (!svg) return
     const clone = svg.cloneNode(true) as SVGSVGElement
     clone.setAttribute('viewBox', `${full.x} ${full.y} ${full.width} ${full.height}`)
@@ -223,23 +224,23 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     >
       <div className="op-toolbar" role="toolbar" aria-label={labels.controls}>
         <button type="button" onClick={() => zoom(0.8)} aria-label={labels.zoomIn} title={labels.zoomIn}>
-          +
+          <Icon name="plus" />
         </button>
         <button type="button" onClick={() => zoom(1.25)} aria-label={labels.zoomOut} title={labels.zoomOut}>
-          −
+          <Icon name="minus" />
         </button>
         <button type="button" onClick={() => setBox(full)} aria-label={labels.fit} title={labels.fit}>
-          ⤢
+          <Icon name="fit" />
         </button>
         <button type="button" onClick={download} aria-label={labels.download} title={labels.download}>
-          ⤓
+          <Icon name="download" />
         </button>
         <button type="button" onClick={() => (props.onPrint ? props.onPrint() : printChart(root.current))} aria-label={labels.print} title={labels.print}>
-          ⎙
+          <Icon name="print" />
         </button>
         {props.themeEditor && (
           <button type="button" onClick={() => setEditing((v) => !v)} aria-label={labels.colors} title={labels.colors} aria-expanded={editing}>
-            ◐
+            <Icon name="palette" />
           </button>
         )}
         {props.toolbar}
@@ -282,8 +283,14 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
               <p>{describeStructure(projection.structures[occurrence.individualId])}</p>
               {occurrence.repeated && <p>{terms.repeated}</p>}
               <div className="op-quick-view-actions">
-                {href && <a href={href}>{labels.open}</a>}
+                {href && (
+                  <a href={href}>
+                    <Icon name="open" />
+                    {labels.open}
+                  </a>
+                )}
                 <button type="button" onClick={close}>
+                  <Icon name="close" />
                   {labels.close}
                 </button>
               </div>
