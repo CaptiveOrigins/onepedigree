@@ -49,6 +49,7 @@ export {
 } from './projection'
 export {
   defaultLayoutEngine,
+  REORDERABLE_VIEWS,
   estimateNodeWidth,
   layoutPedigree,
   nodeSublabel,

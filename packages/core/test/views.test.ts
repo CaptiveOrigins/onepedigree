@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { cloning, humanFamily, incomplete, multiplePaternityClutch, parthenogenesis, reptileBreeding, selfing, sharedAncestors, synthetic } from '../../../fixtures'
-import { generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
+import { generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, REORDERABLE_VIEWS, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
 
 const who = (p: PedigreeViewProjection) => p.occurrences.map((o) => o.individualId).sort()
 const codes = (p: PedigreeViewProjection) => p.issues.map((i) => i.code)
@@ -214,5 +214,27 @@ describe('layout', () => {
     expect(node(h, 'ellen#0').x).toBeLessThan(node(h, 'gwen#0').x)
     // The focal individual is centered under its parents.
     expect(node(v, 'gwen#0').x).toBeCloseTo((node(v, 'frank#0').x + node(v, 'ellen#0').x) / 2)
+  })
+})
+
+describe('chosen display order (drag in the explorer)', () => {
+  const xs = (l: ReturnType<typeof layoutSync>, ids: string[]) => ids.map((id) => l.nodes.find((n) => n.occurrenceId === id)!.x)
+  it('reorders children in descendant branches and leaves the data alone', () => {
+    const p = projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })
+    const before = layoutSync(p)
+    const row = before.nodes.filter((n) => p.occurrences.find((o) => o.occurrenceId === n.occurrenceId)!.generation === -1).sort((a, b) => a.x - b.x).map((n) => n.occurrenceId)
+    expect(row.length).toBeGreaterThan(1)
+    const reversed = [...row].reverse()
+    const after = layoutSync(p, { nodeOrder: reversed })
+    const ax = xs(after, reversed)
+    expect(ax).toEqual([...ax].sort((a, b) => a - b))
+    expect(JSON.stringify(p)).toBe(JSON.stringify(projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })))
+  })
+
+  it('keeps conventions where order is not a choice (ancestors)', () => {
+    const p = projectPedigree(humanFamily, { focalId: 'carlos', view: 'pedigree' })
+    const ids = p.occurrences.map((o) => o.occurrenceId)
+    expect(layoutSync(p, { nodeOrder: [...ids].reverse() })).toEqual(layoutSync(p))
+    expect(REORDERABLE_VIEWS.has('pedigree')).toBe(false)
   })
 })

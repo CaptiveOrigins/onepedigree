@@ -87,7 +87,9 @@ export function App() {
       return null
     }
   }, [doc, focal, view, generations, display.related])
-  const layout = useMemo(() => (projection ? layoutSync(projection) : null), [projection])
+  // Drag nodes to rearrange them where order is a choice (descendants, hourglass, cohort, population, relationship).
+  const [nodeOrder, setNodeOrder] = useState<string[]>([])
+  const layout = useMemo(() => (projection ? layoutSync(projection, { nodeOrder }) : null), [projection, nodeOrder])
   const issues = useMemo(() => (doc ? validatePedigree(doc).issues : []), [doc])
 
   const setDisplay = (patch: Partial<Display>) => {
@@ -310,6 +312,8 @@ export function App() {
             </div>
           ) : projection && layout ? (
             <PedigreeExplorer
+              nodeOrder={nodeOrder}
+              onNodeOrderChange={setNodeOrder}
               key={`${display.theme ?? (dark ? 'midnight' : 'classic')}-${view}`}
               projection={projection}
               layout={layout}

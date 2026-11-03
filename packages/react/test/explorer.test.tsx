@@ -59,3 +59,39 @@ describe('explorer', () => {
     errors.mockRestore()
   })
 })
+
+describe('click-and-drag rearranging', () => {
+  it('computes the new row order from where a node is dropped', async () => {
+    const { dropNodeOrder } = await import('../src')
+    const { layoutSync, projectPedigree } = await import('@captiveorigins/onepedigree-core')
+    const { reptileBreeding } = await import('../../../fixtures')
+    const p = projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })
+    const l = layoutSync(p)
+    const kids = l.nodes.filter((n) => p.occurrences.find((o) => o.occurrenceId === n.occurrenceId)!.generation === -1).sort((a, b) => a.x - b.x)
+    const last = kids.at(-1)!
+    const order = dropNodeOrder(l, last.occurrenceId, { dx: kids[0]!.x - last.x - 10, dy: 0 })!
+    expect(order[0]).toBe(last.occurrenceId)
+    expect(dropNodeOrder(l, last.occurrenceId, { dx: 2, dy: 0 })).toBeNull()
+    // Applying it moves the node to the front of its siblings.
+    const after = layoutSync(p, { nodeOrder: order })
+    const xs = after.nodes.filter((n) => kids.some((k) => k.occurrenceId === n.occurrenceId)).sort((a, b) => a.x - b.x)
+    expect(xs[0]!.occurrenceId).toBe(last.occurrenceId)
+  })
+})
+
+describe('rearranging keeps groups truthful', () => {
+  it('does not move a node out of its clutch frame', async () => {
+    const { dropNodeOrder } = await import('../src')
+    const { layoutSync, projectPedigree } = await import('@captiveorigins/onepedigree-core')
+    const { reptileBreeding } = await import('../../../fixtures')
+    const p = projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })
+    const l = layoutSync(p)
+    const groupOf = (id: string) => (p.groups ?? []).filter((g) => g.occurrenceIds.includes(id)).map((g) => g.id).join('|')
+    const kids = l.nodes.filter((n) => p.occurrences.find((o) => o.occurrenceId === n.occurrenceId)!.generation === -1).sort((a, b) => a.x - b.x)
+    const last = kids.at(-1)!
+    // The last child is alone in its clutch: dragging it to the front changes nothing.
+    const alone = kids.filter((k) => groupOf(k.occurrenceId) === groupOf(last.occurrenceId)).length === 1
+    if (alone) expect(dropNodeOrder(l, last.occurrenceId, { dx: kids[0]!.x - last.x - 10, dy: 0 }, [], groupOf)).toBeNull()
+    expect(alone).toBe(true)
+  })
+})

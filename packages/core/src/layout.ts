@@ -17,6 +17,26 @@ export type LayoutOptions = {
   lifeSpanOf?: (individual: Individual | undefined) => LifeSpan
   /** Timeline scale (default: fits about 1400 px). */
   timeline?: { pxPerYear?: number }
+  /**
+   * A chosen display order of occurrences (e.g. from dragging in the explorer). Applies
+   * where order is a choice, not a convention: children in descendant branches and
+   * rows of layered views (REORDERABLE_VIEWS). Listed occurrences swap among their own
+   * positions; everything else keeps the computed order. Never changes the data.
+   */
+  nodeOrder?: readonly string[]
+}
+
+/** Views where the explorer lets people drag nodes to reorder them. Ancestor branches keep the parent-role convention. */
+export const REORDERABLE_VIEWS: ReadonlySet<PedigreeViewId> = new Set(['descendants', 'hourglass', 'cohort', 'population', 'relationship'])
+
+/** Puts the listed ids into the chosen order within the slots they already occupy. */
+function applyOrder(ids: string[], rankOf: ReadonlyMap<string, number> | undefined): string[] {
+  if (!rankOf) return ids
+  const listed = ids.filter((id) => rankOf.has(id))
+  if (listed.length < 2) return ids
+  const chosen = [...listed].sort((a, b) => rankOf.get(a)! - rankOf.get(b)!)
+  let i = 0
+  return ids.map((id) => (rankOf.has(id) ? chosen[i++]! : id))
 }
 
 /** Rough text width (13 px labels, 11 px sublabels) for sizing nodes without a DOM. */
@@ -97,7 +117,7 @@ function treeSlots(rootId: string, branches: (id: string) => string[], rankOf: (
 }
 
 /** Layered layout: generations as rows, order refined by barycenter sweeps to reduce crossings. */
-function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: PedigreeViewProjection['edges'], rankOf: (o: IndividualOccurrence) => number) {
+function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: PedigreeViewProjection['edges'], rankOf: (o: IndividualOccurrence) => number, chosen?: ReadonlyMap<string, number>) {
   const rows = new Map<number, string[]>()
   for (const o of occurrences) rows.set(rankOf(o), [...(rows.get(rankOf(o)) ?? []), o.occurrenceId])
   const ranks = [...rows.keys()].sort((a, b) => a - b)
@@ -123,6 +143,7 @@ function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: Pedig
       row.forEach((id, i) => pos.set(id, i))
     }
   }
+  if (chosen) for (const r of ranks) rows.set(r, applyOrder(rows.get(r)!, chosen))
   const widest = Math.max(...ranks.map((r) => rows.get(r)!.length))
   const slots = new Map<string, Slot>()
   for (const r of ranks) {
@@ -133,7 +154,7 @@ function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: Pedig
   return slots
 }
 
-type Resolved = Required<Omit<LayoutOptions, 'fan' | 'nodeWidthFor' | 'lifeSpanOf' | 'timeline'>> & { widths: Map<string, number> }
+type Resolved = Required<Omit<LayoutOptions, 'fan' | 'nodeWidthFor' | 'lifeSpanOf' | 'timeline' | 'nodeOrder'>> & { widths: Map<string, number> }
 
 /** Spreads one row's centers so nodes of different widths never overlap (average of a left and a right sweep: stays centered). */
 function spread(row: { id: string; c: number; w: number }[], gap: number) {
@@ -372,11 +393,12 @@ export function layoutSync(projection: PedigreeViewProjection, options: LayoutOp
   if (projection.view === 'fan') return radial(projection, options)
   if (projection.view === 'timeline') return timeline(projection, o, lifeOf, options.timeline?.pxPerYear)
 
+  const chosen = options.nodeOrder?.length && REORDERABLE_VIEWS.has(projection.view) ? new Map(options.nodeOrder.map((id, i) => [id, i])) : undefined
   const topDown = TOP_DOWN.has(projection.view)
   const rankOfGen = (g: number) => (topDown ? g : -g)
   const isTree = TREE_VIEWS.has(projection.view) && projection.occurrenceMode !== 'merge'
   if (!isTree) {
-    return place(projection, layeredSlots(projection.occurrences, projection.edges, (occ) => rankOfGen(occ.generation)), 'layered', o)
+    return place(projection, layeredSlots(projection.occurrences, projection.edges, (occ) => rankOfGen(occ.generation), chosen), 'layered', o)
   }
   const gen = new Map(projection.occurrences.map((x) => [x.occurrenceId, x.generation]))
   const up = new Map<string, string[]>()
@@ -395,7 +417,7 @@ export function layoutSync(projection: PedigreeViewProjection, options: LayoutOp
   const focal = projection.occurrences.find((x) => x.generation === 0 && x.individualId === projection.focalId) ?? projection.occurrences[0]!
   const rank = (id: string) => rankOfGen(gen.get(id) ?? 0)
   const upper = treeSlots(focal.occurrenceId, (id) => sortByRole(up.get(id) ?? [], id), rank)
-  const lower = treeSlots(focal.occurrenceId, (id) => down.get(id) ?? [], rank)
+  const lower = treeSlots(focal.occurrenceId, (id) => applyOrder(down.get(id) ?? [], chosen), rank)
   const slots = new Map(upper)
   const shift = (upper.get(focal.occurrenceId)?.order ?? 0) - (lower.get(focal.occurrenceId)?.order ?? 0)
   for (const [id, s] of lower) if (id !== focal.occurrenceId) slots.set(id, { ...s, order: s.order + shift })

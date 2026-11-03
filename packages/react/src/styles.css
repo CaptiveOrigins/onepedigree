@@ -92,6 +92,8 @@
 }
 /* Brand family (brand/README.md): shared line icons, Captive Origins orange focus ring. */
 .op-icon { flex: none; }
+.op-explorer[data-reorderable] .op-node { cursor: grab; }
+.op-node[data-dragging] { cursor: grabbing; opacity: 0.85; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18)); }
 .op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid #cf8137; outline-offset: 2px; }
 @media (prefers-color-scheme: dark) {
   .op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline-color: #e7a066; }

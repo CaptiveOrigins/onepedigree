@@ -26,6 +26,19 @@ All 13 views of the core: `pedigree`, `fan`, `ahnentafel`, `descendants`, `hourg
 `paternal`. Repeated individuals follow the projection's `merge`, `separate` or `hybrid` mode;
 selecting one occurrence highlights every occurrence of that individual.
 
+## Rearranging by drag
+
+In views where order is a choice (descendants, hourglass, cohort, population, relationship), people can drag a node sideways to reorder it among its siblings. Ancestor charts keep the father/mother convention. A node only moves within its own drawn groups (a clutch or litter frame) and among individuals with the same parents, so frames and family lines stay truthful. The data never changes: the order is a layout option you keep (and may save).
+
+```tsx
+const [nodeOrder, setNodeOrder] = useState<string[]>([])
+const layout = useMemo(() => layoutSync(projection, { nodeOrder }), [projection, nodeOrder])
+
+<PedigreeExplorer projection={projection} layout={layout} nodeOrder={nodeOrder} onNodeOrderChange={setNodeOrder} />
+```
+
+`dropNodeOrder(layout, occurrenceId, delta, current, groupOf)` is exported for custom UIs.
+
 ## Themes and colors
 
 Seven presets, each with its own per-view accents (e.g. warm maternal and cool paternal
@@ -42,6 +55,10 @@ or hex code, for all views or only the current one, with a warning when text con
 below WCAG AA. `onThemeChange` receives the edited theme (a plain object) to store; pass it
 back as `theme`. `ThemeEditor` is also exported for use in your own settings pages. Themes are
 rendered as inline custom properties, so they work in server rendering.
+
+## Brand family
+
+OnePedigree and OneTaxonomy share a backbone (`brand/README.md`): the same line icons (`Icon`, `ICON_PATHS`), 32 px controls, a floating canvas toolbar and a Captive Origins orange focus ring, while each keeps its own views and character.
 
 ## Styling
 

@@ -19,7 +19,9 @@ function Playground() {
     () => projectPedigree(d.doc, { focalId: view === 'descendants' || view === 'hourglass' ? d.founder : d.focal, relatedId: d.related, view, ancestorDepth: depth, descendantDepth: depth, includeSiblings: true, ...(mode ? { occurrenceMode: mode } : {}) }),
     [d, view, depth, mode],
   )
-  const layout = useMemo(() => layoutSync(projection, { orientation }), [projection, orientation])
+  // Drag nodes to rearrange them where order is a choice (descendants, hourglass, cohort, population, relationship).
+  const [nodeOrder, setNodeOrder] = useState<string[]>([])
+  const layout = useMemo(() => layoutSync(projection, { orientation, nodeOrder }), [projection, orientation, nodeOrder])
   const select = <T extends string>(label: string, value: T, options: readonly T[], set: (v: T) => void, names?: Record<string, string>) => (
     <label>
       {label}{' '}
@@ -55,7 +57,7 @@ function Playground() {
         </ul>
       )}
       {/* key: a new preset restarts the explorer's editable theme */}
-      <PedigreeExplorer key={theme} projection={projection} layout={layout} height="70vh" theme={theme} themeEditor />
+      <PedigreeExplorer key={theme} projection={projection} layout={layout} height="70vh" theme={theme} themeEditor nodeOrder={nodeOrder} onNodeOrderChange={setNodeOrder} />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import type { Individual, IndividualOccurrence } from '@captiveorigins/onepedigree-core'
+import { REORDERABLE_VIEWS, type Individual, type IndividualOccurrence } from '@captiveorigins/onepedigree-core'
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
 import { AhnentafelList } from './AhnentafelList.js'
@@ -8,6 +8,7 @@ import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
 import { Icon } from './icons.js'
+import { dropNodeOrder } from './reorder.js'
 import { ThemeEditor } from './ThemeEditor.js'
 import { presetTheme, THEME_PRESETS, themeStyle, type PedigreeTheme } from './themes.js'
 
@@ -34,6 +35,14 @@ export type PedigreeExplorerProps = Omit<PedigreeViewProps, 'interactive' | 'vie
   onPrint?: () => void
   /** Ahnentafel words for the two parents (default Father/Mother). */
   parentWords?: { paternal: string; maternal: string }
+  /**
+   * Turns on click-and-drag rearranging in views where order is a choice
+   * (REORDERABLE_VIEWS: descendants, hourglass, cohort, population, relationship).
+   * Called with the new order; pass it back as `layoutSync(projection, { nodeOrder })`.
+   */
+  onNodeOrderChange?: (nodeOrder: string[]) => void
+  /** The current chosen order (what you passed to the layout), so a drag extends it. */
+  nodeOrder?: readonly string[]
   /** Accessible labels for the controls. */
   labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls' | 'colors', string>>
 }
@@ -97,6 +106,10 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     props.onThemeChange?.(t)
   }
   const drag = useRef<{ x: number; y: number; box: typeof box } | null>(null)
+  // Dragging a node (rearranging) moves the element directly while the pointer is down: no re-render per frame.
+  const nodeDrag = useRef<{ x: number; y: number; id: string; el: SVGGElement; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
+  const reorderable = Boolean(props.onNodeOrderChange) && REORDERABLE_VIEWS.has(projection.view)
 
   const choose = useCallback(
     (occ: IndividualOccurrence | null) => {
@@ -162,19 +175,64 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
     if (!e.ctrlKey && !e.metaKey) return
     zoom(e.deltaY > 0 ? 1.1 : 0.9, svgPoint(e))
   }
+  const svgScale = () => {
+    const r = root.current?.querySelector('svg.op-root')?.getBoundingClientRect()
+    return r?.width ? Math.max(box.width / r.width, box.height / r.height) : 1
+  }
   const onPointerDown = (e: PointerEvent) => {
-    if ((e.target as Element).closest('.op-node, button, a')) return
+    const target = e.target as Element
+    if (target.closest('button, a, .op-toolbar, .op-quick-view, .op-theme-panel')) return
+    const nodeEl = target.closest<SVGGElement>('.op-node')
+    if (nodeEl) {
+      const id = nodeEl.getAttribute('data-occurrence')
+      if (reorderable && id) nodeDrag.current = { x: e.clientX, y: e.clientY, id, el: nodeEl, moved: false }
+      return
+    }
     drag.current = { x: e.clientX, y: e.clientY, box }
     ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
   }
   const onPointerMove = (e: PointerEvent) => {
+    const n = nodeDrag.current
+    if (n) {
+      if (!n.moved && Math.hypot(e.clientX - n.x, e.clientY - n.y) < 4) return
+      if (!n.moved) (e.currentTarget as Element).setPointerCapture?.(e.pointerId)
+      n.moved = true
+      const k = svgScale()
+      n.el.style.translate = `${(e.clientX - n.x) * k}px ${(e.clientY - n.y) * k}px`
+      n.el.setAttribute('data-dragging', '')
+      return
+    }
     const d = drag.current
     const r = root.current?.querySelector('svg.op-root')?.getBoundingClientRect()
     if (!d || !r?.width) return
     setBox({ ...d.box, x: d.box.x - ((e.clientX - d.x) / r.width) * d.box.width, y: d.box.y - ((e.clientY - d.y) / r.height) * d.box.height })
   }
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent) => {
     drag.current = null
+    const n = nodeDrag.current
+    nodeDrag.current = null
+    if (!n?.moved) return
+    n.el.style.translate = ''
+    n.el.removeAttribute('data-dragging')
+    suppressClick.current = true
+    const k = svgScale()
+    // Only among nodes in the same drawn groups (clutch/litter frames, other-parent groups) and with the same
+    // parents, so frames and family lines stay truthful.
+    const groupOf = (id: string) =>
+      [
+        ...(projection.groups ?? []).filter((g) => g.occurrenceIds.includes(id)).map((g) => g.id),
+        projection.edges.filter((ed) => ed.target === id).map((ed) => ed.source).sort().join('+'),
+      ].join('|')
+    const order = dropNodeOrder(layout, n.id, { dx: (e.clientX - n.x) * k, dy: (e.clientY - n.y) * k }, props.nodeOrder, groupOf)
+    if (order) props.onNodeOrderChange!(order)
+  }
+  const onPointerCancel = () => {
+    drag.current = null
+    if (nodeDrag.current) {
+      nodeDrag.current.el.style.translate = ''
+      nodeDrag.current.el.removeAttribute('data-dragging')
+    }
+    nodeDrag.current = null
   }
 
   const download = () => {
@@ -220,7 +278,15 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onClickCapture={(e) => {
+        // A drag ends with a click on the node: don't let it select.
+        if (suppressClick.current) {
+          suppressClick.current = false
+          e.stopPropagation()
+        }
+      }}
+      data-reorderable={reorderable ? '' : undefined}
     >
       <div className="op-toolbar" role="toolbar" aria-label={labels.controls}>
         <button type="button" onClick={() => zoom(0.8)} aria-label={labels.zoomIn} title={labels.zoomIn}>
