@@ -14,7 +14,7 @@
     "svg",
     "breeding"
   ],
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mgilardi/onepedigree.git",
@@ -40,7 +40,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD-PARTY-LICENSE-LUCIDE.txt"
   ],
   "engines": {
     "node": ">=22"

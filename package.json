@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/mgilardi/onepedigree/issues"
   },
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "packageManager": "pnpm@11.2.2",
   "engines": {
