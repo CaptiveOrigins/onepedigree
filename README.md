@@ -96,6 +96,14 @@ pnpm typecheck && pnpm test && pnpm build   # build also writes apps/playground/
 `apps/playground` shows every view for every fixture: `dist/gallery.html` (static, server-
 rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m http.server`).
 
+## Part of the OneOrigin suite
+
+OnePedigree works on its own, or with [OneTaxonomy](https://github.com/mgilardi/onetaxonomy) and [OnePhylogeny](https://github.com/mgilardi/onephylogeny). See [the suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/guidelines.md).
+
+## Documentation
+
+[Architecture](docs/architecture/architecture.md), [scientific invariants](docs/architecture/scientific-invariants.md), [changelog](CHANGELOG.md), [releasing](RELEASING.md).
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from Captive Origins. Versions published before this change remain under MIT.

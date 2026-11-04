@@ -12,7 +12,7 @@ import {
   type PedigreeDocument,
 } from '@captiveorigins/onepedigree-core'
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog'
-import { exists, readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
+import { exists, readTextFile, rename, writeTextFile } from '@tauri-apps/plugin-fs'
 
 /** How a project looks: view, theme, parent words, species; saved with the project. */
 export type Display = {
@@ -40,6 +40,13 @@ export type Project =
 export const projectDoc = (p: Project) => (p.kind === 'json' ? p.doc : applyCompanion(p.source, p.companion))
 export const projectDisplay = (p: Project): Display => (p.kind === 'json' ? p.display : ((p.companion.display ?? {}) as Display))
 export const projectTitle = (p: Project) => baseName(p.kind === 'json' ? (p.path ?? 'Untitled') : p.sourcePath)
+
+/** Atomic: a crash while saving leaves the old file or the new one, never half of one. */
+async function writeFileSafely(path: string, text: string) {
+  const temp = `${path}.tmp`
+  await writeTextFile(temp, text)
+  await rename(temp, path)
+}
 
 const baseName = (path: string) => path.split('/').pop() ?? path
 const dirName = (path: string) => path.slice(0, path.lastIndexOf('/'))
@@ -103,7 +110,7 @@ export async function pickAndOpen(): Promise<Project | null> {
 /** Save: a JSON project to its file (asking where the first time); a GEDCOM project's companion. */
 export async function saveProject(p: Project, saveAs = false): Promise<Project | null> {
   if (p.kind === 'gedcom') {
-    await writeTextFile(p.companionPath, `${JSON.stringify(p.companion, null, 2)}\n`)
+    await writeFileSafely(p.companionPath, `${JSON.stringify(p.companion, null, 2)}\n`)
     return p
   }
   let path = p.path
@@ -113,7 +120,7 @@ export async function saveProject(p: Project, saveAs = false): Promise<Project |
     path = chosen
   }
   const body = { ...(JSON.parse(serializePedigree(p.doc)) as object), display: p.display }
-  await writeTextFile(path, `${JSON.stringify(body, null, 2)}\n`)
+  await writeFileSafely(path, `${JSON.stringify(body, null, 2)}\n`)
   return { ...p, path }
 }
 
@@ -125,5 +132,5 @@ export async function exportAs(p: Project, format: 'gedcom' | 'json') {
     filters: [format === 'gedcom' ? { name: 'GEDCOM', extensions: ['ged'] } : { name: 'OnePedigree JSON', extensions: ['json'] }],
   })
   if (!path) return
-  await writeTextFile(path, format === 'gedcom' ? serializeGedcom(doc) : `${JSON.stringify({ ...(JSON.parse(serializePedigree(doc)) as object), display: projectDisplay(p) }, null, 2)}\n`)
+  await writeFileSafely(path, format === 'gedcom' ? serializeGedcom(doc) : `${JSON.stringify({ ...(JSON.parse(serializePedigree(doc)) as object), display: projectDisplay(p) }, null, 2)}\n`)
 }
