@@ -3,7 +3,7 @@ name = "onepedigree"
 version = "0.2.0"
 description = "OnePedigree for Mac"
 authors = ["Captive Origins"]
-license = "MIT"
+license-file = "../../../LICENSE"
 edition = "2021"
 
 [lib]
