@@ -143,7 +143,7 @@ export function App() {
         setStatus(p.warnings.length ? { text: p.warnings[0]!, details: p.warnings.slice(1) } : { text: `Opened ${projectTitle(p)}` })
       }
     } catch (e) {
-      setStatus({ text: `Could not open: ${(e as Error).message}` })
+      setStatus({ text: `Could not open that file: ${(e as Error).message} Check that it's a GEDCOM, CSV or OnePedigree JSON file, then try again.` })
     }
   }
   const save = async (as = false) => {
@@ -156,7 +156,7 @@ export function App() {
         setStatus({ text: saved.kind === 'gedcom' ? 'Saved your extras in the companion file (the GEDCOM is unchanged).' : 'Saved.' })
       }
     } catch (e) {
-      setStatus({ text: `Could not save: ${(e as Error).message}` })
+      setStatus({ text: `Could not save: ${(e as Error).message} Your changes are still open here. Try Save As to pick another location.` })
     }
   }
   const startNew = () => {
@@ -320,7 +320,7 @@ export function App() {
               theme={display.theme ?? (dark ? 'midnight' : 'classic')}
               height="calc(100vh - 90px)"
               onSelectIndividual={(id) => setSelected(id)}
-              onPrint={() => void invoke('print_window').catch((e) => setStatus({ text: `Could not print: ${String(e)}` }))}
+              onPrint={() => void invoke('print_window').catch((e) => setStatus({ text: `Could not print: ${String(e)} Try again.` }))}
               parentWords={{ paternal: terms.paternal, maternal: terms.maternal }}
               themeEditor
             />

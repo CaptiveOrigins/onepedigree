@@ -36,6 +36,6 @@ export async function checkForUpdates(manual: boolean): Promise<string | null> {
     await relaunch()
     return null
   } catch (e) {
-    return manual ? `Could not check for updates: ${(e as Error).message}` : null
+    return manual ? `Could not check for updates: ${(e as Error).message} Check your connection and try again.` : null
   }
 }
