@@ -4,6 +4,8 @@ A species-neutral pedigree framework for humans and other animals (and plants): 
 data model, graph validation, bounded ancestry traversal, view projections, automatic
 layout, server-renderable React components and a Payload CMS plugin.
 
+Part of the [OneOrigin suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
+
 > **Status: alpha.** The schema-version-1 contract is stable in intent; package APIs may
 > still change before the first prerelease.
 
