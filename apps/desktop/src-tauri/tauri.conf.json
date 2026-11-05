@@ -58,7 +58,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/mgilardi/onepedigree/releases/latest/download/latest.json"
+        "https://github.com/CaptiveOrigins/onepedigree/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5QTIyRjA2QTI5QjJCREUKUldUZUs1dWlCaStpbWNXS3pBWVJDQ3NBa0FVMFNVcjROT2VXSHYyUU83WU5RekFldzdUcXB1RE8K"
     }

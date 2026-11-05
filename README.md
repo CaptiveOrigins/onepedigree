@@ -4,7 +4,7 @@ A species-neutral pedigree framework for humans and other animals (and plants): 
 data model, graph validation, bounded ancestry traversal, view projections, automatic
 layout, server-renderable React components and a Payload CMS plugin.
 
-Part of the [OneOrigin suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
+Part of the [OneOrigin suite](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
 
 > **Status: alpha.** The schema-version-1 contract is stable in intent; package APIs may
 > still change before the first prerelease.
@@ -98,7 +98,7 @@ rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m
 
 ## Part of the OneOrigin suite
 
-OnePedigree works on its own, or with [OneTaxonomy](https://github.com/mgilardi/onetaxonomy) and [OnePhylogeny](https://github.com/mgilardi/onephylogeny). See [the suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/guidelines.md).
+OnePedigree works on its own, or with [OneTaxonomy](https://github.com/CaptiveOrigins/onetaxonomy) and [OnePhylogeny](https://github.com/CaptiveOrigins/onephylogeny). See [the suite](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/guidelines.md).
 
 ## Documentation
 

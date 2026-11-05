@@ -12,9 +12,9 @@
     "payload",
     "payload-plugin"
   ],
-  "homepage": "https://github.com/mgilardi/onepedigree#readme",
+  "homepage": "https://github.com/CaptiveOrigins/onepedigree#readme",
   "bugs": {
-    "url": "https://github.com/mgilardi/onepedigree/issues"
+    "url": "https://github.com/CaptiveOrigins/onepedigree/issues"
   },
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",

@@ -25,4 +25,4 @@ Parentage lives on the individual. Children and siblings are derived, never stor
 
 ## In the suite
 
-OnePedigree stands alone. Other [OneOrigin](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md) tools connect through optional packages and plain files, and OnePedigree never depends on them.
+OnePedigree stands alone. Other [OneOrigin](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/README.md) tools connect through optional packages and plain files, and OnePedigree never depends on them.
