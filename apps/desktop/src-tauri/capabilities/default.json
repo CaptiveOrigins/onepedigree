@@ -10,6 +10,7 @@
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-exists",
+    "fs:allow-rename",
     { "identifier": "fs:scope", "allow": [{ "path": "$HOME/**" }, { "path": "/Volumes/**" }] },
     "store:default",
     "process:allow-restart",

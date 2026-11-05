@@ -4,6 +4,8 @@ A species-neutral pedigree framework for humans and other animals (and plants): 
 data model, graph validation, bounded ancestry traversal, view projections, automatic
 layout, server-renderable React components and a Payload CMS plugin.
 
+Part of the [OneOrigin suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
+
 > **Status: alpha.** The schema-version-1 contract is stable in intent; package APIs may
 > still change before the first prerelease.
 
@@ -93,6 +95,14 @@ pnpm typecheck && pnpm test && pnpm build   # build also writes apps/playground/
 
 `apps/playground` shows every view for every fixture: `dist/gallery.html` (static, server-
 rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m http.server`).
+
+## Part of the OneOrigin suite
+
+OnePedigree works on its own, or with [OneTaxonomy](https://github.com/mgilardi/onetaxonomy) and [OnePhylogeny](https://github.com/mgilardi/onephylogeny). See [the suite](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/mgilardi/onephylogeny/blob/main/docs/oneorigin/guidelines.md).
+
+## Documentation
+
+[Architecture](docs/architecture/architecture.md), [scientific invariants](docs/architecture/scientific-invariants.md), [changelog](CHANGELOG.md), [releasing](RELEASING.md).
 
 ## License
 
