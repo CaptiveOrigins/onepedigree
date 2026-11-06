@@ -35,6 +35,10 @@ import {
 } from '../src'
 import { pedigreeDocumentSchema } from '../src/schema'
 
+// Core's tsconfig has no ambient runtime types, so src can't use Node or DOM globals. Only these tests do.
+declare const structuredClone: <T>(value: T) => T
+declare const performance: { now(): number }
+
 const codes = (d: PedigreeDocument, complete = true) => validatePedigree(d, { complete }).issues.map((i) => `${i.severity}:${i.code}`).sort()
 const ids = (r: { individuals: readonly { id: string }[] }) => r.individuals.map((i) => i.id).sort()
 
