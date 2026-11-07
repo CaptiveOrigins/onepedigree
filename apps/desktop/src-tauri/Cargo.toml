@@ -1,6 +1,6 @@
 [package]
 name = "onepedigree"
-version = "0.2.0"
+version = "0.3.0"
 description = "OnePedigree for Mac"
 authors = ["Captive Origins"]
 license-file = "../../../LICENSE"
