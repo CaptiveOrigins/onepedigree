@@ -3,7 +3,7 @@
 # latest.json, which installed apps check for updates.
 # Secrets: TAURI_SIGNING_PRIVATE_KEY (and TAURI_SIGNING_PRIVATE_KEY_PASSWORD if set).
 # Apple notarization (APPLE_* secrets) can be added later; until then macOS asks
-# people to confirm the first launch (right-click > Open).
+# people to confirm the first launch (Open Anyway in Privacy & Security, or xattr on that one app).
 name: Desktop app
 
 on:
@@ -38,7 +38,17 @@ jobs:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: 'OnePedigree for Mac ${{ github.ref_name }}'
-          releaseBody: 'Download the .dmg below. Installed apps update themselves (you can turn that off in Settings).'
+          releaseBody: |
+            Download the .dmg below and drag OnePedigree to Applications.
+
+            The app isn't notarized, so macOS blocks the first launch. Use either way past the warning:
+
+            - **System Settings:** try to open the app once, then go to System Settings > Privacy & Security, scroll down, click **Open Anyway**, and click **Open** when the warning comes back. Apple says to do this only for an app you trust.
+            - **Terminal:** `xattr -dr com.apple.quarantine "/Applications/OnePedigree.app"`
+
+            Installed copies of 0.2.0 or later update themselves; you can turn that off in Settings.
+
+            Early alpha. A person hasn't yet worked through this build in the Mac app; only its automated tests have run. See CHANGELOG.md for what changed.
           releaseDraft: false
           prerelease: false
           args: --target universal-apple-darwin

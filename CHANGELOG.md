@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Mac app 0.3.0
 
 - Mac app: saves are now atomic, so a crash can't leave a half-written project file.
 - Mac app: uses the OneOrigin suite accent color.
