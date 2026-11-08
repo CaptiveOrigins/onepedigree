@@ -16,7 +16,21 @@ export const VIEW_LABELS: Record<PedigreeViewId, string> = {
   paternal: 'Paternal line',
 }
 
-export type Terminology = { individual: string; individuals: string; parent: string; cohort: string; repeated: string; unknown: string; privateRecord: string }
+export type Terminology = {
+  individual: string
+  individuals: string
+  parent: string
+  cohort: string
+  repeated: string
+  unknown: string
+  privateRecord: string
+  /** Spoken in place of ♂. */
+  male: string
+  /** Spoken in place of ♀. */
+  female: string
+  /** Spoken when no sex is recorded. */
+  sexUnknown: string
+}
 export const DEFAULT_TERMS: Terminology = {
   individual: 'individual',
   individuals: 'individuals',
@@ -25,6 +39,19 @@ export const DEFAULT_TERMS: Terminology = {
   repeated: 'appears more than once',
   unknown: 'Unknown',
   privateRecord: 'Private record',
+  male: 'male',
+  female: 'female',
+  sexUnknown: 'sex unknown',
+}
+
+const SEX_TERM: Record<string, 'male' | 'female' | 'sexUnknown'> = { male: 'male', m: 'male', female: 'female', f: 'female', '': 'sexUnknown', unknown: 'sexUnknown', u: 'sexUnknown' }
+/**
+ * The sex in words, for the spoken name: the node shows only ♂ or ♀. Any other
+ * host label is spoken as written; a missing one says so instead of staying silent.
+ */
+export function sexWord(sex: string | null | undefined, terms: Terminology = DEFAULT_TERMS): string {
+  const key = SEX_TERM[(sex ?? '').trim().toLowerCase()]
+  return key ? terms[key] : (sex as string).trim()
 }
 
 /** Display name: the label, else the ID; anonymous placeholders (`data.private`) never show their ID. */

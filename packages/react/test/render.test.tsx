@@ -47,6 +47,33 @@ describe('server rendering', () => {
     expect(html).toContain('<a href="/animals/ellen" aria-label="Ellen, female, sexual reproduction')
   })
 
+  it('says the sex in words in the spoken name, and keeps the visible symbol', () => {
+    const doc = {
+      schemaVersion: 1 as const,
+      individuals: [
+        { id: 'dam', label: 'Dam', sex: 'F' },
+        { id: 'sire', label: 'Sire', sex: 'm' },
+        { id: 'kit', label: 'Kit', parentage: { parents: [{ individual: 'dam', role: 'mother' }, { individual: 'sire', role: 'father' }] } },
+        { id: 'odd', label: 'Odd', sex: 'intersex', parentage: { parents: [{ individual: 'dam', role: 'mother' }] } },
+      ],
+    }
+    const name = (html: string, id: string) => html.match(new RegExp(`data-individual="${id}"[^>]*>(?:<a[^>]*aria-label="([^"]+)"|<title>([^<]+)</title>)`))?.slice(1).find(Boolean)
+    for (const extra of [{}, { getIndividualHref: (i: { id: string }) => `/animals/${i.id}` }]) {
+      const html = render(doc, { focalId: 'kit', view: 'pedigree' }, extra)
+      expect(name(html, 'dam')).toMatch(/^Dam, female, /)
+      expect(name(html, 'sire')).toMatch(/^Sire, male, /)
+      expect(name(html, 'kit')).toMatch(/^Kit, sex unknown, /)
+      expect(html).toContain('>♀</text>')
+      expect(html).toContain('>♂</text>')
+    }
+    expect(name(render(doc, { focalId: 'odd', view: 'pedigree' }), 'odd')).toMatch(/^Odd, intersex, /)
+    const es = render(doc, { focalId: 'kit', view: 'pedigree' }, { terminology: { female: 'hembra', male: 'macho', sexUnknown: 'sexo desconocido' } })
+    expect(name(es, 'dam')).toMatch(/^Dam, hembra, /)
+    expect(name(es, 'kit')).toMatch(/^Kit, sexo desconocido, /)
+    const button = renderToStaticMarkup(<PedigreeView projection={projectPedigree(doc, { focalId: 'kit', view: 'pedigree' })} layout={layoutSync(projectPedigree(doc, { focalId: 'kit', view: 'pedigree' }))} interactive />)
+    expect(button).toMatch(/role="button" tabindex="0" aria-label="Sire, male, /)
+  })
+
   it('draws fan segments and cohort markers, and numbers Ahnentafel entries', () => {
     expect(render(humanFamily, { focalId: 'gwen', view: 'fan', ancestorDepth: 2 }).match(/class="op-fan-segment"/g)).toHaveLength(7)
     const cohort = render(multiplePaternityClutch, { focalId: 'egg-1', view: 'cohort' })
