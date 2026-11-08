@@ -4,7 +4,7 @@ import { REORDERABLE_VIEWS, type Individual, type IndividualOccurrence } from '@
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
 import { AhnentafelList } from './AhnentafelList.js'
-import { DEFAULT_TERMS, describeStructure, labelOf } from './describe.js'
+import { DEFAULT_TERMS, describeStructure, labelOf, sexWord } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
 import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
 import { GeneLegend, GenotypeKey } from './genetics.js'
@@ -347,7 +347,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
           ) : (
             <>
               <p className="op-quick-view-title">{labelOf(individual, terms)}</p>
-              {individual?.sex && <p>{individual.sex}</p>}
+              {individual?.sex && <p>{sexWord(individual.sex, terms)}</p>}
               <p>{describeStructure(projection.structures[occurrence.individualId])}</p>
               {occurrence.repeated && <p>{terms.repeated}</p>}
               <div className="op-quick-view-actions">

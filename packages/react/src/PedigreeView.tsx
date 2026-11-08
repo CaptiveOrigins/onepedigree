@@ -10,7 +10,7 @@ import type {
 } from '@captiveorigins/onepedigree-core'
 import type { KeyboardEvent, MouseEvent, ReactNode, SVGProps } from 'react'
 
-import { arcPath, DEFAULT_TERMS, describeProjection, describeStructure, labelOf, VIEW_LABELS, type Terminology } from './describe.js'
+import { arcPath, DEFAULT_TERMS, describeProjection, describeStructure, labelOf, sexWord, VIEW_LABELS, type Terminology } from './describe.js'
 import { themeStyle, type PedigreeTheme } from './themes.js'
 import { GenotypeGlyph, GenotypeStrip, genotypeText, genotypeWord, type GenotypeDisplay, type GenotypeMark, type GeneOverlay } from './genetics.js'
 
@@ -337,7 +337,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const label = labelOf(individual, terms)
           const aria = [
             label,
-            individual?.sex,
+            sexWord(individual?.sex, terms),
             lifeLabel(lifeSpan(individual)) || null,
             occurrence.ahnentafel !== undefined ? `Ahnentafel ${occurrence.ahnentafel}` : null,
             occurrence.repeated ? terms.repeated : null,
