@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.0-alpha.14
+## 0.1.0-alpha.15
+
+The same changes as 0.1.0-alpha.14, which was tagged but never staged: its release run failed because a new desktop test needed core built first.
+
+## 0.1.0-alpha.14 (not published)
 
 - **Payload, fixes a leak:** the loop check ran with full access over every proposed parent, including ones the editor can't read. Proposing a private animal as a parent could reveal that it exists and descends from the animal being edited. Loops are now checked only among parents the editor can read; others are already refused as "does not exist or you cannot access it", so a loop still can't be saved. Tested with made-up animals.
 - Tests: a related animal the reader can't see is ignored in the relationship view; the desktop app saves only a GEDCOM's companion file and saves atomically. First test audit in `docs/test-audit.md`, and each invariant now names its tests.
