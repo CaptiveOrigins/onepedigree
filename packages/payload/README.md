@@ -82,7 +82,9 @@ The same holds for plain collection reads (REST, GraphQL, the Admin, and the Loc
 returns `null` for it. Trusted Local API reads (the default `overrideAccess: true`) are unchanged.
 When someone saves a record that showed them a private parent, that parent is kept as stored: a
 placeholder, an empty picker or a missing row means "unchanged", and replacing it with another
-parent is refused.
+parent is refused. The kept parent also passes the parent field's validation, which would
+otherwise look it up with the editor's access whenever the field has `filterOptions` (as the
+multi-tenant plugin adds); other values are validated as usual.
 
 Add an index on the parent path (`parentage.parents.individual`, or your
 role fields) in production; the standard fields declare it.

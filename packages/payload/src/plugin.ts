@@ -6,7 +6,7 @@ import { cohortMembersEndpoint, pedigreeEndpoint, relativesEndpoint, validateEnd
 import { createParentageField } from './fields.js'
 import { cohortBirthParentBeforeChange, parentageBeforeChange, parentBeforeDelete, rememberAccessMode, SKIP, TRUSTED } from './integrity.js'
 import { resolveOptions } from './mapping.js'
-import { keepHiddenParents, parentageAfterRead } from './privacy.js'
+import { keepHiddenParents, keptParentValidate, parentageAfterRead } from './privacy.js'
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
 
 const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
@@ -59,6 +59,26 @@ const settingsGlobal = (opts: ResolvedOptions): GlobalConfig => ({
   ],
 })
 
+/** Paths of the relationship fields that hold parents: role fields, or the rows' individual and the pickers. */
+const parentFieldPaths = (opts: ResolvedOptions): string[] => {
+  const m = opts.fields.parentage
+  return m.kind === 'role-fields' ? Object.values(m.roles) : [`${m.path}.parents.${m.individualField}`, `${m.path}.mother`, `${m.path}.father`]
+}
+
+/** Gives the relationship field at `path` (through groups, arrays, rows, collapsibles and tabs) the kept-parent validation. */
+function wrapParentValidate(fields: Field[], path: string[]): Field[] {
+  return fields.map((f): Field => {
+    const named = 'name' in f && f.name
+    if (!named) {
+      if (f.type === 'tabs') return { ...f, tabs: f.tabs.map((t) => ('name' in t && t.name ? (t.name === path[0] ? { ...t, fields: wrapParentValidate(t.fields, path.slice(1)) } : t) : { ...t, fields: wrapParentValidate(t.fields, path) })) }
+      return 'fields' in f ? ({ ...f, fields: wrapParentValidate(f.fields, path) } as Field) : f
+    }
+    if (f.name !== path[0]) return f
+    if (path.length === 1) return f.type === 'relationship' ? ({ ...f, validate: keptParentValidate(f.validate as never) } as Field) : f
+    return 'fields' in f ? ({ ...f, fields: wrapParentValidate(f.fields, path.slice(1)) } as Field) : f
+  })
+}
+
 /**
  * OnePedigree for Payload. Maps (or creates) an individuals collection,
  * validates parentage on every write, serializes parentage changes, applies
@@ -99,9 +119,10 @@ export const onePedigree =
               }))]
             : []
         if (opts.disabled) return { ...c, fields: [...c.fields, ...inject] }
+        const fields = parentFieldPaths(opts).reduce((fs, p) => wrapParentValidate(fs, p.split('.')), [...c.fields, ...inject])
         return {
           ...c,
-          fields: [...c.fields, ...inject, ...(opts.admin?.panel === false ? [] : [panelField(opts)])],
+          fields: [...fields, ...(opts.admin?.panel === false ? [] : [panelField(opts)])],
           hooks: {
             ...c.hooks,
             beforeOperation: [...(c.hooks?.beforeOperation ?? []), rememberAccessMode],
