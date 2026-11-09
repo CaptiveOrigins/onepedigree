@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0-alpha.17
+
+- **Payload, lets keepers save past a private parent:** where a parent field has `filterOptions` (the multi-tenant plugin adds them to every relationship to a tenant collection), Payload's own validation looks each parent up with the editor's access. So an editor whose record has a parent private to them couldn't save it at all, not even a rename, even though alpha.16 kept that parent. The plugin now wraps its parent fields' validation (rows, Mother/Father pickers, or mapped role fields): a stored parent it kept for that record passes; every other value goes through the field's own validation, `filterOptions` included. Found on a hosted site. The new tests reproduce it with `filterOptions` on the parent fields, and 4 failed before the fix.
+
 ## 0.1.0-alpha.16
 
 **Hosts on 0.1.0-alpha.15 or earlier should upgrade.** Both bugs below let a site reveal or attach private records: plain reads exposed a private parent's ID, and writes through REST, GraphQL or the Admin skipped the checks on parents the editor can't read.

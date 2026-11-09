@@ -1,4 +1,4 @@
-import { ValidationError, type CollectionAfterReadHook, type CollectionBeforeValidateHook, type CollectionSlug, type PayloadRequest, type Where } from 'payload'
+import { validations, ValidationError, type CollectionAfterReadHook, type CollectionBeforeValidateHook, type CollectionSlug, type PayloadRequest, type Where } from 'payload'
 
 import { getAt, idOf } from './mapping.js'
 import type { ResolvedOptions } from './types.js'
@@ -14,6 +14,24 @@ export const isPrivateParent = (v: unknown): v is PrivateParent =>
 /** Per request: which individuals its user may read. */
 const READABLE = 'onepedigreeReadable'
 const SELECTOR_ROLES = { mother: 'mother', father: 'father' } as const
+/** Per request and record: stored parents the editor can't read, kept by `keepHiddenParents`. */
+const KEPT = 'onepedigreeKeptParents'
+
+/**
+ * Wraps a parent field's validation. A stored parent that `keepHiddenParents` kept on this record is valid as it is:
+ * Payload's own check would look it up with the editor's access whenever the field has `filterOptions` (multi-tenant
+ * adds them), and refuse it, so the editor couldn't save the record at all. Every other value goes through the
+ * field's own validation, or Payload's relationship validation.
+ */
+export const keptParentValidate =
+  (original: ((value: unknown, options: unknown) => unknown) | undefined) =>
+  (value: unknown, options: { id?: string | number; req?: PayloadRequest; [k: string]: unknown }) => {
+    const kept = options?.id != null ? (options.req?.context[KEPT] as Map<string, Set<string>> | undefined)?.get(String(options.id)) : undefined
+    const id = idOf(value)
+    if (kept && id && kept.has(id)) return true
+    return (original ?? (validations.relationship as (value: unknown, options: unknown) => unknown))(value, options)
+  }
+
 /** Per request: how many of the plugin's own reads are running that need stored IDs (they redact for themselves). */
 const RAW = 'onepedigreeRawParents'
 
@@ -140,6 +158,9 @@ export const keepHiddenParents =
     const ok = await readableIds(req, opts, stored)
     const hidden = new Set(stored.filter((id) => !ok.has(id)))
     if (!hidden.size) return data
+    // For `keptParentValidate`: these stored parents stay on this record, so field validation lets them through.
+    const kept = ((req.context[KEPT] as Map<string, Set<string>> | undefined) ??= new Map<string, Set<string>>())
+    kept.set(String(originalDoc.id), hidden)
     const d = data as Record<string, unknown>
     const m = opts.fields.parentage
 

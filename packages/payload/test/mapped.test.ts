@@ -21,8 +21,9 @@ const animals: CollectionConfig = {
     { name: 'name', type: 'text' },
     { name: 'sex', type: 'select', options: ['female', 'male', 'unknown'] },
     { name: 'visibility', type: 'select', options: ['public', 'private'], defaultValue: 'public', index: true },
-    { name: 'dam', type: 'relationship', relationTo: 'animals', index: true },
-    { name: 'sire', type: 'relationship', relationTo: 'animals', index: true },
+    // filterOptions, as multi-tenant adds them: Payload looks the parent up with the editor's access when validating.
+    { name: 'dam', type: 'relationship', relationTo: 'animals', index: true, filterOptions: { name: { exists: true } } },
+    { name: 'sire', type: 'relationship', relationTo: 'animals', index: true, filterOptions: { name: { exists: true } } },
     { name: 'clutch', type: 'relationship', relationTo: 'clutches', index: true },
   ],
 }

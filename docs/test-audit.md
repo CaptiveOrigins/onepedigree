@@ -2,6 +2,12 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-09: saving past a private parent with filterOptions (alpha.17)
+
+alpha.16's tests saved a record with a kept private parent, but their parent fields had no `filterOptions`. On a host with the multi-tenant plugin they do, and Payload then validates each parent with the editor's access, so the save was refused. The setups in `private-parents.test.ts` and `mapped.test.ts` now put `filterOptions` on every parent field, as that plugin does. 4 tests failed without the fix: saving what you read, an empty picker or missing row, changing another parent, and the dam/sire save.
+
+**New:** `filterOptions` still apply to every parent the plugin didn't keep (still applies the field's own filterOptions …), and a parent the editor can't read is still refused when it's new to the record (REST writes check readability …).
+
 ## 2026-11-09: private parents in plain reads (alpha.16)
 
 A hosted site found that a plain REST read of a public animal returned its private mother's ID, to anyone. The audit of 2026-11-08 covered the pedigree endpoints but not the collection's own reads, and its write tests all used the Local API with `overrideAccess: false`. That hid a second bug: REST, GraphQL and the Admin leave `overrideAccess` unset, and the plugin counted that as trusted, so the readability and loop checks never ran there.

@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 
 import { configToSchema } from '@payloadcms/graphql'
-import { createLocalReq, handleEndpoints, type Access, type CollectionConfig, type Payload, type TypedUser, type Where } from 'payload'
+import { createLocalReq, handleEndpoints, type Access, type CollectionConfig, type Field, type Payload, type TypedUser, type Where } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { onePedigree } from '../src'
@@ -32,6 +32,9 @@ const animals = (slug: string): CollectionConfig => ({
   ],
 })
 
+const withFilterOptions = (f: Field): Field =>
+  f.type === 'relationship' ? ({ ...f, filterOptions: { name: { exists: true } } } as Field) : 'fields' in f ? ({ ...f, fields: f.fields.map(withFilterOptions) } as Field) : f
+
 type Doc = { id: string; parentage?: { mother?: unknown; father?: unknown; parents?: { id?: string; individual: unknown; role?: string | null }[] } }
 
 let payload: Payload
@@ -59,7 +62,9 @@ const rest = async (path: string, who: string | null = null, init: RequestInit =
 beforeAll(async () => {
   ;({ payload, stop } = await startPayload({
     collections: [usersCollection, animals('animals')],
-    plugins: [onePedigree({ collection: 'animals', mode: 'standard-fields', hiddenRecords: 'placeholder' })],
+    // filterOptions on every parent field, as @payloadcms/plugin-multi-tenant adds them: Payload then looks each
+    // parent up with the editor's access when validating.
+    plugins: [onePedigree({ collection: 'animals', mode: 'standard-fields', hiddenRecords: 'placeholder', overrides: { parentageField: withFilterOptions } })],
   }))
   for (const [name, r] of [['admin', 'admin'], ['owner', 'viewer'], ['keeper', 'viewer'], ['member', 'viewer']] as const) {
     users[name] = (await payload.create({ collection: 'users', data: { email: `${name}@example.com`, password: 'a-long-test-password', role: r } as never })) as TypedUser
@@ -198,6 +203,13 @@ describe('saving a record that shows a placeholder', () => {
     expect(created.status).toBe(400)
     // The owner may.
     expect((await rest(`/animals`, 'owner', { method: 'POST', body: JSON.stringify({ name: 'mine', owner: users.owner!.id, parentage: { parents: [{ individual: a.P, role: 'mother' }] } }) })).status).toBe(201)
+  })
+
+  it('still applies the field’s own filterOptions to every parent it didn’t keep', async () => {
+    const nameless = String((await payload.create({ collection: 'animals' as never, data: { owner: users.keeper!.id } as never })).id)
+    const attempt = payload.update({ collection: 'animals' as never, id: a.Q!, data: { parentage: { father: nameless } } as never, user: users.keeper, overrideAccess: false })
+    await expect(attempt).rejects.toThrow()
+    expect((await trusted('Q')).parentage?.parents?.map((p) => p.individual)).not.toContain(nameless)
   })
 
   it('leaves trusted writes alone: server code can still remove the parent', async () => {
