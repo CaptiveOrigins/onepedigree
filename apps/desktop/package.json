@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "tauri": "tauri",
     "app:dev": "tauri dev",
-    "app:build": "tauri build"
+    "app:build": "tauri build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@captiveorigins/onepedigree-core": "workspace:^",

@@ -73,8 +73,10 @@ export async function checkParentage(
   // Same message whether missing or private: nothing is revealed about records the editor cannot read.
   for (const p of unique) if (!seen.has(p)) issues.push(err('UNRESOLVED_PARENT', 'A parent does not exist or you cannot access it.', path, [p]))
 
-  if (proposal.id && unique.length) {
-    const proposed = new Set(unique)
+  // Loops are checked only among parents the editor can read. Others are already refused as unresolved, and saying
+  // one would loop would reveal that a private record exists and descends from this one.
+  const proposed = new Set(unique.filter((p) => seen.has(p)))
+  if (proposal.id && proposed.size) {
     const reached = new Set([proposal.id])
     let frontier = [proposal.id]
     while (frontier.length && !issues.some((i) => i.code === 'PARENT_IS_DESCENDANT')) {

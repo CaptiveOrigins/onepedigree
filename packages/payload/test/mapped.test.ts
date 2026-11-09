@@ -184,6 +184,27 @@ describe('security (spec §42.4)', () => {
     expect(String(after.sire)).toBe(a['Public Sire'])
   })
 
+  it('answers the same for a private parent as for one that does not exist, even when it would loop', async () => {
+    // Hidden Hatchling is private and descends from Tinta, which the public editor may edit.
+    const check = async (parent: string) => {
+      const v = await callEndpoint(payload, 'animals', '/:id/pedigree/validate', { id: a.Tinta! }, { user: users['public-editor']!, body: { parents: [{ individual: parent, role: 'mother' }] } })
+      expect(v.status).toBe(200)
+      return JSON.stringify(v.body).replaceAll(parent, 'X')
+    }
+    const missing = await check('000000000000000000000000')
+    expect(await check(a['Hidden Hatchling']!)).toBe(missing)
+    expect(missing).not.toMatch(/descend/)
+    const write = await payload.update({ collection: 'animals' as never, id: a.Tinta!, data: { dam: a['Hidden Hatchling'] } as never, user: users['public-editor'], overrideAccess: false }).catch((e) => e)
+    expect(JSON.stringify(write.data ?? write.message)).not.toMatch(/descend/)
+  })
+
+  it('ignores a related animal the reader may not see', async () => {
+    const { status, body } = await pedigree(a.Pico!, null, { view: 'relationship', relatedId: a['Hidden Hatchling']! })
+    expect(status).toBe(200)
+    expect(JSON.stringify(body)).not.toContain(a['Hidden Hatchling']!)
+    expect(JSON.stringify(body)).not.toContain('Hidden Hatchling')
+  })
+
   it('refuses to delete a recorded parent (restrict policy)', async () => {
     await expect(payload.delete({ collection: 'animals' as never, id: a.Tinta! })).rejects.toThrow(/recorded parent/)
   })

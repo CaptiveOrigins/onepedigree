@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.14
+
+- **Payload, fixes a leak:** the loop check ran with full access over every proposed parent, including ones the editor can't read. Proposing a private animal as a parent could reveal that it exists and descends from the animal being edited. Loops are now checked only among parents the editor can read; others are already refused as "does not exist or you cannot access it", so a loop still can't be saved. Tested with made-up animals.
+- Tests: a related animal the reader can't see is ignored in the relationship view; the desktop app saves only a GEDCOM's companion file and saves atomically. First test audit in `docs/test-audit.md`, and each invariant now names its tests.
+
 ## 0.1.0-alpha.13
 
 - React: each node's spoken name says its sex in words ("male", "female" or "sex unknown") instead of the host's raw value, which a screen reader read as a letter or skipped. Other host labels are spoken as written. The visible ♂/♀ is unchanged. New `Terminology` keys `male`, `female` and `sexUnknown` translate the words, and `sexWord` is exported. The Explorer quick view uses the same words.
