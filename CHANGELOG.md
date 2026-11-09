@@ -2,6 +2,8 @@
 
 ## 0.1.0-alpha.16
 
+**Hosts on 0.1.0-alpha.15 or earlier should upgrade.** Both bugs below let a site reveal or attach private records: plain reads exposed a private parent's ID, and writes through REST, GraphQL or the Admin skipped the checks on parents the editor can't read.
+
 - **Payload, fixes a leak:** plain collection reads returned the ID of a parent the reader can't read. A public animal read anonymously over REST, at depth 0 or 1, listed its private mother's ID, although reading the mother gave "not found". The pedigree endpoints already hid it. Now, on every read through access control (REST, GraphQL, the Admin, the Local API with `overrideAccess: false`; single or list; any depth), such a parent comes back as `{ "private": true }` (`hiddenRecords: 'placeholder'`) or is left out (`'omit'`). GraphQL returns `null` for it, as it already did. This includes the Mother/Father pickers.
 - **Payload, keeps hidden parents on save:** an editor who sees a placeholder can save the record without erasing the private parent. A placeholder, an empty picker or a missing row counts as "unchanged". Replacing the private parent with another one is refused, with a message saying it is private to them.
 - **Payload, fixes a check that never ran over REST:** REST, GraphQL and the Admin leave `overrideAccess` unset, and the plugin counted that as trusted. So writes through them skipped the "does not exist or you cannot access it" check, and the private-safe loop check fixed in alpha.14, which only ever took effect through the Local API. Only an explicit `overrideAccess: true` is trusted now.
