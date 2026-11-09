@@ -2,6 +2,30 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-09: private parents in plain reads (alpha.16)
+
+A hosted site found that a plain REST read of a public animal returned its private mother's ID, to anyone. The audit of 2026-11-08 covered the pedigree endpoints but not the collection's own reads, and its write tests all used the Local API with `overrideAccess: false`. That hid a second bug: REST, GraphQL and the Admin leave `overrideAccess` unset, and the plugin counted that as trusted, so the readability and loop checks never ran there.
+
+### Covered now (`packages/payload/test/private-parents.test.ts` unless named)
+
+| Promise | Test |
+| --- | --- |
+| **New:** a private parent's ID never appears in a plain read, for anonymous readers or an unrelated member: REST single at depth 0 and 1, REST list at depth 2 through a populated parent, Local API with access control | REST, single …; REST, list …; an unrelated signed-in member …; Local API with access control |
+| **New:** the same over GraphQL, where the parent is `null` | GraphQL: the private parent is null … (it passed before the fix too: Payload's resolver already returned null) |
+| **New:** the private parent's owner and admins still see it; trusted server reads are unchanged | the private parent's owner and admins see it; trusted server reads … |
+| **New:** saving what you read, an empty picker or a missing row keeps the private parent; other parents can still change | keeps the private parent when the keeper saves what they read …; treats an empty Mother picker …; lets the keeper change the parents they can see … |
+| **New:** replacing a private parent is refused | refuses replacing the private parent with another |
+| **New:** REST updates and creates refuse a parent the editor can't read; the owner may | REST writes check readability … |
+| **New:** the same with role fields (dam/sire) | `mapped.test.ts`: plain reads give a placeholder for a private dam or sire … |
+| **New:** with `hiddenRecords: 'omit'` the parent is left out, and saving keeps it | `private-parents-omit.test.ts` |
+
+11 of these failed before the fix. The pedigree endpoints' own tests still pass: they read stored IDs internally and draw their own placeholders.
+
+### Gaps left
+
+- **The Admin UI itself** (how the edit form shows a `{ private: true }` value in the Mother/Father pickers) hasn't been seen in a browser. The tests send what the Admin sends: the document as read, back as the update. It needs a look on a test site.
+- **Versions and drafts** (`/versions` reads) aren't covered: the plugin's collections don't enable versions, and a host that does should check them.
+
 ## 2026-11-08: first audit
 
 Scope: every package and the desktop app, with the Payload plugin's access rules first. Coverage numbers weren't collected; this maps promises to tests by reading them.

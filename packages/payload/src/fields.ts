@@ -57,7 +57,7 @@ export const createCohortField = (o: { cohorts: string }): Field => ({
 
 const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
 
-const rowId = (v: unknown) => (v && typeof v === 'object' && 'id' in v ? String((v as { id: unknown }).id) : v ? String(v) : null)
+const rowId = (v: unknown) => (v && typeof v === 'object' ? ('id' in v && (v as { id: unknown }).id != null ? String((v as { id: unknown }).id) : null) : v ? String(v) : null)
 type Row = { individual?: unknown; role?: string | null }
 
 /**

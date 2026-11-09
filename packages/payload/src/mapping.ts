@@ -3,8 +3,11 @@ import type { Where } from 'payload'
 
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
 
-export const idOf = (v: unknown): string | null =>
-  v && typeof v === 'object' && 'id' in v ? String((v as { id: unknown }).id) : v !== undefined && v !== null && v !== '' ? String(v) : null
+/** A relationship value's ID: the value itself, or a populated document's `id`. Other objects (a private placeholder) have none. */
+export const idOf = (v: unknown): string | null => {
+  if (v && typeof v === 'object') return 'id' in v && (v as { id: unknown }).id != null ? String((v as { id: unknown }).id) : null
+  return v !== undefined && v !== null && v !== '' ? String(v) : null
+}
 
 export const getAt = (doc: unknown, path: string): unknown =>
   path.split('.').reduce<unknown>((o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined), doc)

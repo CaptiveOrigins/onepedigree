@@ -18,6 +18,7 @@ import {
 } from 'payload'
 
 import { childrenWhere, getAt, graphSelect, idOf, maternalRoles, readCohort, readMode, readParents, toIndividual } from './mapping.js'
+import { withStoredParents } from './privacy.js'
 import type { ResolvedOptions } from './types.js'
 
 /** Context flag for the plugin's own writes (detaching references, internal updates). */
@@ -47,7 +48,7 @@ export async function checkParentage(
   req: PayloadRequest,
   opts: ResolvedOptions,
   proposal: { id?: string | null; parents: readonly ParentReference[]; reproductiveMode?: ReproductiveModeId | null; cohort?: string | null; doc?: Record<string, unknown> },
-  { trusted = false }: { trusted?: boolean } = {},
+  { trusted = false, stored = [] }: { trusted?: boolean; stored?: readonly string[] } = {},
 ): Promise<PedigreeIssue[]> {
   const issues: PedigreeIssue[] = []
   const path = parentsPath(opts)
@@ -58,20 +59,23 @@ export async function checkParentage(
   const unique = [...new Set(ids)]
   const visible = unique.length
     ? ((
-        await req.payload.find({
-          collection: opts.collection as CollectionSlug,
-          where: { id: { in: unique } },
-          depth: 0,
-          pagination: false,
-          select: graphSelect(opts) as never,
-          overrideAccess: trusted,
-          req,
-        })
+        await withStoredParents(req, () =>
+          req.payload.find({
+            collection: opts.collection as CollectionSlug,
+            where: { id: { in: unique } },
+            depth: 0,
+            pagination: false,
+            select: graphSelect(opts) as never,
+            overrideAccess: trusted,
+            req,
+          }),
+        )
       ).docs as unknown as Record<string, unknown>[])
     : []
   const seen = new Set(visible.map((d) => String(d.id)))
-  // Same message whether missing or private: nothing is revealed about records the editor cannot read.
-  for (const p of unique) if (!seen.has(p)) issues.push(err('UNRESOLVED_PARENT', 'A parent does not exist or you cannot access it.', path, [p]))
+  // Same message whether missing or private: nothing is revealed about records the editor cannot read. A parent
+  // already stored on this record is kept even when the editor can't read it (see privacy.ts): they saw a placeholder.
+  for (const p of unique) if (!seen.has(p) && !stored.includes(p)) issues.push(err('UNRESOLVED_PARENT', 'A parent does not exist or you cannot access it.', path, [p]))
 
   // Loops are checked only among parents the editor can read. Others are already refused as unresolved, and saying
   // one would loop would reveal that a private record exists and descends from this one.
@@ -156,7 +160,7 @@ export const parentageBeforeChange =
     const before = originalDoc ? readParents(originalDoc, opts) : []
     if (operation === 'update' && same(parents, before) && mode === readMode(originalDoc, opts) && cohort === readCohort(originalDoc, opts)) return data
 
-    const issues = await checkParentage(req, opts, { id, parents, reproductiveMode: mode, cohort, doc: merged }, { trusted: context[TRUSTED] === true })
+    const issues = await checkParentage(req, opts, { id, parents, reproductiveMode: mode, cohort, doc: merged }, { trusted: context[TRUSTED] === true, stored: before.map((p) => p.individual) })
     const errors = issues.filter((i) => i.severity === 'error')
     if (errors.length)
       throw new ValidationError({
@@ -177,10 +181,13 @@ export const parentageBeforeChange =
     return data
   }
 
-/** Records whether this create/update bypasses access control (Local API default), for the readability check. */
+/**
+ * Records whether this create/update bypasses access control, for the readability check. Only an explicit `true`
+ * does (the Local API's default): REST, GraphQL and the Admin leave it unset, and Payload then enforces access.
+ */
 export const rememberAccessMode: CollectionBeforeOperationHook = ({ args, operation, context }) => {
   if (operation === 'create' || operation === 'update' || operation === 'updateByID')
-    context[TRUSTED] = (args as { overrideAccess?: boolean }).overrideAccess !== false
+    context[TRUSTED] = (args as { overrideAccess?: boolean }).overrideAccess === true
   return args
 }
 

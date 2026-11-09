@@ -4,8 +4,9 @@ import type { CollectionConfig, Config, Field, GlobalConfig, Plugin } from 'payl
 import { createCohortsCollection, createIndividualsCollection } from './collections.js'
 import { cohortMembersEndpoint, pedigreeEndpoint, relativesEndpoint, validateEndpoint } from './endpoints.js'
 import { createParentageField } from './fields.js'
-import { cohortBirthParentBeforeChange, parentageBeforeChange, parentBeforeDelete, rememberAccessMode } from './integrity.js'
+import { cohortBirthParentBeforeChange, parentageBeforeChange, parentBeforeDelete, rememberAccessMode, SKIP, TRUSTED } from './integrity.js'
 import { resolveOptions } from './mapping.js'
+import { keepHiddenParents, parentageAfterRead } from './privacy.js'
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
 
 const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
@@ -104,8 +105,11 @@ export const onePedigree =
           hooks: {
             ...c.hooks,
             beforeOperation: [...(c.hooks?.beforeOperation ?? []), rememberAccessMode],
+            beforeValidate: [...(c.hooks?.beforeValidate ?? []), keepHiddenParents(opts, TRUSTED, SKIP)],
             beforeChange: [...(c.hooks?.beforeChange ?? []), parentageBeforeChange(opts)],
             beforeDelete: [...(c.hooks?.beforeDelete ?? []), parentBeforeDelete(opts)],
+            // Last, so host hooks never see a redacted value and nothing after it restores an ID.
+            afterRead: [...(c.hooks?.afterRead ?? []), parentageAfterRead(opts)],
           },
           endpoints: [...(Array.isArray(c.endpoints) ? c.endpoints : []), pedigreeEndpoint(opts), relativesEndpoint(opts), validateEndpoint(opts)],
         }
