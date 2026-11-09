@@ -380,7 +380,10 @@ export async function layoutPedigree(projection: PedigreeViewProjection, options
 export function layoutSync(projection: PedigreeViewProjection, options: LayoutOptions = {}): LayoutResult {
   const lifeOf = options.lifeSpanOf ?? lifeSpan
   const widthFor =
-    options.nodeWidthFor ?? ((occ: IndividualOccurrence, ind: Individual | undefined) => estimateNodeWidth(ind?.label ?? occ.individualId, nodeSublabel(ind, lifeOf(ind))))
+    options.nodeWidthFor ??
+    // An anonymous placeholder is drawn as "Private record" (the React default), never its ID: size it for that.
+    ((occ: IndividualOccurrence, ind: Individual | undefined) =>
+      estimateNodeWidth(ind?.data?.private ? 'Private record' : (ind?.label ?? occ.individualId), nodeSublabel(ind, lifeOf(ind))))
   const o: Resolved = {
     orientation: options.orientation ?? 'vertical',
     nodeWidth: options.nodeWidth ?? 160,

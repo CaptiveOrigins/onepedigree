@@ -362,6 +362,7 @@ export function PedigreeView(props: PedigreeViewProps) {
             'data-occurrence': occurrence.occurrenceId,
             'data-generation': occurrence.generation,
             'data-repeated': occurrence.repeated || undefined,
+            'data-private': individual?.data?.private ? true : undefined,
             'data-collapsed': occurrence.collapsedInto ? true : undefined,
             'data-cohort': individual?.parentage?.cohort ?? undefined,
             'data-reproductive-mode': structure?.reproductiveMode ?? undefined,

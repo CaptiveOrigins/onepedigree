@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Core, fixes a cut-off label:** a private placeholder was sized for its internal ID, so its "Private record" text was cut to "Private reco…" in the pedigree, Ahnentafel, compact, inbreeding and population views, including in the layouts the Payload endpoint returns. The default layout now sizes it for that text. A host that translates it can pass `nodeWidthFor`.
+- **React:** a private placeholder has `data-private` and its own look (a dotted border and an italic, muted label) in both themes, so it never reads as a real individual.
+- **Fixtures** for the tree shapes a demo needs: line breeding (an ancestor at two depths), half-siblings both ways, six generations and a private ancestor. They're in the layout tests (no overlaps in any view or orientation) and the playground gallery, and were checked by eye in the light and dark themes.
+- **Payload, test:** the plugin never writes parent terms or the pedigree settings; it only reads them.
+
 ## 0.1.0-alpha.17
 
 - **Payload, lets keepers save past a private parent:** where a parent field has `filterOptions` (the multi-tenant plugin adds them to every relationship to a tenant collection), Payload's own validation looks each parent up with the editor's access. So an editor whose record has a parent private to them couldn't save it at all, not even a rename, even though alpha.16 kept that parent. The plugin now wraps its parent fields' validation (rows, Mother/Father pickers, or mapped role fields): a stored parent it kept for that record passes; every other value goes through the field's own validation, `filterOptions` included. Found on a hosted site. The new tests reproduce it with `filterOptions` on the parent fields, and 4 failed before the fix.

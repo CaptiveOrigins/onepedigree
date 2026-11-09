@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { cloning, humanFamily, incomplete, multiplePaternityClutch, parthenogenesis, reptileBreeding, selfing, sharedAncestors, synthetic } from '../../../fixtures'
-import { generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, REORDERABLE_VIEWS, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
+import { cloning, deepLine, halfSiblings, humanFamily, incomplete, lineBreeding, privateAncestor, multiplePaternityClutch, parthenogenesis, reptileBreeding, selfing, sharedAncestors, synthetic } from '../../../fixtures'
+import { estimateNodeWidth, generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, REORDERABLE_VIEWS, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
 
 const who = (p: PedigreeViewProjection) => p.occurrences.map((o) => o.individualId).sort()
 const codes = (p: PedigreeViewProjection) => p.issues.map((i) => i.code)
@@ -175,6 +175,10 @@ describe('layout', () => {
     [selfing, 'plant-b'],
     [cloning, 'clone-2'],
     [incomplete, 'z', 'y'],
+    [lineBreeding, 'opal', 'coral'],
+    [halfSiblings, 'thistle', 'reed'],
+    [deepLine, 'dam-5', 'dam-2'],
+    [privateAncestor, 'pebble', 'sage'],
   ]
 
   it('gives every occurrence of every view a non-overlapping, deterministic position', () => {
@@ -195,6 +199,12 @@ describe('layout', () => {
           for (const e of l.edges) expect(e.points.length).toBe(4)
           expect(l.bounds.width).toBeGreaterThan(0)
         }
+  })
+
+  it('sizes a private placeholder for its "Private record" text, not its ID', () => {
+    const p = projectPedigree(privateAncestor, { focalId: 'pebble', view: 'pedigree' })
+    const node = layoutSync(p).nodes.find((n) => p.occurrences.find((o) => o.occurrenceId === n.occurrenceId)?.individualId === 'private-1')!
+    expect(node.width).toBeGreaterThanOrEqual(estimateNodeWidth('Private record'))
   })
 
   it('gives each parent group its own connector line, so half-siblings are distinguishable', () => {
