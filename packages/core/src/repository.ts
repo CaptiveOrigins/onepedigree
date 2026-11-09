@@ -8,6 +8,8 @@ export type PedigreeAdapter<T> = {
   getReproductiveMode?(record: T): ReproductiveModeId | null
   getCohortId?(record: T): CohortId | null
   getLabel?(record: T): string | null
+  /** A host identifier shown beside the label (see `Individual.identifier`). */
+  getIdentifier?(record: T): string | null
   getSexLabel?(record: T): string | null
   /** Only explicitly approved presentation data. */
   getDisplayData?(record: T): Readonly<Record<string, unknown>>
@@ -32,6 +34,7 @@ export function adaptIndividual<T>(record: T, adapter: PedigreeAdapter<T>): Indi
   return normalizeIndividual({
     id: adapter.getId(record),
     label: adapter.getLabel?.(record) ?? null,
+    identifier: adapter.getIdentifier?.(record) ?? null,
     sex: adapter.getSexLabel?.(record) ?? null,
     parentage: parents.length || mode || cohort ? { parents, reproductiveMode: mode, cohort } : null,
     data: adapter.getDisplayData?.(record),

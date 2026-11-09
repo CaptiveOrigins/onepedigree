@@ -26,6 +26,7 @@ export const individualSchema = {
   properties: {
     id: { type: 'string', minLength: 1 },
     label: nullableString,
+    identifier: nullableString,
     sex: nullableString,
     parentage: { oneOf: [parentageSchema, { type: 'null' }] },
     data: { type: 'object' },

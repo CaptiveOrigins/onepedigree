@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Identifiers beside names:** a host identifier, such as a registry ID, can show after each name: "Mead (CO-AQCR6T)". Core has `Individual.identifier`, `PedigreeAdapter.getIdentifier` and `nameWithIdentifier`, and the default layout sizes nodes for the longer name. React shows it in every view, list, quick view and spoken name, with the format set by `Terminology.identifierFormat`. In Payload, `fields.identifier` is a path or a function of the requester (so each person can choose, say, a studbook number), and relatives and cohort members carry `identifier`. A private placeholder never has one.
 - **Core, fixes a cut-off label:** a private placeholder was sized for its internal ID, so its "Private record" text was cut to "Private reco…" in the pedigree, Ahnentafel, compact, inbreeding and population views, including in the layouts the Payload endpoint returns. The default layout now sizes it for that text. A host that translates it can pass `nodeWidthFor`.
 - **React:** a private placeholder has `data-private` and its own look (a dotted border and an italic, muted label) in both themes, so it never reads as a real individual.
 - **Fixtures** for the tree shapes a demo needs: line breeding (an ancestor at two depths), half-siblings both ways, six generations and a private ancestor. They're in the layout tests (no overlaps in any view or orientation) and the playground gallery, and were checked by eye in the light and dark themes.

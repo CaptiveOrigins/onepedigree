@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { cloning, deepLine, halfSiblings, humanFamily, incomplete, lineBreeding, privateAncestor, multiplePaternityClutch, parthenogenesis, reptileBreeding, selfing, sharedAncestors, synthetic } from '../../../fixtures'
-import { estimateNodeWidth, generationLabel, layoutSync, PEDIGREE_VIEWS, projectPedigree, REORDERABLE_VIEWS, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
+import { estimateNodeWidth, generationLabel, nameWithIdentifier, normalizeIndividual, layoutSync, PEDIGREE_VIEWS, projectPedigree, REORDERABLE_VIEWS, relativesByGeneration, type PedigreeDocument, type PedigreeViewProjection } from '../src'
 
 const who = (p: PedigreeViewProjection) => p.occurrences.map((o) => o.individualId).sort()
 const codes = (p: PedigreeViewProjection) => p.issues.map((i) => i.code)
@@ -199,6 +199,18 @@ describe('layout', () => {
           for (const e of l.edges) expect(e.points.length).toBe(4)
           expect(l.bounds.width).toBeGreaterThan(0)
         }
+  })
+
+  it('shows a host identifier beside the name, and sizes the node for both', () => {
+    expect(nameWithIdentifier('Mead', 'CO-AQCR6T')).toBe('Mead (CO-AQCR6T)')
+    expect(nameWithIdentifier(null, 'CO-AQCR6T')).toBe('CO-AQCR6T')
+    expect(nameWithIdentifier('Mead', null)).toBe('Mead')
+    expect(nameWithIdentifier('Mead', 'CHCA-2501', '{id} · {label}')).toBe('CHCA-2501 · Mead')
+    expect(normalizeIndividual({ id: 'm', label: 'Mead', identifier: 'CO-AQCR6T' }).identifier).toBe('CO-AQCR6T')
+    expect('identifier' in normalizeIndividual({ id: 'm' })).toBe(false)
+    const doc = { schemaVersion: 1 as const, individuals: [{ id: 'm', label: 'Mead Pine Lagoon', identifier: 'CO-AQCR6T' }] }
+    const node = layoutSync(projectPedigree(doc, { focalId: 'm', view: 'pedigree' })).nodes[0]!
+    expect(node.width).toBeGreaterThanOrEqual(estimateNodeWidth('Mead Pine Lagoon (CO-AQCR6T)'))
   })
 
   it('sizes a private placeholder for its "Private record" text, not its ID', () => {

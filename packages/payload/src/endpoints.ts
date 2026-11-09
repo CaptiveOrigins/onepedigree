@@ -35,7 +35,7 @@ export function payloadRepository(req: PayloadRequest, opts: ResolvedOptions, tr
         depth: 0,
         limit: opts.limits.maxNodes,
         pagination: false,
-        select: graphSelect(opts) as never,
+        select: graphSelect(opts, req.user) as never,
         overrideAccess: trusted,
         req,
       }))
@@ -137,7 +137,7 @@ export async function getPedigree(req: PayloadRequest, opts: ResolvedOptions, id
     }
   }
   const both = view === 'population' || view === 'timeline'
-  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), {
+  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts, req.user), {
     focalIds,
     ancestorDepth: view === 'cohort' ? 1 : view === 'descendants' ? 0 : relatedId ? max : ancestorDepth,
     descendantDepth: DOWN_VIEWS.has(view) ? descendantDepth : 0,
@@ -198,13 +198,19 @@ export const pedigreeEndpoint = (opts: ResolvedOptions): Endpoint => ({
   },
 })
 
-export type Summary = { id: string; label: string | null; sex: string | null; href: string | null } | { private: true }
-const summary = (ind: Individual, opts: ResolvedOptions): Summary => ({ id: ind.id, label: ind.label ?? null, sex: ind.sex ?? null, href: hrefFor(opts, ind.id) })
+export type Summary = { id: string; label: string | null; identifier: string | null; sex: string | null; href: string | null } | { private: true }
+const summary = (ind: Individual, opts: ResolvedOptions): Summary => ({
+  id: ind.id,
+  label: ind.label ?? null,
+  identifier: ind.identifier ?? null,
+  sex: ind.sex ?? null,
+  href: hrefFor(opts, ind.id),
+})
 
 /** Parents, offspring, siblings (full / partial / unresolved) and cohort mates the request's user may see. Null when not readable. */
 export async function getRelatives(req: PayloadRequest, opts: ResolvedOptions, id: string) {
   if (!(await readable(req, opts.collection, id))) return null
-  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts), { focalIds: [id], ancestorDepth: 1, descendantDepth: 1, includeSiblings: true, maxNodes: opts.limits.maxNodes })
+  const n = await loadNeighborhood(payloadRepository(req, opts), documentAdapter(opts, req.user), { focalIds: [id], ancestorDepth: 1, descendantDepth: 1, includeSiblings: true, maxNodes: opts.limits.maxNodes })
   const { individuals } = redact([...n.document.individuals], new Set(n.unavailable), opts)
   const index = indexPedigree({ schemaVersion: 1, individuals })
   const at = (x: string): Summary => (index.individuals.get(x)?.data?.private ? { private: true } : summary(index.individuals.get(x)!, opts))
@@ -270,10 +276,10 @@ export const cohortMembersEndpoint = (opts: ResolvedOptions): Endpoint => ({
       depth: 0,
       limit: opts.limits.maxNodes,
       pagination: false,
-      select: graphSelect(opts) as never,
+      select: graphSelect(opts, req.user) as never,
       overrideAccess: false,
       req,
     })
-    return Response.json({ members: docs.map((d) => summary(toIndividual(d as Doc, opts), opts)) })
+    return Response.json({ members: docs.map((d) => summary(toIndividual(d as Doc, opts, req.user), opts)) })
   },
 })

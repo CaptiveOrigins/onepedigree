@@ -1,4 +1,4 @@
-import type { Individual, PedigreeViewId, PedigreeViewProjection, ReproductiveStructure } from '@captiveorigins/onepedigree-core'
+import { IDENTIFIER_FORMAT, nameWithIdentifier, type Individual, type PedigreeViewId, type PedigreeViewProjection, type ReproductiveStructure } from '@captiveorigins/onepedigree-core'
 
 export const VIEW_LABELS: Record<PedigreeViewId, string> = {
   pedigree: 'Pedigree',
@@ -24,6 +24,8 @@ export type Terminology = {
   repeated: string
   unknown: string
   privateRecord: string
+  /** A name with the host's identifier: `{label}` and `{id}` (default "{label} ({id})"). */
+  identifierFormat: string
   /** Spoken in place of ♂. */
   male: string
   /** Spoken in place of ♀. */
@@ -39,6 +41,7 @@ export const DEFAULT_TERMS: Terminology = {
   repeated: 'appears more than once',
   unknown: 'Unknown',
   privateRecord: 'Private record',
+  identifierFormat: IDENTIFIER_FORMAT,
   male: 'male',
   female: 'female',
   sexUnknown: 'sex unknown',
@@ -54,9 +57,14 @@ export function sexWord(sex: string | null | undefined, terms: Terminology = DEF
   return key ? terms[key] : (sex as string).trim()
 }
 
-/** Display name: the label, else the ID; anonymous placeholders (`data.private`) never show their ID. */
+/**
+ * Display name: the label with the host's identifier ("Mead (CO-AQCR6T)"), else either alone, else the record ID.
+ * Anonymous placeholders (`data.private`) show neither their ID nor any identifier.
+ */
 export const labelOf = (individual: Individual | undefined, terms: Terminology = DEFAULT_TERMS) =>
-  individual?.data?.private ? terms.privateRecord : individual?.label || individual?.id || terms.unknown
+  individual?.data?.private
+    ? terms.privateRecord
+    : nameWithIdentifier(individual?.label, individual?.identifier, terms.identifierFormat) || individual?.id || terms.unknown
 
 const MODE_TEXT: Record<string, string> = {
   sexual: 'sexual reproduction',

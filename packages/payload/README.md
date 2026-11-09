@@ -21,6 +21,19 @@ export default buildConfig({
 })
 ```
 
+## Identifiers beside names
+
+`fields.identifier` shows a host identifier after each name in every view, relatives list and
+spoken name, e.g. "Mead (CO-AQCR6T)". Give a field path, or a function of the requester so each
+person can choose, for example a registry ID or their own studbook number:
+
+```ts
+fields: { identifier: ({ user }) => (user?.showStudbook ? 'studbookNo' : 'coId') }
+```
+
+A record the requester can't read never shows its identifier: its placeholder carries none.
+React's `Terminology.identifierFormat` (default `{label} ({id})`) changes how the two are joined.
+
 ## Modes
 
 - **`managed`**: creates `individuals`-style and cohort collections from the factories
