@@ -134,3 +134,52 @@ export function synthetic(generations: number, width: number): PedigreeDocument 
     }
   return doc(individuals)
 }
+
+/**
+ * Line breeding: Kingston is the focal animal's paternal grandsire and maternal great-grandsire, so he appears
+ * twice, at two depths (a demo shape for the platform's tour).
+ */
+export const lineBreeding = doc([
+  { id: 'kingston', label: 'Kingston', sex: 'male' },
+  { id: 'saffron', label: 'Saffron', sex: 'female' },
+  { id: 'willow', label: 'Willow', sex: 'female' },
+  { id: 'harbor', label: 'Harbor', sex: 'male' },
+  { id: 'rio', label: 'Rio', sex: 'male', parentage: sexual('saffron', 'kingston') },
+  { id: 'maya', label: 'Maya', sex: 'female', parentage: sexual('willow', 'kingston') },
+  { id: 'coral', label: 'Coral', sex: 'female', parentage: sexual('maya', 'harbor') },
+  { id: 'opal', label: 'Opal', sex: 'female', parentage: sexual('coral', 'rio') },
+])
+
+/** Half-siblings both ways: one dam with two sires, and one sire with two dams. */
+export const halfSiblings = doc([
+  { id: 'juniper', label: 'Juniper', sex: 'female' },
+  { id: 'ash', label: 'Ash', sex: 'male' },
+  { id: 'bramble', label: 'Bramble', sex: 'male' },
+  { id: 'clover', label: 'Clover', sex: 'female' },
+  { id: 'fern', label: 'Fern', sex: 'female', parentage: sexual('juniper', 'ash') },
+  { id: 'moss', label: 'Moss', sex: 'male', parentage: sexual('juniper', 'ash') },
+  { id: 'thistle', label: 'Thistle', sex: 'female', parentage: sexual('juniper', 'bramble') },
+  { id: 'reed', label: 'Reed', sex: 'male', parentage: sexual('clover', 'bramble') },
+])
+
+/** Six generations: each generation's daughter is bred to an unrelated male. */
+export const deepLine = doc(
+  Array.from({ length: 6 }, (_, g): Individual[] => {
+    const dam = { id: `dam-${g}`, label: `Generation ${g + 1} dam`, sex: 'female' as const }
+    const sire = { id: `sire-${g}`, label: `Generation ${g + 1} sire`, sex: 'male' as const }
+    if (g > 0) Object.assign(dam, { parentage: sexual(`dam-${g - 1}`, `sire-${g - 1}`) })
+    return [dam, sire]
+  }).flat(),
+)
+
+/**
+ * A private ancestor, as the Payload plugin's pedigree endpoint hands it to a reader who can't see it: an anonymous
+ * placeholder with no name, in place of the focal animal's maternal grandsire.
+ */
+export const privateAncestor = doc([
+  { id: 'private-1', label: null, sex: null, parentage: null, data: { private: true } },
+  { id: 'nettle', label: 'Nettle', sex: 'female' },
+  { id: 'sage', label: 'Sage', sex: 'female', parentage: sexual('nettle', 'private-1') },
+  { id: 'flint', label: 'Flint', sex: 'male' },
+  { id: 'pebble', label: 'Pebble', sex: 'female', parentage: sexual('sage', 'flint') },
+])

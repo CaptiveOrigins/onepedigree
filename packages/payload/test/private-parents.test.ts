@@ -87,6 +87,16 @@ beforeAll(async () => {
 })
 afterAll(async () => stop?.())
 
+/** The parent terms and pedigree settings as stored: the plugin only ever reads them (tour v3 brief, part F). */
+const termsAndSettings = async () => ({
+  users: (await payload.find({ collection: 'users', depth: 0, pagination: false })).docs.map((u) => [u.id, (u as { parentTerms?: unknown }).parentTerms, u.updatedAt]),
+  settings: await payload.findGlobal({ slug: 'pedigree-settings' as never, depth: 0 }),
+})
+let before: Awaited<ReturnType<typeof termsAndSettings>>
+beforeAll(async () => {
+  before = await termsAndSettings()
+})
+
 const expectRedacted = (doc: Doc) => {
   expect(JSON.stringify(doc)).not.toContain(a.P!)
   expect(doc.parentage?.mother).toEqual({ private: true })
@@ -215,5 +225,12 @@ describe('saving a record that shows a placeholder', () => {
   it('leaves trusted writes alone: server code can still remove the parent', async () => {
     await payload.update({ collection: 'animals' as never, id: a.G!, data: { parentage: { parents: [] } } as never })
     expect((await trusted('G')).parentage?.parents).toEqual([])
+  })
+})
+
+describe('parent terms and settings', () => {
+  it('are never written by the plugin: after every read, write and refusal above, they are as they were', async () => {
+    for (const path of [`/animals/${a.Q}/pedigree?view=pedigree`, `/animals/${a.Q}/relatives`]) expect((await rest(path, 'keeper')).status).toBe(200)
+    expect(await termsAndSettings()).toEqual(before)
   })
 })

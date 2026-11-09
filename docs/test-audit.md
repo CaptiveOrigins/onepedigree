@@ -2,6 +2,15 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-09: tree shapes for the demo tour
+
+The demo will show line breeding, a backcross, half-siblings and several generations, and a private ancestor. These were rendered in every view and checked by eye in the light and dark themes (headless Chrome screenshots of the playground gallery).
+
+- **Covered:** each shape is in the layout test (no overlapping nodes, deterministic positions, every view and orientation). The backcross was already there (`reptileBreeding`).
+- **Fixed in this pass:** a private placeholder's label was cut off. **New:** a test that it's sized for its text (`views.test.ts`), and that it's marked `data-private` and drawn as "Private record" (`render.test.tsx`). Both failed before.
+- **New:** the plugin never writes parent terms or the pedigree settings (`private-parents.test.ts`, parent terms and settings). The brief reported an overwritten maternal label; the cause was the host's seed.
+- **Left by eye only:** how good a layout looks can't be tested by a rule. The gallery is the check.
+
 ## 2026-11-09: saving past a private parent with filterOptions (alpha.17)
 
 alpha.16's tests saved a record with a kept private parent, but their parent fields had no `filterOptions`. On a host with the multi-tenant plugin they do, and Payload then validates each parent with the editor's access, so the save was refused. The setups in `private-parents.test.ts` and `mapped.test.ts` now put `filterOptions` on every parent field, as that plugin does. 4 tests failed without the fix: saving what you read, an empty picker or missing row, changing another parent, and the dam/sire save.

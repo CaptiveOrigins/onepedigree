@@ -2,7 +2,7 @@ import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@captiveorigins/one
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { humanFamily, multiplePaternityClutch, parthenogenesis, reptileBreeding, sharedAncestors } from '../../../fixtures'
+import { humanFamily, multiplePaternityClutch, parthenogenesis, privateAncestor, reptileBreeding, sharedAncestors } from '../../../fixtures'
 import { ahnentafelRelation, AhnentafelList, describeProjection, PedigreeView } from '../src'
 
 const render = (doc: Parameters<typeof projectPedigree>[0], options: Parameters<typeof projectPedigree>[1], extra: Partial<Parameters<typeof PedigreeView>[0]> = {}) => {
@@ -33,6 +33,15 @@ describe('server rendering', () => {
     // Non-color cues: repeat glyph and junction shape with a text description.
     expect(html).toContain('op-repeat-marker')
     expect(html).toMatch(/class="op-junction" data-structure="pair" data-completeness="complete"/)
+  })
+
+  it('marks a private placeholder, names it "Private record" and never shows its ID', () => {
+    const projection = projectPedigree(privateAncestor, { focalId: 'pebble', view: 'pedigree' })
+    const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layoutSync(projection)} />)
+    const node = html.match(/<g[^>]*data-individual="private-1"[^>]*>[\s\S]*?<\/g>/)![0]
+    expect(node).toContain('data-private="true"')
+    expect(node).toContain('Private record')
+    expect(html.match(/data-private/g)).toHaveLength(1)
   })
 
   it('distinguishes reproductive modes by shape and line pattern data', () => {

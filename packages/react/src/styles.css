@@ -58,6 +58,9 @@
 .op-junction { fill: var(--op-junction); stroke: var(--op-junction); stroke-width: 1.5px; }
 .op-junction[data-completeness='incomplete'] { fill: var(--op-node-background); }
 .op-individual[data-repeated] { --op-node-border-dash: 5 3; }
+/* An anonymous placeholder for a record the reader can't see: dotted and muted, so it never reads as a real individual. */
+.op-individual[data-private] { --op-node-border-dash: 2 3; }
+.op-individual[data-private] .op-label { fill: var(--op-sublabel); font-style: italic; font-weight: 500; }
 .op-individual[data-focal] .op-node-box { stroke: var(--op-focal-border); stroke-width: 2.5px; }
 .op-individual[data-highlighted] .op-node-box,
 .op-individual[data-highlighted] .op-fan-segment { stroke: var(--op-highlight); stroke-width: 2.5px; }
