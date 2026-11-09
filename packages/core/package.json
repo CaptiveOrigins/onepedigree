@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/onepedigree-core",
-  "version": "0.1.0-alpha.17",
+  "version": "0.1.0-alpha.18",
   "description": "OnePedigree core: the species-neutral pedigree data model, validation, bounded traversal, view projections and layout, with no React, Payload or database dependency.",
   "homepage": "https://github.com/CaptiveOrigins/onepedigree#readme",
   "bugs": {
