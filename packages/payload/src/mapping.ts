@@ -30,7 +30,7 @@ export function resolveOptions(o: OnePedigreePluginOptions): ResolvedOptions {
     mode: o.mode ?? 'standard-fields',
     hiddenRecords: o.hiddenRecords ?? 'omit',
     onReferencedIndividualDelete: o.onReferencedIndividualDelete ?? 'restrict',
-    fields: { label: o.fields?.label ?? 'name', sex: o.fields?.sex ?? 'sex', parentage, display: o.fields?.display ?? [] },
+    fields: { label: o.fields?.label ?? 'name', identifier: o.fields?.identifier ?? null, sex: o.fields?.sex ?? 'sex', parentage, display: o.fields?.display ?? [] },
     cohorts: o.cohorts
       ? { collection: o.cohorts.collection, label: o.cohorts.label ?? 'name', managed: o.cohorts.managed ?? false, birthParentField: o.cohorts.birthParentField ?? null }
       : null,
@@ -79,19 +79,31 @@ export const childrenWhere = (opts: ResolvedOptions, ids: readonly string[]): Wh
   or: parentPaths(opts).map((p) => ({ [p]: { in: [...ids] } })),
 })
 
+/** The identifier field for this requester, if any (see `fields.identifier`). */
+export const identifierPath = (opts: ResolvedOptions, user: unknown): string | null => {
+  const f = opts.fields.identifier
+  return (typeof f === 'function' ? f({ user }) : f) || null
+}
+
 /** Fields to read for the graph (keeps queries small; never the whole document). */
-export function graphSelect(opts: ResolvedOptions): Record<string, true> {
+export function graphSelect(opts: ResolvedOptions, user?: unknown): Record<string, true> {
   const m = opts.fields.parentage
   const top = (p: string) => p.split('.')[0]!
-  const keys = new Set<string>([opts.fields.label, ...(opts.fields.sex ? [opts.fields.sex] : []), ...opts.fields.display.map(top)])
+  const idPath = identifierPath(opts, user)
+  const keys = new Set<string>([opts.fields.label, ...(idPath ? [top(idPath)] : []), ...(opts.fields.sex ? [opts.fields.sex] : []), ...opts.fields.display.map(top)])
   if (m.kind === 'role-fields') for (const p of Object.values(m.roles)) keys.add(top(p))
   else keys.add(top(m.path))
   for (const p of [m.reproductiveMode, m.cohort]) if (p) keys.add(top(p))
   return Object.fromEntries([...keys].map((k) => [k, true as const]))
 }
 
-export function documentAdapter(opts: ResolvedOptions): PedigreeAdapter<Record<string, unknown>> {
+export function documentAdapter(opts: ResolvedOptions, user?: unknown): PedigreeAdapter<Record<string, unknown>> {
+  const idPath = identifierPath(opts, user)
   return {
+    getIdentifier: (d) => {
+      const v = idPath ? getAt(d, idPath) : null
+      return typeof v === 'string' && v ? v : typeof v === 'number' ? String(v) : null
+    },
     getId: (d) => String(d.id),
     getParents: (d) => readParents(d, opts),
     getReproductiveMode: (d) => readMode(d, opts),
@@ -108,7 +120,7 @@ export function documentAdapter(opts: ResolvedOptions): PedigreeAdapter<Record<s
   }
 }
 
-export const toIndividual = (doc: Record<string, unknown>, opts: ResolvedOptions): Individual => adaptIndividual(doc, documentAdapter(opts))
+export const toIndividual = (doc: Record<string, unknown>, opts: ResolvedOptions, user?: unknown): Individual => adaptIndividual(doc, documentAdapter(opts, user))
 
 /** Maternal (birthing) roles. */
 export const maternalRoles = (opts: ResolvedOptions) => opts.lineageRoles?.maternal ?? ['mother', 'dam', 'egg']

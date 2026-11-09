@@ -2,6 +2,10 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-09: identifiers beside names
+
+**New tests:** the name and identifier format, and its fallbacks when one is missing, normalization, and node width (`views.test.ts`); the visible and spoken name, and no identifier on a placeholder even when the source data has one (`render.test.tsx`); and in Payload, the identifier per requester (the keeper sees their studbook number, others the registry ID), the private parent's ID absent for readers who can't see it and present for its owner, and relatives carrying identifiers (`private-parents.test.ts`, identifiers beside names).
+
 ## 2026-11-09: tree shapes for the demo tour
 
 The demo will show line breeding, a backcross, half-siblings and several generations, and a private ancestor. These were rendered in every view and checked by eye in the light and dark themes (headless Chrome screenshots of the playground gallery).

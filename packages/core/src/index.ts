@@ -51,6 +51,8 @@ export {
   defaultLayoutEngine,
   REORDERABLE_VIEWS,
   estimateNodeWidth,
+  IDENTIFIER_FORMAT,
+  nameWithIdentifier,
   layoutPedigree,
   nodeSublabel,
   layoutSync,

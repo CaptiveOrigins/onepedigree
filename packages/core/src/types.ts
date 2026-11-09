@@ -29,6 +29,8 @@ export type Parentage = {
 export type Individual = {
   id: IndividualId
   label?: string | null
+  /** A host's own identifier shown beside the label, e.g. a registry ID ("CO-AQCR6T"). Display only. */
+  identifier?: string | null
   /** Host-defined sex or sex-category label. Assigns no reproductive role. */
   sex?: string | null
   parentage?: Parentage | null

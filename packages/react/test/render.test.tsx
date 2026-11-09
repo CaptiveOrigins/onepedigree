@@ -35,6 +35,19 @@ describe('server rendering', () => {
     expect(html).toMatch(/class="op-junction" data-structure="pair" data-completeness="complete"/)
   })
 
+  it('shows the host identifier beside the name, in the node and its spoken name, but never on a placeholder', () => {
+    const doc = {
+      ...privateAncestor,
+      individuals: privateAncestor.individuals.map((i) => (i.id === 'pebble' ? { ...i, identifier: 'CO-AQCR6T' } : i.id === 'private-1' ? { ...i, identifier: 'CO-SECRET' } : i)),
+    }
+    const projection = projectPedigree(doc, { focalId: 'pebble', view: 'pedigree' })
+    const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layoutSync(projection)} />)
+    expect(html).toContain('Pebble (CO-AQCR6T)')
+    // The spoken name: the node's <title> (or its link's aria-label).
+    expect(html).toMatch(/data-individual="pebble"[^>]*><title>Pebble \(CO-AQCR6T\)/)
+    expect(html).not.toContain('CO-SECRET')
+  })
+
   it('marks a private placeholder, names it "Private record" and never shows its ID', () => {
     const projection = projectPedigree(privateAncestor, { focalId: 'pebble', view: 'pedigree' })
     const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layoutSync(projection)} />)

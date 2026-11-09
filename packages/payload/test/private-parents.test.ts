@@ -29,6 +29,8 @@ const animals = (slug: string): CollectionConfig => ({
     { name: 'name', type: 'text' },
     { name: 'visibility', type: 'select', options: ['public', 'private'], defaultValue: 'public' },
     { name: 'owner', type: 'relationship', relationTo: 'users' },
+    { name: 'coId', type: 'text' },
+    { name: 'studbook', type: 'text' },
   ],
 })
 
@@ -64,7 +66,9 @@ beforeAll(async () => {
     collections: [usersCollection, animals('animals')],
     // filterOptions on every parent field, as @payloadcms/plugin-multi-tenant adds them: Payload then looks each
     // parent up with the editor's access when validating.
-    plugins: [onePedigree({ collection: 'animals', mode: 'standard-fields', hiddenRecords: 'placeholder', overrides: { parentageField: withFilterOptions } })],
+    plugins: [onePedigree({ collection: 'animals', mode: 'standard-fields', hiddenRecords: 'placeholder', overrides: { parentageField: withFilterOptions },
+        // The keeper reads their own studbook numbers; everyone else the registry ID.
+        fields: { identifier: ({ user }) => ((user as { email?: string } | null)?.email === 'keeper@example.com' ? 'studbook' : 'coId') } })],
   }))
   for (const [name, r] of [['admin', 'admin'], ['owner', 'viewer'], ['keeper', 'viewer'], ['member', 'viewer']] as const) {
     users[name] = (await payload.create({ collection: 'users', data: { email: `${name}@example.com`, password: 'a-long-test-password', role: r } as never })) as TypedUser
@@ -79,10 +83,10 @@ beforeAll(async () => {
     tokens[name] = ((await login.json()) as { token: string }).token
   }
   // P is private to its owner. Q is public, kept by someone else, and P is its mother.
-  await create('P', { visibility: 'private', owner: users.owner!.id })
+  await create('P', { visibility: 'private', owner: users.owner!.id, coId: 'CO-APPPPP' })
   await create('S', { owner: users.keeper!.id })
-  await create('S2', { owner: users.keeper!.id })
-  await create('Q', { owner: users.keeper!.id, parentage: { parents: [{ individual: a.P, role: 'mother' }, { individual: a.S, role: 'father' }] } })
+  await create('S2', { owner: users.keeper!.id, coId: 'CO-AS2222' })
+  await create('Q', { owner: users.keeper!.id, coId: 'CO-AQCR6T', studbook: 'CHCA-2501', parentage: { parents: [{ individual: a.P, role: 'mother' }, { individual: a.S, role: 'father' }] } })
   await create('G', { owner: users.keeper!.id, parentage: { parents: [{ individual: a.Q, role: 'mother' }] } })
 })
 afterAll(async () => stop?.())
@@ -225,6 +229,30 @@ describe('saving a record that shows a placeholder', () => {
   it('leaves trusted writes alone: server code can still remove the parent', async () => {
     await payload.update({ collection: 'animals' as never, id: a.G!, data: { parentage: { parents: [] } } as never })
     expect((await trusted('G')).parentage?.parents).toEqual([])
+  })
+})
+
+describe('identifiers beside names', () => {
+  type Projection = { individuals: Record<string, { label?: string; identifier?: string | null; data?: { private?: boolean } }> }
+  it('come with each individual in the pedigree, per requester, and never with a private placeholder', async () => {
+    const anon = (await rest(`/animals/${a.Q}/pedigree?view=pedigree`)).body as { projection: Projection }
+    expect(anon.projection.individuals[a.Q!]!.identifier).toBe('CO-AQCR6T')
+    expect(JSON.stringify(anon)).not.toContain('CO-APPPPP')
+    const placeholder = Object.values(anon.projection.individuals).find((i) => i.data?.private)!
+    expect(placeholder.identifier ?? null).toBeNull()
+    const keeper = (await rest(`/animals/${a.Q}/pedigree?view=pedigree`, 'keeper')).body as { projection: Projection }
+    expect(keeper.projection.individuals[a.Q!]!.identifier).toBe('CHCA-2501')
+    // The owner can read the private mother, so sees her ID.
+    expect(JSON.stringify((await rest(`/animals/${a.Q}/pedigree?view=pedigree`, 'owner')).body)).toContain('CO-APPPPP')
+  })
+
+  it('come with each relative, and a private parent stays { private: true }', async () => {
+    const q = await rest(`/animals/${a.Q}/relatives`)
+    const parents = (q.body as { parents: { individual: Record<string, unknown> }[] }).parents.map((p) => p.individual)
+    expect(parents).toContainEqual({ private: true })
+    // Earlier tests made S2 the father.
+    expect(parents).toContainEqual(expect.objectContaining({ label: 'S2', identifier: 'CO-AS2222' }))
+    expect(JSON.stringify(q.body)).not.toContain('CO-APPPPP')
   })
 })
 

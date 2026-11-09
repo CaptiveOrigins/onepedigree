@@ -34,6 +34,12 @@ export type OnePedigreePluginOptions = {
   fields?: {
     /** Display label field (default `name`, falling back to the ID). */
     label?: string
+    /**
+     * A host identifier shown beside the label, e.g. "Mead (CO-AQCR6T)": a field path, or a function of the
+     * requester returning one (so each user can choose, say, a registry ID or their own studbook number).
+     * Never shown for records the requester can't read.
+     */
+    identifier?: string | ((args: { user: unknown }) => string | null | undefined)
     sex?: string
     parentage?: ParentageMapping
     /** Extra fields copied into projections as display data (explicitly approved; never everything). */
@@ -95,7 +101,7 @@ export type OnePedigreePluginOptions = {
 
 export type ResolvedOptions = Required<Pick<OnePedigreePluginOptions, 'collection' | 'mode' | 'hiddenRecords' | 'onReferencedIndividualDelete'>> &
   Omit<OnePedigreePluginOptions, 'fields' | 'cohorts' | 'limits'> & {
-    fields: { label: string; sex: string | null; parentage: Required<Extract<ParentageMapping, { kind: 'parent-array' }>> | Extract<ParentageMapping, { kind: 'role-fields' }>; display: readonly string[] }
+    fields: { label: string; identifier: NonNullable<OnePedigreePluginOptions['fields']>['identifier'] | null; sex: string | null; parentage: Required<Extract<ParentageMapping, { kind: 'parent-array' }>> | Extract<ParentageMapping, { kind: 'role-fields' }>; display: readonly string[] }
     cohorts: { collection: string; label: string; managed: boolean; birthParentField: string | null } | null
     limits: { maxDepth: number; maxNodes: number }
     graphGlobal: string

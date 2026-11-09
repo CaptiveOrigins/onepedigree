@@ -60,6 +60,8 @@ export function normalizeIndividual(input: unknown, path = 'individual'): Indivi
     id: id(input.id, `${path}.id`),
     label: optText(input.label, `${path}.label`),
     sex: optText(input.sex, `${path}.sex`),
+    // Only when present, so documents without identifiers are unchanged.
+    ...(input.identifier !== undefined && input.identifier !== null ? { identifier: optText(input.identifier, `${path}.identifier`) } : {}),
     parentage,
     ...(extra ? { data: extra } : {}),
   })

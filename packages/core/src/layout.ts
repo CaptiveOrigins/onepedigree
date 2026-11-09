@@ -4,6 +4,8 @@ import type { Individual } from './types'
 
 export type LayoutOptions = {
   orientation?: 'vertical' | 'horizontal'
+  /** How a name and identifier are shown together, for sizing nodes (default `IDENTIFIER_FORMAT`). */
+  identifierFormat?: string
   nodeWidth?: number
   nodeHeight?: number
   /** Space between neighbors in a generation. */
@@ -40,6 +42,19 @@ function applyOrder(ids: string[], rankOf: ReadonlyMap<string, number> | undefin
 }
 
 /** Rough text width (13 px labels, 11 px sublabels) for sizing nodes without a DOM. */
+/** The default way a name and a host identifier are shown together. */
+export const IDENTIFIER_FORMAT = '{label} ({id})'
+
+/**
+ * A name with the host's identifier, e.g. "Mead (CO-AQCR6T)". With no name, the identifier alone; with no
+ * identifier, the name alone. `format` uses `{label}` and `{id}`.
+ */
+export function nameWithIdentifier(label: string | null | undefined, identifier: string | null | undefined, format = IDENTIFIER_FORMAT): string {
+  if (!identifier) return label ?? ''
+  if (!label) return identifier
+  return format.replaceAll('{label}', label).replaceAll('{id}', identifier)
+}
+
 export function estimateNodeWidth(label: string, sublabel = ''): number {
   const w = (s: string, px: number) =>
     [...s].reduce((n, ch) => n + (/[\u1100-\u9fff\uac00-\ud7af]/.test(ch) ? 2 : /[A-Z@MW]/.test(ch) ? 1.25 : /[ilj.,'’ ]/.test(ch) ? 0.55 : 1) * px, 0)
@@ -154,7 +169,7 @@ function layeredSlots(occurrences: readonly IndividualOccurrence[], edges: Pedig
   return slots
 }
 
-type Resolved = Required<Omit<LayoutOptions, 'fan' | 'nodeWidthFor' | 'lifeSpanOf' | 'timeline' | 'nodeOrder'>> & { widths: Map<string, number> }
+type Resolved = Required<Omit<LayoutOptions, 'fan' | 'nodeWidthFor' | 'lifeSpanOf' | 'timeline' | 'nodeOrder' | 'identifierFormat'>> & { widths: Map<string, number> }
 
 /** Spreads one row's centers so nodes of different widths never overlap (average of a left and a right sweep: stays centered). */
 function spread(row: { id: string; c: number; w: number }[], gap: number) {
@@ -383,7 +398,10 @@ export function layoutSync(projection: PedigreeViewProjection, options: LayoutOp
     options.nodeWidthFor ??
     // An anonymous placeholder is drawn as "Private record" (the React default), never its ID: size it for that.
     ((occ: IndividualOccurrence, ind: Individual | undefined) =>
-      estimateNodeWidth(ind?.data?.private ? 'Private record' : (ind?.label ?? occ.individualId), nodeSublabel(ind, lifeOf(ind))))
+      estimateNodeWidth(
+        ind?.data?.private ? 'Private record' : ind?.label || ind?.identifier ? nameWithIdentifier(ind?.label, ind?.identifier, options.identifierFormat) : occ.individualId,
+        nodeSublabel(ind, lifeOf(ind)),
+      ))
   const o: Resolved = {
     orientation: options.orientation ?? 'vertical',
     nodeWidth: options.nodeWidth ?? 160,
