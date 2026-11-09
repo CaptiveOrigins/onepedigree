@@ -19,15 +19,17 @@ import { addDataAndFileToRequest, APIError, type CollectionSlug, type Endpoint, 
 
 import { checkParentage } from './integrity.js'
 import { childrenWhere, documentAdapter, graphSelect, termsFor, toIndividual } from './mapping.js'
+import { withStoredParents } from './privacy.js'
 import type { ResolvedOptions } from './types.js'
 
 type Doc = Record<string, unknown>
 
 /** Reads as the requester (access control applies) unless `trusted`. */
 export function payloadRepository(req: PayloadRequest, opts: ResolvedOptions, trusted = false): PedigreeRepository<Doc> {
+  // Stored IDs, so hidden parents can be told apart from unloaded ones and redacted below (see `redact`).
   const find = async (where: Where) =>
     (
-      await req.payload.find({
+      await withStoredParents(req, () => req.payload.find({
         collection: opts.collection as CollectionSlug,
         where,
         depth: 0,
@@ -36,7 +38,7 @@ export function payloadRepository(req: PayloadRequest, opts: ResolvedOptions, tr
         select: graphSelect(opts) as never,
         overrideAccess: trusted,
         req,
-      })
+      }))
     ).docs as Doc[]
   return { getByIds: (ids) => find({ id: { in: [...ids] } }), findChildrenOf: (ids) => find(childrenWhere(opts, ids)) }
 }
@@ -79,7 +81,7 @@ export function redact(individuals: Individual[], hidden: ReadonlySet<string>, o
 }
 
 async function readable(req: PayloadRequest, collection: string, id: string) {
-  return req.payload.findByID({ collection: collection as CollectionSlug, id, depth: 0, overrideAccess: false, disableErrors: true, req })
+  return withStoredParents(req, () => req.payload.findByID({ collection: collection as CollectionSlug, id, depth: 0, overrideAccess: false, disableErrors: true, req }))
 }
 
 async function canUpdate(req: PayloadRequest, opts: ResolvedOptions, id: string) {

@@ -74,7 +74,17 @@ removes the references (`'detach'`).
 Every read runs as the requester (access control applies), is bounded by `limits`
 (`maxDepth`, `maxNodes`) and returns display projections, not documents. Records the requester
 cannot read are omitted or replaced by anonymous placeholders; their IDs, names and links never
-appear in responses. Add an index on the parent path (`parentage.parents.individual`, or your
+appear in responses.
+
+The same holds for plain collection reads (REST, GraphQL, the Admin, and the Local API with
+`overrideAccess: false`), single or list, at any depth. A parent the reader can't read comes back as
+`{ "private": true }` with `hiddenRecords: 'placeholder'`, or is left out with `'omit'`. GraphQL
+returns `null` for it. Trusted Local API reads (the default `overrideAccess: true`) are unchanged.
+When someone saves a record that showed them a private parent, that parent is kept as stored: a
+placeholder, an empty picker or a missing row means "unchanged", and replacing it with another
+parent is refused.
+
+Add an index on the parent path (`parentage.parents.individual`, or your
 role fields) in production; the standard fields declare it.
 
 ## Admin

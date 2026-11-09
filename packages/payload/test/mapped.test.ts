@@ -198,6 +198,18 @@ describe('security (spec §42.4)', () => {
     expect(JSON.stringify(write.data ?? write.message)).not.toMatch(/descend/)
   })
 
+  it('plain reads give a placeholder for a private dam or sire, and saving it back keeps the stored one', async () => {
+    const seen = (await payload.findByID({ collection: 'animals' as never, id: a.Tinta!, depth: 1, overrideAccess: false, user: null } as never)) as unknown as Record<string, unknown>
+    expect(JSON.stringify(seen)).not.toContain(a['Secret Sire']!)
+    expect(seen.sire).toEqual({ private: true })
+    expect((seen.dam as { id: string }).id).toBe(a['Founder Dam'])
+    // The public editor can read Tinta but not her sire: saving what they read keeps him, and clearing him is ignored.
+    const asEditor = (await payload.findByID({ collection: 'animals' as never, id: a.Tinta!, depth: 0, overrideAccess: false, user: users['public-editor'] } as never)) as unknown as Record<string, unknown>
+    await payload.update({ collection: 'animals' as never, id: a.Tinta!, data: { name: 'Tinta', dam: asEditor.dam, sire: asEditor.sire } as never, user: users['public-editor'], overrideAccess: false })
+    await payload.update({ collection: 'animals' as never, id: a.Tinta!, data: { sire: null } as never, user: users['public-editor'], overrideAccess: false })
+    expect(String(((await payload.findByID({ collection: 'animals' as never, id: a.Tinta!, depth: 0 })) as unknown as { sire: string }).sire)).toBe(a['Secret Sire'])
+  })
+
   it('ignores a related animal the reader may not see', async () => {
     const { status, body } = await pedigree(a.Pico!, null, { view: 'relationship', relatedId: a['Hidden Hatchling']! })
     expect(status).toBe(200)
