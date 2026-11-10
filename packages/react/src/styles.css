@@ -177,3 +177,27 @@
 .op-explorer[data-legend] { display: flex; flex-direction: column; }
 .op-explorer[data-legend] > svg { flex: 1; min-height: 0; height: auto; }
 .op-explorer[data-legend] .op-gene-legends { position: static; margin: 0 8px 8px; max-width: none; }
+/* Studbook table */
+.op-visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.op-studbook { color: var(--op-label, #1d2330); font: 14px/1.5 var(--op-font, system-ui, sans-serif); }
+.op-studbook-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.op-studbook-controls input[type='search'] { min-width: 16rem; padding: 6px 8px; border: 1px solid #8a93a3; border-radius: 6px; font: inherit; }
+.op-studbook-hint, .op-studbook-count, .op-studbook-old, .op-studbook-currentness { color: var(--op-sublabel, #5b6577); font-size: 13px; }
+.op-studbook-hint { flex-basis: 100%; }
+.op-studbook-check { display: inline-flex; align-items: center; gap: 6px; }
+.op-studbook-basis { margin: 4px 0 8px; font-size: 13px; }
+.op-studbook-basis summary { cursor: pointer; font-weight: 600; }
+.op-studbook-basis p { margin: 4px 0 0; max-width: 60rem; }
+.op-studbook-scroll { overflow-x: auto; }
+.op-studbook-scroll:focus-visible, .op-studbook button:focus-visible, .op-studbook input:focus-visible, .op-studbook summary:focus-visible { outline: 2px solid var(--op-selected-ring, #2563eb); outline-offset: 2px; }
+.op-studbook table { border-collapse: collapse; width: 100%; }
+.op-studbook caption { text-align: start; font-weight: 600; padding: 4px 0; }
+.op-studbook th, .op-studbook td { padding: 6px 10px; border-bottom: 1px solid #dfe3ea; text-align: start; vertical-align: top; white-space: nowrap; }
+.op-studbook thead th { font-size: 13px; color: var(--op-sublabel, #5b6577); border-bottom-width: 2px; }
+.op-studbook tbody th { font-weight: 600; font-variant-numeric: tabular-nums; }
+.op-studbook .op-studbook-num { text-align: end; font-variant-numeric: tabular-nums; }
+.op-studbook-sort, .op-studbook-open { all: unset; cursor: pointer; }
+.op-studbook-open { text-decoration: underline; text-underline-offset: 2px; }
+.op-studbook-sort abbr { text-decoration: none; }
+.op-studbook-private td { color: var(--op-sublabel, #5b6577); font-style: italic; }
+.op-studbook tr[data-status='dead'] td, .op-studbook tr[data-status='lost-to-follow-up'] td { color: var(--op-sublabel, #5b6577); }
