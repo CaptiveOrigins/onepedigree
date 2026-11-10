@@ -39,6 +39,16 @@ const layout = useMemo(() => layoutSync(projection, { nodeOrder }), [projection,
 
 `dropNodeOrder(layout, occurrenceId, delta, current, groupOf)` is exported for custom UIs.
 
+## Studbook table
+
+`StudbookTable` lists a studbook: studbook number (with any old numbers), Captive Origins ID and the keeper's Animal ID on every row, then sex, birth, origin, parents, status and holder. People can search by any of those numbers or IDs, show only living animals, and sort by studbook number, birth, mean kinship or inbreeding. Animals with no value for the sorted column go last.
+
+The table shows what it's given, so visibility is decided before it: pass a private animal with `private: true` and it appears as a placeholder that never matches a search, pass holder names already resolved, and pass `genetics` only where the reader may see it. MK and F columns appear only when some row has them, with a note that they're pedigree-based. Labels can be replaced through `labels`.
+
+```tsx
+<StudbookTable rows={rows} caption="Redfoot tortoise assurance studbook" currentness="Current to 1 Nov 2026" onSelect={open} />
+```
+
 ## Themes and colors
 
 Seven presets, each with its own per-view accents (e.g. warm maternal and cool paternal

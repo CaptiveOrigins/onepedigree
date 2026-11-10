@@ -50,4 +50,4 @@
 - `*MOVE` lines built from the event ledger, with PMx's estimate codes;
 - sex codes 0–7, all fertile until reproductive status arrives (Tier B).
 
-Not built: the census file. The manual names `exchcens.txt` but doesn't give its columns, so it waits until its layout can be confirmed. Numbering is built: `nextStudbookNumber`, `renumber` (old numbers kept, never reused) and `checkStudbookNumbers`. Next: the studbook table view.
+Not built: the census file. The manual names `exchcens.txt` but doesn't give its columns, so it waits until its layout can be confirmed. Numbering is built: `nextStudbookNumber`, `renumber` (old numbers kept, never reused) and `checkStudbookNumbers`. The studbook table is built in the React package (`StudbookTable`). Next: drawing MULT, WILD and UNK parents in the pedigree views, then the payload plugin's studbook module.

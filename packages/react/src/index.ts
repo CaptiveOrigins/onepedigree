@@ -6,3 +6,4 @@ export { AhnentafelList, ahnentafelRelation, type AhnentafelListProps } from './
 export { Icon, ICON_PATHS, type IconName } from './icons.js'
 export { dropNodeOrder } from './reorder.js'
 export { dotsWidth, GeneLegend, GenotypeDots, GenotypeGlyph, GenotypeKey, GenotypeStrip, genotypeText, genotypeWord, GENOTYPE_WORDS, type GeneKey, type GeneOverlay, type GenotypeDisplay, type GenotypeMark, type GenotypeWords } from './genetics.js'
+export { StudbookTable, STUDBOOK_TABLE_LABELS, type StudbookRow, type StudbookTableLabels, type StudbookTableProps } from './StudbookTable.js'
