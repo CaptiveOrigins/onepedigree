@@ -22,6 +22,7 @@ endpoints: [studbookEndpoint({
 ```
 
 - Private animals are counted in every number but come back as `{ private: true }`, and are never named as a parent, founder or holder.
+- Parents come back as codes (a studbook number, Private, MULT, WILD or UNK), with a MULT parent's candidates and their probabilities in `mult`.
 - MK, F and Known come back only where `geneticsVisibleFor` says yes. Population GD, FGE and founders come back only when the reader may see every animal's numbers, since GD would otherwise give the hidden ones away.
 - `?format=pmx` returns the PMx `.ped` file to those `canExport` allows, and 403 to everyone else.
 - A callback that throws, or answers anything but `true`, counts as no.
