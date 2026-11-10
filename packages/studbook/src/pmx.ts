@@ -48,8 +48,8 @@ export function sexCode(a: StudbookAnimal): number {
   return { female: 0, male: 1, unknown: 5, abnormal: 4, hermaphrodite: 5 }[a.sex]
 }
 
-const SIRE_ROLES = ['father', 'sire', 'sperm']
-const DAM_ROLES = ['mother', 'dam', 'egg']
+export const SIRE_ROLES: readonly string[] = ['father', 'sire', 'sperm']
+export const DAM_ROLES: readonly string[] = ['mother', 'dam', 'egg']
 
 type ParentField = { code: string; candidates?: { number: string; probability: number }[] }
 
