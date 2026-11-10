@@ -3,6 +3,21 @@
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
 
+
+## 2026-11-10: studbook kinship
+
+`packages/studbook/test/kinship.test.ts` (7 tests) checks the maths against textbook values:
+
+- inbreeding from full-sib (0.25), half-sib (0.125), parent-offspring (0.25) and first-cousin (0.0625) matings;
+- gene diversity 1 − 1/(2N) and FGE N for N unrelated founders;
+- mean kinship including self;
+- a MULT parent by expectation, with the unknown remainder;
+- a shared unknown parent making clutchmates related;
+- founder shares and the unknown share summing to 1;
+- refusal of more than two parents, cycles and an unknown population member.
+
+Gap: not yet compared with a real PMx run on the same data, which needs PMx and a real studbook. The kinship matrix is n² in memory, which is fine for thousands of animals and noted for larger ones.
+
 ## 2026-11-10: uncertain parents
 
 `core.test.ts` ("uncertain parents", 5 tests) covers what the field promises:

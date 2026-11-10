@@ -1,0 +1,19 @@
+{
+  "name": "@captiveorigins/onepedigree-studbook",
+  "version": "0.1.0-alpha.18",
+  "type": "module",
+  "description": "OnePedigree studbook: species-neutral studbook numbering, pedigree-based kinship, inbreeding, mean kinship, gene diversity and founder analysis, and PMx export, for any managed population.",
+  "keywords": ["studbook", "pedigree", "kinship", "mean-kinship", "gene-diversity", "conservation-breeding", "pmx"],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --target node22",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": { "@captiveorigins/onepedigree-core": "workspace:^" },
+  "engines": { "node": ">=22" },
+  "repository": { "type": "git", "url": "git+https://github.com/CaptiveOrigins/onepedigree.git", "directory": "packages/studbook" }
+}

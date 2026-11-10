@@ -159,6 +159,12 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
 
+  packages/studbook:
+    dependencies:
+      '@captiveorigins/onepedigree-core':
+        specifier: workspace:^
+        version: link:../core
+
 packages:
 
   '@apidevtools/json-schema-ref-parser@11.9.3':
