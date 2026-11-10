@@ -18,7 +18,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Packages test against each other's built output.
-      - run: pnpm build
+      # Same order as the Release workflow: packages read each other's source, so nothing needs building first.
+      # (Building first here once hid a package that only typechecked against built output; alpha.19's release failed.)
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm build

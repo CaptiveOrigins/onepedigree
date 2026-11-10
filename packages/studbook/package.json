@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/onepedigree-studbook",
-  "version": "0.1.0-alpha.19",
+  "version": "0.1.0-alpha.20",
   "type": "module",
   "description": "OnePedigree studbook: species-neutral studbook numbering, pedigree-based kinship, inbreeding, mean kinship, gene diversity and founder analysis, and PMx export, for any managed population.",
   "keywords": [
@@ -29,7 +29,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/payload.ts --format esm --dts --clean --target node22",
+    "build": "tsup src/index.ts src/payload.ts --format esm --dts --clean --target node22 --tsconfig tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "prepack": "pnpm run build"

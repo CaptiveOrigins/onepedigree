@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.0-alpha.19
+## 0.1.0-alpha.20
+
+The first release with these changes. The `v0.1.0-alpha.19` tag's Release run failed before staging, so 0.1.0-alpha.19 was never published. The studbook package didn't typecheck before core was built. It now reads core's source for typecheck and tests, and CI runs in the Release workflow's order.
 
 - **Pedigree views draw MULT, WILD and UNK parents:** the projection adds one placeholder per uncertain parent slot (`uncertain: true` on the occurrence). It's labelled "Possible mothers", "Wild father" or "Unknown mother" and lists the visible candidates with their chances. Private candidates are only counted. A WILD1 shared by clutchmates is one placeholder and says so. Placeholders are never followed further, and React never links them. They have a long-dashed border and an italic label, and their candidates are in the spoken name. Documents without uncertain parents project exactly as before.
 - **React, `StudbookTable`:** the studbook as an accessible table, with both IDs and old numbers on every row. It searches by any number or ID, has a living-only filter, and sorts by number, birth, MK or F (unknowns last, with `aria-sort`). Private animals are placeholders that never match a search, and MK and F appear only where given, with a note that they're pedigree-based.
