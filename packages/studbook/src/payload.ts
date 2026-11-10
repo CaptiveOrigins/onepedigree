@@ -212,3 +212,5 @@ export const studbookEndpoint = (options: StudbookEndpointOptions): Endpoint => 
     }
   },
 })
+
+export { studbookNumberEndpoints, type StudbookNumbersOptions } from './payload-numbers.js'

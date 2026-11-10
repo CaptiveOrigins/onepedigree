@@ -5,6 +5,19 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: studbook numbering endpoints
+
+`packages/studbook/test/payload-numbers.test.ts` (6 tests) runs on a real Payload with an in-memory MongoDB and made-up animals:
+
+- the next permanent number, a T number, a given unused number, and the next after it;
+- **hidden animals:** a number held by an animal the reader can't see is never given, and the response doesn't name that animal;
+- **refusals:** a reader without write access to the number collection gets 403; anonymous readers, private animals and unknown animals get 404; a malformed number gets 400; a taken number, or an animal already numbered, gets 409;
+- renumbering confirms a T number, keeps old numbers, refuses an old or taken number, notes a changed permanent number, and refuses a reader without update access;
+- **race:** two animals numbered at the same moment get different numbers, and no number ends up on two animals;
+- no renumber endpoint without `oldNumbersField`.
+
+Gaps left: a simultaneous renumber race isn't tested separately (it uses the same check as numbering). Not run inside the platform yet; its wiring gets its tests there.
+
 ## 2026-11-10: studbook endpoint for Payload
 
 `packages/studbook/test/payload.test.ts` (9 tests) calls the endpoint handler with a stand-in request; it reads no database, because the platform's `source` does that:

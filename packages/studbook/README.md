@@ -27,6 +27,8 @@ endpoints: [studbookEndpoint({
 - `?format=pmx` returns the PMx `.ped` file to those `canExport` allows, and 403 to everyone else.
 - A callback that throws, or answers anything but `true`, counts as no.
 
+`studbookNumberEndpoints({ source, numbers })` keeps studbook numbers in a collection of yours, one document per studbook and animal. `POST …/studbook/:studbook/numbers { animal, temporary?, number? }` gives a first number. `POST …/numbers/renumber { animal, to? }` moves an animal to a new number and keeps the old one; it's only offered when you name an `oldNumbersField`. Writes use the reader's own access, numbers held by animals they can't see are never reused, and if two people take the same number at once, the later write steps back.
+
 Payload is an optional peer dependency; the main entry point doesn't use it.
 
 Not affiliated with any zoo association or software vendor. "PMx" names the free analysis program whose input format this package will write.

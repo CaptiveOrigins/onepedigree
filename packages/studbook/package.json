@@ -46,6 +46,8 @@
     }
   },
   "devDependencies": {
+    "@payloadcms/db-mongodb": "3.92.1",
+    "mongodb-memory-server": "^11.3.0",
     "payload": "^3.92.1"
   },
   "engines": {
