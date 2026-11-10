@@ -2,6 +2,19 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+
+## 2026-11-10: uncertain parents
+
+`core.test.ts` ("uncertain parents", 5 tests) covers what the field promises:
+
+- **Candidates and probabilities are kept**, and documents without them are unchanged.
+- **An explicit unknown and an unknown remainder are valid.**
+- **Candidates are never counted as parents.**
+- **Each inconsistency is refused**, with its own code.
+- **Malformed input is refused when reading.**
+
+Gap: CSV and GEDCOM can't carry candidates yet, and no test claims they do.
+
 ## 2026-11-09: identifiers beside names
 
 **New tests:** the name and identifier format, and its fallbacks when one is missing, normalization, and node width (`views.test.ts`); the visible and spoken name, and no identifier on a placeholder even when the source data has one (`render.test.tsx`); and in Payload, the identifier per requester (the keeper sees their studbook number, others the registry ID), the private parent's ID absent for readers who can't see it and present for its owner, and relatives carrying identifiers (`private-parents.test.ts`, identifiers beside names).

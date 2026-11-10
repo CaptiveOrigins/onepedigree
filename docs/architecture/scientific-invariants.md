@@ -11,4 +11,6 @@ The rules OnePedigree keeps, from its README and its tests. A rule without a pas
 | I5 | **Source files aren't changed.** A GEDCOM stays as it is, and extras live in a companion file. | `csv.test.ts` (extras on top of a GEDCOM without changing it); desktop `files.test.ts` (saves only the companion) |
 | I6 | **Saves are atomic.** A crash leaves the old file or the new one. | desktop `files.test.ts` (temporary file then rename; a failed write leaves the old file) |
 
+| I7 | **A candidate is never a parent.** A parent known only as candidates with probabilities (a studbook's MULT), or explicitly unknown (UNK), is kept in `uncertainParents`. It is never counted, traversed or used for siblings or cycles as a parent, and its probabilities sum to at most 1. | `core.test.ts` (uncertain parents: kept, never counted, refused when inconsistent) |
+
 Access rules for the Payload plugin are listed in the [test audit](../test-audit.md).

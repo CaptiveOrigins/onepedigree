@@ -1,5 +1,5 @@
 import { indexPedigree, reproductiveStructure, type PedigreeIndex } from './normalize'
-import { REPRODUCTIVE_MODES, type Individual, type IndividualId, type ParentReference, type PedigreeDocument, type PedigreeIssue } from './types'
+import { REPRODUCTIVE_MODES, type Individual, type IndividualId, type ParentReference, type PedigreeDocument, type UncertainParent, type PedigreeIssue } from './types'
 
 /** A host-supplied rule, e.g. taxonomic compatibility. Rules add issues; they cannot remove built-in ones. */
 export type ValidationRule = {
@@ -41,6 +41,48 @@ function parentIssues(childId: IndividualId, parents: readonly ParentReference[]
     if (resolves(p.individual) === false)
       out.push(issue('error', 'UNRESOLVED_PARENT', 'The parent reference does not resolve.', { individualId: childId, path, relatedIds: [p.individual] }))
   })
+  return out
+}
+
+/**
+ * Uncertain parent slots (studbook "MULT" and "UNK"): probabilities in (0, 1] summing to at most 1, each candidate
+ * once, never the child, never already a recorded parent, never a descendant of the child, and no role both known
+ * and uncertain.
+ */
+function uncertainIssues(childId: IndividualId, parents: readonly ParentReference[], slots: readonly UncertainParent[], resolves: (id: string) => boolean | null, index: PedigreeIndex): PedigreeIssue[] {
+  const out: PedigreeIssue[] = []
+  const known = new Set(parents.map((p) => p.individual))
+  const knownRoles = new Set(parents.map((p) => p.role).filter(Boolean))
+  let descendants: Set<IndividualId> | null = null
+  const below = () => {
+    if (descendants) return descendants
+    descendants = new Set()
+    const queue = [childId]
+    while (queue.length) for (const c of index.childrenOf.get(queue.shift()!) ?? []) if (!descendants.has(c)) { descendants.add(c); queue.push(c) }
+    return descendants
+  }
+  slots.forEach((slot, i) => {
+    const path = `parentage.uncertainParents[${i}]`
+    if (slot.role && knownRoles.has(slot.role)) out.push(issue('error', 'ROLE_KNOWN_AND_UNCERTAIN', `The ${slot.role} is recorded both as known and as uncertain.`, { individualId: childId, path }))
+    let sum = 0
+    const seen = new Set<string>()
+    slot.candidates.forEach((c, j) => {
+      const at = `${path}.candidates[${j}]`
+      sum += c.probability
+      if (!(c.probability > 0 && c.probability <= 1)) out.push(issue('error', 'CANDIDATE_PROBABILITY', 'A candidate parent\'s probability must be above 0 and at most 1.', { individualId: childId, path: at }))
+      if (c.individual === childId) out.push(issue('error', 'SELF_PARENT', 'An individual cannot be its own parent.', { individualId: childId, path: at }))
+      if (seen.has(c.individual)) out.push(issue('error', 'DUPLICATE_CANDIDATE', 'The same candidate appears more than once in one slot.', { individualId: childId, path: at, relatedIds: [c.individual] }))
+      seen.add(c.individual)
+      if (known.has(c.individual)) out.push(issue('error', 'CANDIDATE_IS_PARENT', 'A candidate is already a recorded parent.', { individualId: childId, path: at, relatedIds: [c.individual] }))
+      if (resolves(c.individual) === false) out.push(issue('error', 'UNRESOLVED_PARENT', 'The candidate parent reference does not resolve.', { individualId: childId, path: at, relatedIds: [c.individual] }))
+      else if (below().has(c.individual)) out.push(issue('error', 'ANCESTRY_CYCLE', 'A candidate parent descends from the individual, so it would be its own ancestor.', { individualId: childId, path: at, relatedIds: [c.individual] }))
+    })
+    if (sum > 1 + 1e-9) out.push(issue('error', 'CANDIDATE_PROBABILITY_SUM', `Candidate probabilities sum to ${Math.round(sum * 1000) / 1000}, above 1.`, { individualId: childId, path }))
+  })
+  // Studbook practice: a wild-caught animal's parents are both WILD; WILD and UNK aren't mixed on one animal.
+  const kinds = new Set(slots.map((s) => s.kind ?? 'unknown').filter((k) => k))
+  if (kinds.has('wild') && kinds.has('unknown') && slots.length > 1)
+    out.push(issue('notice', 'WILD_AND_UNKNOWN_MIXED', 'One parent is recorded as wild and another as unknown; studbooks keep these apart.', { individualId: childId, path: 'parentage.uncertainParents' }))
   return out
 }
 
@@ -97,6 +139,7 @@ export function validatePedigree(document: PedigreeDocument, options: Validation
   for (const ind of index.individuals.values()) {
     const parents = ind.parentage?.parents ?? []
     issues.push(...parentIssues(ind.id, parents, (p) => (index.individuals.has(p) ? true : complete ? false : null)))
+    issues.push(...uncertainIssues(ind.id, parents, ind.parentage?.uncertainParents ?? [], (p) => (index.individuals.has(p) ? true : complete ? false : null), index))
     const mode = ind.parentage?.reproductiveMode
     if (mode && !(REPRODUCTIVE_MODES as readonly string[]).includes(mode))
       issues.push(issue('error', 'UNKNOWN_REPRODUCTIVE_MODE', `"${mode}" is not a supported reproductive mode.`, { individualId: ind.id, path: 'parentage.reproductiveMode' }))

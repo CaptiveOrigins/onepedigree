@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Uncertain parents (studbook MULT and UNK):** `Parentage.uncertainParents` holds parent slots known only as candidates with probabilities, or explicitly unknown (no candidates). The rest of a probability up to 1 is an unrecorded individual. Candidates are never parents (invariant I7). Validation refuses probabilities outside (0, 1] or summing above 1, duplicate candidates, the child itself, a recorded parent, a missing individual, a descendant, and a role recorded both as known and as uncertain. The JSON Schema includes the field, and documents without it are unchanged. Each slot also says what its unknown part is: `kind: 'wild'` (WILD, a wild-caught founder) or `'unknown'` (UNK). A `shared` key marks one unknown parent shared by clutchmates (WILD1, UNK1). WILD mixed with UNK on one animal is a notice. This matches the studbook research's parent codes, which map onto it one to one: a studbook ID is a parent, MULTn is candidates, WILD/WILDn and UNK/UNKn are kinds with optional shared keys. CSV and GEDCOM can't carry candidates yet: they're left out on export. First step of the studbook package (owner, 2026-11-10; `docs/architecture/decisions.md`).
+
 ## 0.1.0-alpha.18
 
 - **Identifiers beside names:** a host identifier, such as a registry ID, can show after each name: "Mead (CO-AQCR6T)". Core has `Individual.identifier`, `PedigreeAdapter.getIdentifier` and `nameWithIdentifier`, and the default layout sizes nodes for the longer name. React shows it in every view, list, quick view and spoken name, with the format set by `Terminology.identifierFormat`. In Payload, `fields.identifier` is a path or a function of the requester (so each person can choose, say, a studbook number), and relatives and cohort members carry `identifier`. A private placeholder never has one.

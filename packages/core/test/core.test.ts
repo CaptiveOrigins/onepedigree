@@ -279,3 +279,55 @@ describe('parent terms and birthing events', () => {
     expect(validatePedigree(twoMothers).issues.map((i) => i.code)).toEqual(['COHORT_MIXED_BIRTH_PARENTS', 'COHORT_WITHOUT_SHARED_PARENT'])
   })
 })
+
+describe('uncertain parents (studbook MULT and UNK)', () => {
+  const doc = (extra: Record<string, unknown>[] = [], uncertain: unknown[] = [], parents: unknown[] = []) =>
+    normalizePedigree({ schemaVersion: 1, individuals: [{ id: 'dam' }, { id: 's1' }, { id: 's2' }, { id: 'kid', parentage: { parents: [{ individual: 'dam', role: 'mother' }, ...parents], uncertainParents: uncertain } }, ...extra] })
+  const codes = (d: ReturnType<typeof doc>) => validatePedigree(d).issues.map((i) => i.code)
+
+  it('keeps candidates with probabilities, and leaves documents without them unchanged', () => {
+    const d = doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0.6 }, { individual: 's2', probability: 0.4 }] }])
+    expect(d.individuals.find((i) => i.id === 'kid')!.parentage!.uncertainParents).toEqual([{ role: 'father', candidates: [{ individual: 's1', probability: 0.6 }, { individual: 's2', probability: 0.4 }] }])
+    expect(validatePedigree(d).valid).toBe(true)
+    expect('uncertainParents' in doc().individuals.find((i) => i.id === 'kid')!.parentage!).toBe(false)
+  })
+
+  it('accepts an explicit unknown (no candidates) and a remainder left unknown', () => {
+    expect(validatePedigree(doc([], [{ role: 'father', candidates: [] }])).valid).toBe(true)
+    expect(validatePedigree(doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0.5 }] }])).valid).toBe(true)
+  })
+
+  it('never counts candidates as parents', () => {
+    const d = doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 1 }] }])
+    expect(d.individuals.find((i) => i.id === 'kid')!.parentage!.parents.map((p) => p.individual)).toEqual(['dam'])
+  })
+
+  it('refuses bad probabilities, duplicates, the child itself, a recorded parent, a missing one, a descendant and a role both known and uncertain', () => {
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0.7 }, { individual: 's2', probability: 0.5 }] }]))).toContain('CANDIDATE_PROBABILITY_SUM')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0 }] }]))).toContain('CANDIDATE_PROBABILITY')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0.3 }, { individual: 's1', probability: 0.3 }] }]))).toContain('DUPLICATE_CANDIDATE')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 'kid', probability: 0.5 }] }]))).toContain('SELF_PARENT')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 'dam', probability: 0.5 }] }]))).toContain('CANDIDATE_IS_PARENT')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 'ghost', probability: 0.5 }] }]))).toContain('UNRESOLVED_PARENT')
+    expect(codes(doc([{ id: 'grandkid', parentage: { parents: [{ individual: 'kid', role: 'mother' }] } }], [{ role: 'father', candidates: [{ individual: 'grandkid', probability: 0.5 }] }]))).toContain('ANCESTRY_CYCLE')
+    expect(codes(doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 0.5 }] }], [{ individual: 's2', role: 'father' }]))).toContain('ROLE_KNOWN_AND_UNCERTAIN')
+  })
+
+  it('refuses malformed input on reading', () => {
+    expect(() => doc([], [{ role: 'father', candidates: [{ individual: 's1', probability: 'high' }] }])).toThrow(/probability/)
+    expect(() => doc([], [{ role: 'father' }])).toThrow(/candidates/)
+  })
+})
+
+describe('wild and shared unknown parents (studbook WILD, WILDn, UNKn)', () => {
+  const kid = (slots: unknown[]) => normalizePedigree({ schemaVersion: 1, individuals: [{ id: 'kid', parentage: { parents: [], uncertainParents: slots } }] })
+  it('keeps the kind and a key shared by clutchmates', () => {
+    const d = kid([{ role: 'mother', kind: 'wild', shared: 'WILD1', candidates: [] }, { role: 'father', kind: 'wild', shared: 'WILD2', candidates: [] }])
+    expect(d.individuals[0]!.parentage!.uncertainParents).toEqual([{ role: 'mother', kind: 'wild', shared: 'WILD1', candidates: [] }, { role: 'father', kind: 'wild', shared: 'WILD2', candidates: [] }])
+    expect(validatePedigree(d).valid).toBe(true)
+  })
+  it('notes WILD mixed with UNK on one animal, and refuses an unknown kind', () => {
+    expect(validatePedigree(kid([{ role: 'mother', kind: 'wild', candidates: [] }, { role: 'father', candidates: [] }])).issues.map((i) => i.code)).toContain('WILD_AND_UNKNOWN_MIXED')
+    expect(() => kid([{ role: 'mother', kind: 'feral', candidates: [] }])).toThrow(/kind/)
+  })
+})
