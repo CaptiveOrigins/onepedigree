@@ -5,6 +5,18 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: studbook numbers
+
+`packages/studbook/test/numbers.test.ts` (12 tests) covers each numbering rule in docs/architecture/studbook.md:
+
+- format: permanent numbers are digits with no leading zero; temporary are T and digits (both checked with bad cases);
+- the next number continues past every number ever used, old ones included, compares as numbers, and counts permanent and temporary apart;
+- renumbering keeps the old number, takes a given unused number (a regional book using the international one), and refuses a used, retired or malformed number without changing the animal;
+- changing a permanent number gives a notice, and that number is never given again;
+- a whole-book check finds malformed, duplicate and reused numbers, and reports gaps only as a notice.
+
+Gaps left: storing numbers per (studbook, animal) and logging who renumbered belong to the payload plugin, and get their tests there. Left out as overkill: permanent numbers above 2^53, which the gap check skips.
+
 ## 2026-11-10: PMx export
 
 `packages/studbook/test/pmx.test.ts` (7 tests) checks the writer against the PMx manual's format:
