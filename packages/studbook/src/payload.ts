@@ -31,6 +31,7 @@ export type StudbookEndpointOptions = {
 }
 
 export type StudbookParentCode = string
+export type StudbookCandidate = ({ studbookNumber: string } | { private: true }) & { probability: number }
 export type StudbookAnimalView =
   | { private: true }
   | {
@@ -45,6 +46,8 @@ export type StudbookAnimalView =
       /** A studbook number, or Private, MULT, WILD or UNK. */
       sire: StudbookParentCode
       dam: StudbookParentCode
+      /** Candidates for a MULT sire or dam, with probabilities. A private candidate is counted, never numbered. */
+      mult: { sire?: StudbookCandidate[]; dam?: StudbookCandidate[] } | null
       status: StudbookAnimal['status']
       selected: boolean
       holder: string | null
@@ -84,6 +87,18 @@ function parentCode(a: StudbookAnimal, roles: readonly string[], byId: Map<strin
   const slot = a.parentage?.uncertainParents?.find((u) => u.role && roles.includes(u.role))
   if (slot) return slot.candidates.length ? 'MULT' : slot.kind === 'wild' ? 'WILD' : 'UNK'
   return 'UNK'
+}
+
+function candidates(a: StudbookAnimal, roles: readonly string[], byId: Map<string, StudbookAnimal>): StudbookCandidate[] | undefined {
+  // Only for a MULT slot: a known parent takes precedence, as in parentCode.
+  if (a.parentage?.parents.some((p) => p.role && roles.includes(p.role))) return undefined
+  const slot = a.parentage?.uncertainParents?.find((u) => u.role && roles.includes(u.role))
+  if (!slot?.candidates.length) return undefined
+  return slot.candidates.map((c) => {
+    const animal = byId.get(c.individual)
+    // A candidate with no record in the studbook is as unknown as a private one: counted, never named.
+    return animal && !animal.private ? { studbookNumber: animal.studbookNumber, probability: c.probability } : { private: true as const, probability: c.probability }
+  })
 }
 
 /** The latest recorded location of an animal: its holder code. */
@@ -129,6 +144,11 @@ export async function getStudbook(req: PayloadRequest, options: StudbookEndpoint
       birth: a.birth,
       sire: parentCode(a, SIRE_ROLES, byId),
       dam: parentCode(a, DAM_ROLES, byId),
+      mult: (() => {
+        const sire = candidates(a, SIRE_ROLES, byId)
+        const dam = candidates(a, DAM_ROLES, byId)
+        return sire || dam ? { ...(sire ? { sire } : {}), ...(dam ? { dam } : {}) } : null
+      })(),
       status: a.status,
       selected: inPopulation(a),
       holder: await holderOf(currentHolder(book, a.id)),

@@ -19,6 +19,7 @@ const book: Studbook = {
     animal({ id: 'c4', studbookNumber: '4', sex: 'female', parentage: { parents: [mother('P'), father('c3')] }, animalId: 'Fern' }),
     animal({ id: 'c5', studbookNumber: 'T1', parentage: { parents: [], uncertainParents: [{ role: 'father', candidates: [{ individual: 'w2', probability: 0.5 }, { individual: 'c3', probability: 0.5 }] }, { role: 'mother', candidates: [], kind: 'wild' }] } }),
     animal({ id: 'c6', studbookNumber: '6', parentage: { parents: [father('gone')] }, status: 'dead' }),
+    animal({ id: 'c7', studbookNumber: '7', parentage: { parents: [father('c3')], uncertainParents: [{ role: 'mother', candidates: [{ individual: 'w1', probability: 0.5 }, { individual: 'P', probability: 0.3 }, { individual: 'gone', probability: 0.1 }] }] } }),
   ],
   events: [
     { animal: 'c4', type: 'birth', date: date('2020-05-01'), location: 'H1' },
@@ -53,8 +54,8 @@ describe('studbook endpoint: privacy', () => {
     expect(r.animals.filter((a) => 'private' in a)).toEqual([{ private: true }])
     expect(view(r, '4').dam).toBe('Private')
     expect(r.population!.founders.filter((f) => 'private' in f)).toHaveLength(1)
-    // Still counted: six living animals (c6 is dead), the private founder among them.
-    expect(r.population!.size).toBe(6)
+    // Still counted: seven living animals (c6 is dead), the private founder among them.
+    expect(r.population!.size).toBe(7)
   })
 
   it('gives a 404 to a reader the platform gives nothing, the same as a studbook that does not exist', async () => {
@@ -104,7 +105,19 @@ describe('studbook endpoint: rows', () => {
     expect(view(JSON.parse((await call(member)).text) as StudbookResponse, '4').holder).toBe('Private holder')
     const { holderLabel: _, ...noLabels } = options
     expect(view(JSON.parse((await call(coordinator, '', noLabels)).text) as StudbookResponse, '4').holder).toBeNull()
-    expect(r.animals.filter((a) => 'studbookNumber' in a).map((a) => (a as { studbookNumber: string }).studbookNumber)).toEqual(['1', '2', '3', '4', '6', 'T1'])
+    expect(r.animals.filter((a) => 'studbookNumber' in a).map((a) => (a as { studbookNumber: string }).studbookNumber)).toEqual(['1', '2', '3', '4', '6', '7', 'T1'])
+  })
+})
+
+describe('studbook endpoint: MULT candidates', () => {
+  it('lists a MULT parent\'s candidates with probabilities; private or unrecorded ones are counted, never numbered', async () => {
+    const { text } = await call(coordinator)
+    const r = JSON.parse(text) as StudbookResponse
+    expect(view(r, 'T1').mult).toEqual({ sire: [{ studbookNumber: '2', probability: 0.5 }, { studbookNumber: '3', probability: 0.5 }] })
+    expect(view(r, '7').mult).toEqual({ dam: [{ studbookNumber: '1', probability: 0.5 }, { private: true, probability: 0.3 }, { private: true, probability: 0.1 }] })
+    expect(view(r, '7')).toMatchObject({ sire: '3', dam: 'MULT' })
+    expect(view(r, '4').mult).toBeNull()
+    for (const s of ['"9"', 'CO-A-SECRET', 'gone']) expect(text).not.toContain(s)
   })
 })
 

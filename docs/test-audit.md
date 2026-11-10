@@ -14,6 +14,7 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 - **genetics:** the coordinator sees every animal's MK, F and Known plus the population summary; a member sees only their own animal and no summary;
 - **fails closed:** `geneticsVisibleFor` or `canExport` that throws, or answers a truthy non-`true`, is a no;
 - **rows:** both IDs, parent codes (number, MULT, WILD, UNK for a parent with no record), holders only through `holderLabel` (per reader, left out without it), studbook order;
+- **MULT candidates:** listed with probabilities; private and unrecorded candidates counted, never numbered (added in a follow-up PR, 1 test);
 - **PMx:** the coordinator gets the `.ped` file with holder names and an attachment name; a member and an anonymous reader get 403;
 - 400 for an unknown format, 422 for a pedigree the analysis refuses.
 
