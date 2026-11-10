@@ -84,6 +84,16 @@ describe('studbook endpoint: who sees genetics', () => {
     expect(r.canExport).toBe(false)
   })
 
+  it('gives no population summary when the only animals a member can\'t see are private ones', async () => {
+    // GD is 1 − mean MK: with their own MK and the summary, a member could work out the private animal's MK.
+    const small: Studbook = { ...book, animals: [book.animals[0]!, book.animals[2]!], events: [] }
+    const r = JSON.parse((await call({ id: 'u3', role: 'member', owns: ['w1'] }, '', { ...options, source: () => small })).text) as StudbookResponse
+    expect(view(r, '1').genetics).not.toBeNull()
+    expect(r.population).toBeNull()
+    // The coordinator may see every animal's numbers, private ones included, so still gets it.
+    expect(JSON.parse((await call(coordinator, '', { ...options, source: () => small })).text).population).not.toBeNull()
+  })
+
   it('fails closed: a callback that throws or answers anything but true is a no', async () => {
     for (const geneticsVisibleFor of [() => { throw new Error('down') }, () => 'yes' as unknown as boolean, async () => 1 as unknown as boolean]) {
       const r = JSON.parse((await call(coordinator, '', { ...options, geneticsVisibleFor })).text) as StudbookResponse
@@ -130,6 +140,12 @@ describe('studbook endpoint: PMx export', () => {
     expect(res.text).toContain('Holder H2')
     expect((await call(member, '?format=pmx')).status).toBe(403)
     expect((await call(null, '?format=pmx')).status).toBe(403)
+  })
+
+  it('answers 404, with no file, when an exporter asks for a studbook the platform gives them nothing for', async () => {
+    const res = await call(coordinator, '?format=pmx', { ...options, source: () => null })
+    expect(res.status).toBe(404)
+    expect(res.headers.get('content-disposition')).toBeNull()
   })
 
   it('answers 400 for an unknown format and 422 for a pedigree it cannot analyse', async () => {

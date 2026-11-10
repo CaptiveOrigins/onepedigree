@@ -35,7 +35,7 @@
 ## Plugin options
 
 - `source({ studbook, req })`: the platform's data for one studbook, read with the request's user (`overrideAccess: false`).
-- `geneticsVisibleFor({ studbook, animal, req })`: the coordinator sees every animal's numbers, members their own (owner, 2026-11-10).
+- `geneticsVisibleFor({ studbook, animal, req })`: the coordinator sees every animal's numbers, members their own (owner, 2026-11-10). It's asked about private animals too: their rows stay placeholders either way, but the population summary appears only if it says yes for every animal, private ones included (test audit, 2026-11-10).
 - `canExport({ studbook, req })`: the coordinator and the studbook keeper may export PMx and the full CSV.
 - `holderLabel(code, req)`: a holder's name, or "Private holder". Names never appear in the analysis payload, and appear in PMx only for those who may export.
 - `numbers: { collection, studbookField, animalField, numberField, oldNumbersField? }`: numbers are kept per (studbook, animal), never reused, with renumbering logged.
