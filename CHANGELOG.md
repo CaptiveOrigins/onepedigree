@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.0-alpha.21
+
+Replaces 0.1.0-alpha.20 before the studbook package's first publish, which will be this version. Core, React and the Payload plugin are unchanged apart from tests.
+
 - **Studbook endpoint, privacy fix:** the population summary (GD, FGE, founders) was given to a member when the only animals they couldn't see were private ones. With their own MK and the summary, they could work out a private animal's MK. `geneticsVisibleFor` is now asked about private animals too, and the summary appears only if it says yes for every animal. Private rows stay placeholders either way. Found by the 2026-11-10 test audit.
 
 ## 0.1.0-alpha.20
