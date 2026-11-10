@@ -80,8 +80,24 @@ export function normalizeParentage(input: unknown, path = 'parentage') {
     if (!isRecord(p)) throw new PedigreeFormatError('Expected a parent reference object', at)
     return Object.freeze({ individual: id(p.individual, `${at}.individual`), role: optText(p.role, `${at}.role`) })
   })
+  const rawUncertain = input.uncertainParents
+  if (rawUncertain !== undefined && rawUncertain !== null && !Array.isArray(rawUncertain)) throw new PedigreeFormatError('Expected an uncertainParents array', `${path}.uncertainParents`)
+  const uncertain = (rawUncertain ?? []).map((u, i) => {
+    const at = `${path}.uncertainParents[${i}]`
+    if (!isRecord(u)) throw new PedigreeFormatError('Expected an uncertain parent object', at)
+    if (!Array.isArray(u.candidates)) throw new PedigreeFormatError('Expected a candidates array', `${at}.candidates`)
+    const candidates = u.candidates.map((c, j) => {
+      const cat = `${at}.candidates[${j}]`
+      if (!isRecord(c)) throw new PedigreeFormatError('Expected a candidate object', cat)
+      if (typeof c.probability !== 'number' || !Number.isFinite(c.probability)) throw new PedigreeFormatError('Expected a probability number', `${cat}.probability`)
+      return Object.freeze({ individual: id(c.individual, `${cat}.individual`), probability: c.probability })
+    })
+    return Object.freeze({ role: optText(u.role, `${at}.role`), candidates: Object.freeze(candidates) })
+  })
   return Object.freeze({
     parents: Object.freeze(parents),
+    // Only when recorded, so documents without uncertain parents are unchanged.
+    ...(uncertain.length ? { uncertainParents: Object.freeze(uncertain) } : {}),
     reproductiveMode: optText(input.reproductiveMode, `${path}.reproductiveMode`) as ReproductiveModeId | null,
     cohort: optText(input.cohort, `${path}.cohort`),
   })

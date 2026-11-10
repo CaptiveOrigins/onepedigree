@@ -19,9 +19,19 @@ export type ParentReference = {
   role?: ParentRole | null
 }
 
+/**
+ * One parent slot known only as candidates with probabilities (a studbook's "MULT"), or explicitly unknown ("UNK")
+ * when `candidates` is empty. Probabilities sum to at most 1; the remainder is an unknown, unrecorded individual.
+ * Candidates are never parents: graph queries, counts and cycles use `parents` only.
+ */
+export type ParentCandidate = { individual: IndividualId; probability: number }
+export type UncertainParent = { role?: ParentRole | null; candidates: readonly ParentCandidate[] }
+
 export type Parentage = {
   /** Zero or more identified contributors. The parent count is always `parents.length`. */
   parents: readonly ParentReference[]
+  /** Parent slots that aren't known for certain. Present only when recorded. */
+  uncertainParents?: readonly UncertainParent[]
   reproductiveMode?: ReproductiveModeId | null
   cohort?: CohortId | null
 }

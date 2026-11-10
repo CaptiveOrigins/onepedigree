@@ -14,6 +14,21 @@ export const parentageSchema = {
   additionalProperties: false,
   properties: {
     parents: { type: 'array', items: parentReferenceSchema },
+    uncertainParents: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['candidates'],
+        additionalProperties: false,
+        properties: {
+          role: nullableString,
+          candidates: {
+            type: 'array',
+            items: { type: 'object', required: ['individual', 'probability'], additionalProperties: false, properties: { individual: { type: 'string', minLength: 1 }, probability: { type: 'number', exclusiveMinimum: 0, maximum: 1 } } },
+          },
+        },
+      },
+    },
     reproductiveMode: { enum: ['sexual', 'parthenogenesis', 'self', 'asexual', 'cloning', 'other', null] },
     cohort: nullableString,
   },
