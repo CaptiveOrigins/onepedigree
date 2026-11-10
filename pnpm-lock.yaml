@@ -164,6 +164,10 @@ importers:
       '@captiveorigins/onepedigree-core':
         specifier: workspace:^
         version: link:../core
+    devDependencies:
+      payload:
+        specifier: ^3.92.1
+        version: 3.92.1(graphql@16.14.2)(typescript@5.9.3)
 
 packages:
 

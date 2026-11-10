@@ -5,6 +5,20 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: studbook endpoint for Payload
+
+`packages/studbook/test/payload.test.ts` (9 tests) calls the endpoint handler with a stand-in request; it reads no database, because the platform's `source` does that:
+
+- **privacy:** a private animal is counted (population size) but appears only as `{ private: true }`. Its number, IDs, its use as a parent ("Private") and as a founder (counted, unnamed), and its holder code are all absent from the response;
+- **refusals:** 404 alike for a reader the platform gives nothing, an anonymous reader and a studbook that doesn't exist;
+- **genetics:** the coordinator sees every animal's MK, F and Known plus the population summary; a member sees only their own animal and no summary;
+- **fails closed:** `geneticsVisibleFor` or `canExport` that throws, or answers a truthy non-`true`, is a no;
+- **rows:** both IDs, parent codes (number, MULT, WILD, UNK for a parent with no record), holders only through `holderLabel` (per reader, left out without it), studbook order;
+- **PMx:** the coordinator gets the `.ped` file with holder names and an attachment name; a member and an anonymous reader get 403;
+- 400 for an unknown format, 422 for a pedigree the analysis refuses.
+
+Gaps left: not run inside a real Payload app yet. The platform's wiring (`source` reading with `overrideAccess: false`) gets its tests there. The numbering endpoints aren't built.
+
 ## 2026-11-10: uncertain parents in the views
 
 `packages/core/test/uncertain-views.test.ts` (6 tests) and `packages/react/test/uncertain.test.tsx` (3 tests):
