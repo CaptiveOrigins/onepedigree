@@ -5,6 +5,18 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: uncertain parents in the views
+
+`packages/core/test/uncertain-views.test.ts` (6 tests) and `packages/react/test/uncertain.test.tsx` (3 tests):
+
+- one placeholder per uncertain slot, linked to the child by role, never followed further, and candidates are listed on it, not drawn as parents (I7);
+- visible candidates with their chances, private candidates only counted (the placeholder names nothing private), and the unrecorded remainder;
+- a shared WILD1 is one placeholder identity for clutchmates and says so; maternal and paternal lines keep only their role;
+- documents without uncertain parents project exactly as before; placeholders lay out like any node; a placeholder never takes a real individual's ID;
+- React: drawn by kind (`data-uncertain`), candidates in the spoken name, and **never linked**, in the static view or the explorer (with a control showing a real animal still links).
+
+Gaps left: the payload plugin doesn't store or serve `uncertainParents` yet. When its studbook module does, it must drop candidates the reader can't see, with a test, as for known parents. Fan and Ahnentafel numbering ignore placeholders by design. Left out as overkill: candidates' own ancestry, which isn't drawn.
+
 ## 2026-11-10: studbook table
 
 `packages/react/test/studbook.test.tsx` (6 tests) covers what the table promises:

@@ -266,7 +266,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
 
   const occurrence = projection.occurrences.find((o) => o.occurrenceId === selectedOccurrence)
   const individual = occurrence ? projection.individuals[occurrence.individualId] : undefined
-  const href = individual ? (props.getIndividualHref?.(individual) ?? null) : null
+  const href = individual && !occurrence?.uncertain ? (props.getIndividualHref?.(individual) ?? null) : null
   const close = () => choose(null)
 
   return (

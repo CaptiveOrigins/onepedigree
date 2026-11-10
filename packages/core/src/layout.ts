@@ -1,5 +1,5 @@
 import { lifeLabel, lifeSpan, type LifeSpan } from './life'
-import type { IndividualOccurrence, PedigreeViewId, PedigreeViewProjection } from './projection'
+import type { IndividualOccurrence, PedigreeViewId, PedigreeViewProjection, UncertainParentDisplay } from './projection'
 import type { Individual } from './types'
 
 export type LayoutOptions = {
@@ -64,7 +64,20 @@ export function estimateNodeWidth(label: string, sublabel = ''): number {
 const SEX_MARK: Record<string, string> = { female: '♀', f: '♀', male: '♂', m: '♂' }
 /** The default node sublabel: sex mark and life years ("♂ 1950 – 2010"). */
 export function nodeSublabel(individual: Individual | undefined, span = lifeSpan(individual)): string {
+  const uncertain = individual?.data?.uncertain as UncertainParentDisplay | undefined
+  if (uncertain) return uncertainSublabel(uncertain)
   return [SEX_MARK[(individual?.sex ?? '').toLowerCase()] ?? '', lifeLabel(span)].filter(Boolean).join(' ')
+}
+
+const percent = (p: number) => `${Math.round(p * 100)}%`
+
+/** An uncertain parent's candidates with their chances ("A 60% · B 40%"), the hidden and leftover share, and whether clutchmates share it. */
+export function uncertainSublabel(u: UncertainParentDisplay, words: { private: string; wild: string; unknown: string; shared: string } = { private: 'private', wild: 'wild', unknown: 'unknown', shared: 'shared by clutchmates' }): string {
+  const parts = u.candidates.map((c) => `${c.label} ${percent(c.probability)}`)
+  if (u.hiddenCandidates) parts.push(`${u.hiddenCandidates} ${words.private}`)
+  if (u.remainder) parts.push(`${u.remainder.kind === 'wild' ? words.wild : words.unknown} ${percent(u.remainder.probability)}`)
+  if (u.shared) parts.push(words.shared)
+  return parts.join(' · ')
 }
 
 export type Point = { x: number; y: number }

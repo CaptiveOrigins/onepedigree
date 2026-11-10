@@ -1,6 +1,7 @@
 import { getDescendants, getRelationshipPaths } from './graph'
 import { indexPedigree, reproductiveStructure, type PedigreeIndex } from './normalize'
-import type { CohortId, Individual, IndividualId, PedigreeDocument, PedigreeIssue, ReproductiveStructure } from './types'
+import type { CohortId, Individual, IndividualId, PedigreeDocument, PedigreeIssue, ReproductiveStructure, UncertainParent } from './types'
+import { nameWithIdentifier } from './layout'
 
 export type PedigreeViewId =
   | 'pedigree'
@@ -70,6 +71,23 @@ export type IndividualOccurrence = {
   ahnentafel?: number
   /** Relationship view: part of a connecting path; inbreeding view: on a converging path. */
   highlighted?: boolean
+  /**
+   * A parent that isn't known for certain (studbook MULT, WILD or UNK), drawn as a placeholder. Its individual is made
+   * up for the view (see `UncertainParentDisplay` in its `data.uncertain`): don't link to it or look it up elsewhere.
+   */
+  uncertain?: true
+}
+
+/** What a placeholder for an uncertain parent shows. Candidates the reader can't see are only counted. */
+export type UncertainParentDisplay = {
+  kind: 'multiple' | 'wild' | 'unknown'
+  role: string | null
+  /** Siblings share this one unknown parent (studbook WILD1, UNK1). */
+  shared: string | null
+  candidates: readonly { individual: IndividualId; label: string; probability: number }[]
+  hiddenCandidates: number
+  /** Probability left over for an unrecorded parent, and what it is. */
+  remainder: { probability: number; kind: 'wild' | 'unknown' } | null
 }
 
 export type ProjectedEdge = {
@@ -109,6 +127,7 @@ export class ProjectionBuilder {
   truncated = false
   private readonly byIdentity = new Map<IndividualId, string[]>()
   private readonly edgeKeys = new Set<string>()
+  private readonly placeholders = new Map<IndividualId, Individual>()
 
   constructor(
     readonly index: PedigreeIndex,
@@ -149,13 +168,45 @@ export class ProjectionBuilder {
     this.edges.push({ id: `e${this.edges.length}`, source, target, role })
   }
 
+  /**
+   * A placeholder occurrence for one uncertain parent slot of `childId`. A slot with a `shared` key is one individual
+   * for every sibling (merged where the occurrence mode merges). Placeholders are never expanded further.
+   */
+  addUncertain(childId: IndividualId, slot: UncertainParent, slotIndex: number, generation: number, lineagePath: readonly IndividualId[]) {
+    let id = slot.shared ? `~uncertain:shared:${slot.role ?? ''}:${slot.shared}` : `~uncertain:${childId}:${slotIndex}`
+    while (this.index.individuals.has(id)) id = `~${id}`
+    if (!this.placeholders.has(id)) {
+      const visible = slot.candidates.filter((c) => {
+        const ind = this.index.individuals.get(c.individual)
+        return ind && !ind.data?.private
+      })
+      const total = slot.candidates.reduce((sum, c) => sum + c.probability, 0)
+      const kind = slot.kind ?? 'unknown'
+      const display: UncertainParentDisplay = {
+        kind: slot.candidates.length ? 'multiple' : kind,
+        role: slot.role ?? null,
+        shared: slot.shared ?? null,
+        candidates: visible.map((c) => {
+          const ind = this.index.individuals.get(c.individual)!
+          return { individual: c.individual, label: nameWithIdentifier(ind.label, ind.identifier) || ind.id, probability: c.probability }
+        }),
+        hiddenCandidates: slot.candidates.length - visible.length,
+        remainder: slot.candidates.length && total < 1 - 1e-9 ? { probability: 1 - total, kind } : null,
+      }
+      const role = slot.role ? ` ${slot.role}` : ' parent'
+      const label = display.kind === 'multiple' ? `Possible${role}s` : display.kind === 'wild' ? `Wild${role}` : `Unknown${role}`
+      this.placeholders.set(id, { id, label, data: { uncertain: display } })
+    }
+    return this.add(id, generation, [...lineagePath, id], { uncertain: true })
+  }
+
   build(view: PedigreeViewId): PedigreeViewProjection {
     for (const [, occ] of this.byIdentity)
       if (occ.length > 1) for (const o of this.occurrences) if (occ.includes(o.occurrenceId)) o.repeated = true
     const individuals: Record<IndividualId, Individual> = {}
     const structures: Record<IndividualId, ReproductiveStructure> = {}
     for (const o of this.occurrences) {
-      const ind = this.index.individuals.get(o.individualId)
+      const ind = this.index.individuals.get(o.individualId) ?? this.placeholders.get(o.individualId)
       if (!ind) continue
       individuals[ind.id] = ind
       if (ind.parentage) structures[ind.id] = reproductiveStructure(ind)
@@ -189,8 +240,16 @@ export function addAncestors(b: ProjectionBuilder, focal: { occurrenceId: string
         b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null)
         if (r.expand) next.push({ occurrenceId: r.occurrenceId, id: p.individual, path: [...child.path, p.individual] })
       }
+    // Parents known only as candidates, wild or unknown: one placeholder per slot, not followed further.
+    for (const child of frontier)
+      for (const [i, slot] of (b.index.individuals.get(child.id)?.parentage?.uncertainParents ?? []).entries()) {
+        if (filter && !filter(slot.role ?? null)) continue
+        const r = b.addUncertain(child.id, slot, i, g, child.path)
+        if (!r) return
+        b.edge(r.occurrenceId, child.occurrenceId, slot.role ?? null)
+      }
     frontier = next
-    if (g === depth && frontier.some((f) => (b.index.parentsOf.get(f.id) ?? []).some((p) => b.index.individuals.has(p.individual)))) b.truncated = true
+    if (g === depth && frontier.some((f) => (b.index.parentsOf.get(f.id) ?? []).some((p) => b.index.individuals.has(p.individual)) || Boolean(b.index.individuals.get(f.id)?.parentage?.uncertainParents?.length))) b.truncated = true
   }
 }
 

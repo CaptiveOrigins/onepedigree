@@ -61,6 +61,10 @@
 /* An anonymous placeholder for a record the reader can't see: dotted and muted, so it never reads as a real individual. */
 .op-individual[data-private] { --op-node-border-dash: 2 3; }
 .op-individual[data-private] .op-label { fill: var(--op-sublabel); font-style: italic; font-weight: 500; }
+/* A parent known only as candidates, wild or unknown (studbook MULT, WILD, UNK): long dashes and italic, and its label says which.
+   Its connector keeps a data-uncertain hook but no pattern, because line patterns already mean reproductive mode. */
+.op-individual[data-uncertain] { --op-node-border-dash: 10 4; }
+.op-individual[data-uncertain] .op-label { font-style: italic; }
 .op-individual[data-focal] .op-node-box { stroke: var(--op-focal-border); stroke-width: 2.5px; }
 .op-individual[data-highlighted] .op-node-box,
 .op-individual[data-highlighted] .op-fan-segment { stroke: var(--op-highlight); stroke-width: 2.5px; }
