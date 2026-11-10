@@ -4,6 +4,21 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+
+## 2026-11-10: PMx export
+
+`packages/studbook/test/pmx.test.ts` (7 tests) checks the writer against the PMx manual's format:
+
+- the header lines and studbook order;
+- known parents, sex codes, flags, dates and both IDs;
+- a MULT sire with `*SIRE` lines;
+- a shared clutch father;
+- `*MOVE` lines through birth, transfer and death, and an open stay closed as alive;
+- holder names only through `holderLabel`, and refusal of `;` and `:` and of role-less parents;
+- estimate codes.
+
+Gap: not yet loaded into PMx itself, which runs on Windows and isn't available here.
+
 ## 2026-11-10: studbook kinship
 
 `packages/studbook/test/kinship.test.ts` (7 tests) checks the maths against textbook values:
