@@ -5,6 +5,12 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: uncertain parents stay out of the main plugin
+
+- **Promise:** MULT candidates name other animals, and only the studbook endpoint serves them, with private candidates counted but never named. The main plugin has no step that would drop candidates a reader can't see.
+- **Covered now:** `packages/payload/test/uncertain-parents.test.ts` shows the main plugin's mapping leaves stored `uncertainParents` and their candidates out, with parent arrays and with role fields. It passed on the current code: no fix was needed.
+- **Gap kept:** if the main plugin ever serves uncertain parents, it needs candidate redaction and real-Payload tests for it. This test has to change in the same PR.
+
 ## 2026-11-10: studbook numbering endpoints
 
 `packages/studbook/test/payload-numbers.test.ts` (6 tests) runs on a real Payload with an in-memory MongoDB and made-up animals:
