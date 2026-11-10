@@ -5,6 +5,19 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 
 
+## 2026-11-10: studbook table
+
+`packages/react/test/studbook.test.tsx` (6 tests) covers what the table promises:
+
+- both IDs and old numbers on every row (decision 2026-11-09);
+- search by studbook number, old number, CO ID or Animal ID;
+- **privacy:** a private animal is a placeholder with no number, ID or name in the markup, never matches a search (by its number, CO ID or Animal ID), and stays in the count whether or not "living only" is on, so the filter doesn't reveal its status;
+- MK and F shown only where given, "Not shown to you" elsewhere, the pedigree-based note, and no genetics columns at all when nothing is given;
+- sorting by number (permanent, then T), mean kinship and birth, unknowns last, with `aria-sort`;
+- opening an animal from its number; the labelled scroll region and caption.
+
+Gaps left: no screen-reader pass yet (the same accessibility gap as the rest of the React package). Who may see genetics or private animals is decided by the payload plugin, and gets its tests there.
+
 ## 2026-11-10: studbook numbers
 
 `packages/studbook/test/numbers.test.ts` (12 tests) covers each numbering rule in docs/architecture/studbook.md:
