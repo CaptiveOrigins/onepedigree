@@ -4,6 +4,7 @@ Decisions the owner made about OnePedigree, newest first, each with its date. Mo
 
 | Date | Decision |
 | --- | --- |
+| 2026-11-10 | **The studbook gets a Mac app counterpart:** "Oh! I forgot. The Studbook needs a Mac app counterpart" (about 1:15 PM MST). Scope as the director relayed it: the same two views (the project view and the formal studbook view), the same data model and the same exports (PDF, CSV, JSON, PMx), on local files with no Captive Origins server, planned with Tier A/B after tour v3. Plan: [studbook-mac.md](studbook-mac.md). Relayed. |
 | 2026-11-10 | **Tour first, then the studbook:** "Let's do the tour before the Studbook addition so we don't have to wait, but we should mention the studbook features we've decided on and put it as in progress at time of doc compilation." Relayed. |
 | 2026-11-10 | **Audit old values for a studbook record's own fields only** (dates, parents, status, location), never personal details. Built by the platform. Relayed. |
 | 2026-11-10 | **Studbooks live in a OnePedigree extension:** "An onepedigree-studbook package: species-neutral numbering, kinship, founders and exports, which any group could use. Captive Origins turns it on inside Assurance Projects." Relayed. |
