@@ -1,6 +1,6 @@
 {
   "name": "@captiveorigins/payload-plugin-onepedigree",
-  "version": "0.1.0-alpha.18",
+  "version": "0.1.0-alpha.19",
   "description": "OnePedigree for Payload: parentage fields, cycle-safe parentage writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin previews.",
   "homepage": "https://github.com/CaptiveOrigins/onepedigree#readme",
   "bugs": {
