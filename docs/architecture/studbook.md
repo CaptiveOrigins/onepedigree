@@ -42,4 +42,12 @@
 
 ## Analysis
 
-`kinshipAnalysis` (built) gives F, kinship, MK, GD, FGE, founder representation and Known, all labelled **pedigree-based**. The rules are in its source comment. Next: numbering, the PMx primary-input writer (semicolon delimited, SPARKS 1.6 header, `*SIRE`/`*DAM` probability lines, `*MOVE` lines) and the census file, then the studbook table view.
+`kinshipAnalysis` (built) gives F, kinship, MK, GD, FGE, founder representation and Known, all labelled **pedigree-based**. The rules are in its source comment. `toPed` (built) writes PMx's primary input as a `.ped` file, following the PMx User Manual v1.0, pages 138–141:
+
+- the analysis date and animal-count header lines;
+- one record per animal (`ID; SireID; DamID; Sex; Selected; Dead; Birth Date; Death Date; Location; Local ID; Other ID`), with the keeper's Animal ID as a UDF so both IDs travel;
+- MULT with `*SIRE`/`*DAM` probability lines; WILD, UNK, and shared `WLDn`/`UNKn` codes, which PMx inserts as one founder per clutch;
+- `*MOVE` lines built from the event ledger, with PMx's estimate codes;
+- sex codes 0–7, all fertile until reproductive status arrives (Tier B).
+
+Not built: the census file. The manual names `exchcens.txt` but doesn't give its columns, so it waits until its layout can be confirmed. Next: numbering, then the studbook table view.
