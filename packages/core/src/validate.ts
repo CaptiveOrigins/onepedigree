@@ -79,6 +79,10 @@ function uncertainIssues(childId: IndividualId, parents: readonly ParentReferenc
     })
     if (sum > 1 + 1e-9) out.push(issue('error', 'CANDIDATE_PROBABILITY_SUM', `Candidate probabilities sum to ${Math.round(sum * 1000) / 1000}, above 1.`, { individualId: childId, path }))
   })
+  // Studbook practice: a wild-caught animal's parents are both WILD; WILD and UNK aren't mixed on one animal.
+  const kinds = new Set(slots.map((s) => s.kind ?? 'unknown').filter((k) => k))
+  if (kinds.has('wild') && kinds.has('unknown') && slots.length > 1)
+    out.push(issue('notice', 'WILD_AND_UNKNOWN_MIXED', 'One parent is recorded as wild and another as unknown; studbooks keep these apart.', { individualId: childId, path: 'parentage.uncertainParents' }))
   return out
 }
 

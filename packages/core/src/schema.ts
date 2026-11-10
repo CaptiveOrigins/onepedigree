@@ -22,6 +22,8 @@ export const parentageSchema = {
         additionalProperties: false,
         properties: {
           role: nullableString,
+          kind: { enum: ['wild', 'unknown', null] },
+          shared: nullableString,
           candidates: {
             type: 'array',
             items: { type: 'object', required: ['individual', 'probability'], additionalProperties: false, properties: { individual: { type: 'string', minLength: 1 }, probability: { type: 'number', exclusiveMinimum: 0, maximum: 1 } } },

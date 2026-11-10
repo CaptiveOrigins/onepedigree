@@ -318,3 +318,16 @@ describe('uncertain parents (studbook MULT and UNK)', () => {
     expect(() => doc([], [{ role: 'father' }])).toThrow(/candidates/)
   })
 })
+
+describe('wild and shared unknown parents (studbook WILD, WILDn, UNKn)', () => {
+  const kid = (slots: unknown[]) => normalizePedigree({ schemaVersion: 1, individuals: [{ id: 'kid', parentage: { parents: [], uncertainParents: slots } }] })
+  it('keeps the kind and a key shared by clutchmates', () => {
+    const d = kid([{ role: 'mother', kind: 'wild', shared: 'WILD1', candidates: [] }, { role: 'father', kind: 'wild', shared: 'WILD2', candidates: [] }])
+    expect(d.individuals[0]!.parentage!.uncertainParents).toEqual([{ role: 'mother', kind: 'wild', shared: 'WILD1', candidates: [] }, { role: 'father', kind: 'wild', shared: 'WILD2', candidates: [] }])
+    expect(validatePedigree(d).valid).toBe(true)
+  })
+  it('notes WILD mixed with UNK on one animal, and refuses an unknown kind', () => {
+    expect(validatePedigree(kid([{ role: 'mother', kind: 'wild', candidates: [] }, { role: 'father', candidates: [] }])).issues.map((i) => i.code)).toContain('WILD_AND_UNKNOWN_MIXED')
+    expect(() => kid([{ role: 'mother', kind: 'feral', candidates: [] }])).toThrow(/kind/)
+  })
+})

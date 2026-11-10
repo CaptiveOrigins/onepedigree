@@ -25,7 +25,20 @@ export type ParentReference = {
  * Candidates are never parents: graph queries, counts and cycles use `parents` only.
  */
 export type ParentCandidate = { individual: IndividualId; probability: number }
-export type UncertainParent = { role?: ParentRole | null; candidates: readonly ParentCandidate[] }
+export type UncertainParent = {
+  role?: ParentRole | null
+  candidates: readonly ParentCandidate[]
+  /**
+   * What the unknown part is: `wild` (a wild-caught, unrelated founder; studbook WILD) or `unknown` (studbook UNK, the
+   * default). Applies to the whole slot when there are no candidates, and to the remainder below 1 otherwise.
+   */
+  kind?: 'wild' | 'unknown' | null
+  /**
+   * A key shared by siblings whose unknown parent is the same individual (studbook WILD1, UNK1: a clutch collected
+   * together). Without it, every unknown parent is unique and unrelated to all others.
+   */
+  shared?: string | null
+}
 
 export type Parentage = {
   /** Zero or more identified contributors. The parent count is always `parents.length`. */

@@ -92,7 +92,10 @@ export function normalizeParentage(input: unknown, path = 'parentage') {
       if (typeof c.probability !== 'number' || !Number.isFinite(c.probability)) throw new PedigreeFormatError('Expected a probability number', `${cat}.probability`)
       return Object.freeze({ individual: id(c.individual, `${cat}.individual`), probability: c.probability })
     })
-    return Object.freeze({ role: optText(u.role, `${at}.role`), candidates: Object.freeze(candidates) })
+    const kind = optText(u.kind, `${at}.kind`)
+    if (kind !== null && kind !== 'wild' && kind !== 'unknown') throw new PedigreeFormatError('Expected kind "wild" or "unknown"', `${at}.kind`)
+    const shared = optText(u.shared, `${at}.shared`)
+    return Object.freeze({ role: optText(u.role, `${at}.role`), candidates: Object.freeze(candidates), ...(kind ? { kind } : {}), ...(shared ? { shared } : {}) })
   })
   return Object.freeze({
     parents: Object.freeze(parents),
