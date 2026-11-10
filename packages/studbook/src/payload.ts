@@ -14,7 +14,8 @@ import type { Studbook, StudbookAnimal, StudbookDate } from './types.js'
  *   nowhere else either: a private parent is "Private", a private founder is counted without its number.
  * - An animal's MK, F and Known come back only where `geneticsVisibleFor` says yes (owner, 2026-11-10: the coordinator
  *   for every animal, a member for their own). The population's GD, FGE and founders come back only when the reader
- *   may see every non-private animal's numbers, because GD is 1 − mean MK and would give the hidden ones away.
+ *   may see every animal's numbers, private animals included (asked of `geneticsVisibleFor`; their rows stay
+ *   placeholders), because GD is 1 − mean MK and would give the hidden ones away.
  * - Holders appear only through `holderLabel`, which decides per reader (owner, 2026-10-31: keeper names only to the
  *   custody chain). Without it, holders are left out.
  * - `?format=pmx` is the PMx `.ped` file, for those `canExport` allows (the coordinator and the studbook keeper);
@@ -128,6 +129,8 @@ export async function getStudbook(req: PayloadRequest, options: StudbookEndpoint
   for (const a of [...book.animals].sort((x, y) => x.studbookNumber.localeCompare(y.studbookNumber, 'en', { numeric: true }))) {
     if (a.private) {
       animals.push({ private: true })
+      // Its row stays a placeholder whatever the answer, but the summary would give its MK away.
+      if (!(await yes(() => options.geneticsVisibleFor({ studbook, animal: a, req })))) seesAll = false
       continue
     }
     const visible = await yes(() => options.geneticsVisibleFor({ studbook, animal: a, req }))

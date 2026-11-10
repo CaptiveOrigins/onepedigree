@@ -2,8 +2,43 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-10: full audit
 
+Scope: every package and the desktop app, against the README, the invariants (I1 to I7), `studbook.md`, `decisions.md` and the dated audits below. No coverage output exists in the repo, so this maps promises to tests by reading them. Tests went from 206 to 210: studbook 42 to 44, desktop 3 to 5. Core (75), react (40) and payload (46) are unchanged.
 
+### Fixed in this pass
+
+- **The studbook endpoint gave a member the population summary when the only animals they couldn't see were private ones.** `seesAll` was worked out over non-private animals only, so a member whose own animal was the only public one got GD, FGE and the founders. GD is 1 − mean MK, so with their own MK they could work out the private animal's MK. That breaks the owner's rule of 2026-11-10 (a member sees their own animal's numbers only). `geneticsVisibleFor` is now asked about private animals too, and the summary appears only if every answer is yes. Private rows stay `{ private: true }` either way, and the coordinator still gets the summary. Test: `payload.test.ts`, "gives no population summary when the only animals a member can't see are private ones". It failed before the fix (`size: 2, meanKinship: 0.25` came back). The studbook package is unpublished, so no released version has this bug.
+
+### Covered
+
+- **Invariants I1 to I7** each name passing tests in [scientific-invariants.md](architecture/scientific-invariants.md).
+- **Private parents and hidden records in the Payload plugin:** plain REST, GraphQL and Local API reads, writes that keep or refuse a private parent, the loop check that can't reveal a private animal, private offspring and cohort members left out of lists and counts, and `hiddenRecords: 'omit'` (`private-parents.test.ts`, `private-parents-omit.test.ts`, `mapped.test.ts`). Uncertain parents are never served by the main plugin (`uncertain-parents.test.ts`).
+- **Who sees genetics and exports in the studbook:** private animals counted but never named (as a row, parent, MULT candidate, founder or holder), 404 alike for no access and no studbook, genetics per `geneticsVisibleFor`, the summary only for readers who may see every animal's numbers, PMx only for `canExport`, and any callback that throws or answers anything but `true` counted as no (`studbook/test/payload.test.ts`).
+- **Numbering:** hidden animals' numbers never reused or named, 403 and 404 refusals, and the race (`payload-numbers.test.ts`).
+- **The studbook table:** a private animal is a placeholder, never matches a search, and stays in the count (`react/test/studbook.test.tsx`).
+- **Files that must not be lost or changed:** a GEDCOM is never changed (I5), saves are atomic and a failed write leaves the old file (I6), and a changed GEDCOM is noticed (`apps/desktop/test/files.test.ts`, Tauri mocked).
+
+### Gaps added (with the tests)
+
+- **The population-summary leak above** (`studbook/test/payload.test.ts`, 1 test).
+- **A PMx request for a studbook the platform gives nothing for** gets 404 and no file, even from someone allowed to export (`studbook/test/payload.test.ts`, 1 test).
+- **Desktop: a JSON project keeps every animal, parent and display setting through a save and reopen.** Nothing tested the round trip before (`files.test.ts`).
+- **Desktop: an imported spreadsheet is never saved over.** The project has no path, so saving asks where, and cancelling writes nothing (`files.test.ts`).
+
+### Gaps left
+
+- **A file named `<family>.companion.json` that isn't a companion is replaced on the next save.** The app treats it as missing and starts a fresh companion. The name makes a clash unlikely, but refusing or renaming instead is a behaviour change for the lead, not an audit.
+- **A failed rename leaves `<file>.tmp` beside the chosen file** (desktop). The old file is safe and the error is shown. Minor.
+- **If `holderLabel` throws, the studbook request fails** with a server error instead of leaving the holder out. Nothing leaks, so this fails closed, but the whole page is lost. Worth deciding with the platform.
+- Still open from earlier audits: the Admin pickers with a private parent haven't been seen in a browser; `/versions` reads aren't covered; a simultaneous renumber race isn't tested on its own; the studbook endpoints haven't run inside the platform; the `.ped` file hasn't been loaded into PMx; and there's been no full keyboard and screen-reader audit of the React package.
+- The desktop app's dialogs and file calls are mocked. Saving on a real disk is only checked by hand.
+
+### Left out as overkill
+
+- Payload's own internals, such as relationship validation and admin rendering.
+- How good a layout looks, which the playground gallery checks by eye.
+- The playground app, which is a demo.
 
 ## 2026-11-10: uncertain parents stay out of the main plugin
 

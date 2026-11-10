@@ -48,4 +48,30 @@ describe('saving', () => {
     await expect(saveProject(project)).rejects.toThrow(/disk full/)
     expect(disk.get('/made-up/p.json')).toBe('old')
   })
+
+  it('keeps every animal, parent and display setting through a save and reopen', async () => {
+    disk.clear()
+    const doc = { schemaVersion: 1 as const, individuals: [{ id: 'd', label: 'Nova', sex: 'female' as const }, { id: 'c', label: 'Ember', parentage: { parents: [{ individual: 'd', role: 'dam' }] } }] }
+    const display = { parentTerms: 'dam-sire' as const, species: 'Made-up species', view: 'fan' }
+    await saveProject({ kind: 'json', path: '/made-up/p.json', doc, display, warnings: [] })
+    const back = await openPath('/made-up/p.json')
+    // Saved in normalized form (sorted, unknowns written as null), with nothing lost.
+    const byId = new Map(back.kind === 'json' ? back.doc.individuals.map((i) => [i.id, i]) : [])
+    expect(byId.size).toBe(2)
+    for (const i of doc.individuals) expect(byId.get(i.id)).toMatchObject(i)
+    expect(back.kind === 'json' && back.display).toEqual(display)
+  })
+
+  it('never saves over an imported spreadsheet: it asks where, and a cancel writes nothing', async () => {
+    const dialog = await import('@tauri-apps/plugin-dialog')
+    disk.clear(); writes.length = 0
+    disk.set('/made-up/animals.csv', 'ID,Dam,Sire\nD1,,\nH1,D1,\n')
+    const project = await openPath('/made-up/animals.csv')
+    expect(project.kind === 'json' && project.path).toBeNull()
+    vi.mocked(dialog.save).mockResolvedValueOnce(null)
+    expect(await saveProject(project)).toBeNull()
+    expect(vi.mocked(dialog.save)).toHaveBeenCalled()
+    expect(writes).toEqual([])
+    expect(disk.get('/made-up/animals.csv')).toBe('ID,Dam,Sire\nD1,,\nH1,D1,\n')
+  })
 })
