@@ -92,6 +92,9 @@ navigation (arrows between nodes, Enter to select, Escape to clear, +/−/0 to z
 to pan), visible focus, reduced-motion support, and non-color cues: junction shapes (circle =
 two-parent mode, diamond = single-parent mode, square = variable; hollow = incomplete), line
 patterns per reproductive mode, and a ↻ marker plus dashed border on repeated individuals.
+Parents known only as candidates, wild or unknown (studbook MULT, WILD, UNK) are drawn as
+placeholders with long-dashed borders and italic labels that say which ("Possible mothers", "Wild
+father"), list the candidates with their chances in the node and its spoken name, and never link anywhere.
 
 ## License
 

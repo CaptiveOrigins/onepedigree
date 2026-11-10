@@ -1,4 +1,4 @@
-import { estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel } from '@captiveorigins/onepedigree-core'
+import { estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
 import type {
   Individual,
   IndividualOccurrence,
@@ -317,6 +317,7 @@ export function PedigreeView(props: PedigreeViewProps) {
               className={cx('op-connector', c.connector)}
               d={e.points.map((pt, i) => `${i ? 'L' : 'M'} ${pt.x} ${pt.y}`).join(' ')}
               data-role={e.role ?? undefined}
+              data-uncertain={occById.get(e.source)?.uncertain || undefined}
               data-reproductive-mode={s?.reproductiveMode ?? undefined}
               data-completeness={s?.completeness}
               data-highlighted={highlighted || undefined}
@@ -333,9 +334,11 @@ export function PedigreeView(props: PedigreeViewProps) {
           const structure = p.structures[occurrence.individualId]
           const selected = props.selectedIndividualId === occurrence.individualId
           const highlighted = Boolean(props.highlightedOccurrenceIds?.has(node.occurrenceId) || occurrence.highlighted)
-          const href = individual ? props.getIndividualHref?.(individual) : null
+          // A placeholder for an uncertain parent is made up for the view: it never links anywhere.
+          const uncertain = occurrence.uncertain ? (individual?.data?.uncertain as UncertainParentDisplay | undefined) : undefined
+          const href = individual && !occurrence.uncertain ? props.getIndividualHref?.(individual) : null
           const label = labelOf(individual, terms)
-          const aria = [
+          const aria = (uncertain ? [label, uncertainSublabel(uncertain)] : [
             label,
             sexWord(individual?.sex, terms),
             lifeLabel(lifeSpan(individual)) || null,
@@ -344,7 +347,7 @@ export function PedigreeView(props: PedigreeViewProps) {
             describeStructure(structure),
             props.geneOverlay ? `${props.geneOverlay.label}: ${genotypeWord(props.geneOverlay.marks.get(occurrence.individualId))}` : null,
             props.genotypes ? genotypeText(props.genotypes, occurrence.individualId) : null,
-          ]
+          ])
             .filter(Boolean)
             .join(', ')
           const slot: IndividualSlotProps = { individual, occurrence, node, structure, selected, highlighted, terms, ...(props.geneOverlay ? { gene: props.geneOverlay.marks.get(occurrence.individualId) ?? null } : {}), ...(props.genotypes ? { genotypes: props.genotypes } : {}) }
@@ -363,6 +366,7 @@ export function PedigreeView(props: PedigreeViewProps) {
             'data-generation': occurrence.generation,
             'data-repeated': occurrence.repeated || undefined,
             'data-private': individual?.data?.private ? true : undefined,
+            'data-uncertain': uncertain?.kind,
             'data-collapsed': occurrence.collapsedInto ? true : undefined,
             'data-cohort': individual?.parentage?.cohort ?? undefined,
             'data-reproductive-mode': structure?.reproductiveMode ?? undefined,
