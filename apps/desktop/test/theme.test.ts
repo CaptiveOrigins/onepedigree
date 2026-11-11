@@ -27,6 +27,23 @@ describe('focus ring colour (N154)', () => {
     for (const bg of ['--bg', '--panel', '--field']) expect(contrastRatio(light['--focus']!, light[bg]!), `light focus on ${bg}`).toBeGreaterThanOrEqual(3)
   })
 
+  it('the shell colors match the OneOrigin tokens built into oneorigin.css, in light and both dark blocks', () => {
+    // oneorigin.css is written from brand/oneorigin/tokens.json by `node scripts/oneorigin.mjs build`; CI's `check` keeps it current.
+    const tokenCss = readFileSync(join(__dirname, '../src/oneorigin.css'), 'utf8')
+    const tokens = (start: string) => {
+      const at = tokenCss.indexOf(start)
+      expect(at, start).toBeGreaterThanOrEqual(0)
+      return Object.fromEntries([...tokenCss.slice(at, tokenCss.indexOf('}', at)).matchAll(/(--[a-z-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1]!, m[2]!]))
+    }
+    const shell: Record<string, string> = { '--bg': '--op-background', '--panel': '--op-panel', '--text': '--op-text', '--muted': '--op-muted', '--border': '--op-border', '--accent': '--op-accent', '--focus': '--op-focus' }
+    const pairs = [[':root {', ':root {'], [':root:not(', ':root:not('], [":root[data-appearance='dark'] {", ":root[data-appearance='dark'] {"]] as const
+    for (const [app, built] of pairs) {
+      const a = vars(app)
+      const t = tokens(built)
+      for (const [name, token] of Object.entries(shell)) expect(a[name], `${app} ${name} = ${token}`).toBe(t[token])
+    }
+  })
+
   it('a chosen appearance sets the pedigree focus ring too, and app controls use --focus', () => {
     expect(vars(":root[data-appearance='light'] :is(")['--op-focus']).toBe('#a65f20')
     expect(vars(":root[data-appearance='dark'] :is(")['--op-focus']).toBe('#e7a066')

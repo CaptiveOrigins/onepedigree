@@ -1,0 +1,48 @@
+/* OneOrigin tokens for OnePedigree (--op-), written by `node scripts/oneorigin.mjs build` from brand/oneorigin/tokens.json.
+   Don't edit by hand: `node scripts/oneorigin.mjs check` fails when this differs from what build writes. Tool: onepedigree. */
+:root {
+  --op-accent: #cf8137;
+  --op-focus: #a65f20;
+  --op-brand-pink: #e48185;
+  --op-structure: #4c312c;
+  --op-mauve: #91645d;
+  --op-text: #1d2330;
+  --op-muted: #5b6577;
+  --op-background: #ffffff;
+  --op-panel: #f7f8fa;
+  --op-border: #d9dde5;
+  --op-radius-button: 8px;
+  --op-radius-card: 10px;
+  --op-button-height: 32px;
+  --op-focus-width: 2px;
+  --op-focus-offset: 1px;
+  --op-icon-size: 24px;
+  --op-tile-top: #f8dcc0;
+  --op-tile-bottom: #eeb684;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-appearance='light']) {
+    --op-accent: #e7a066;
+    --op-focus: #e7a066;
+    --op-brand-pink: #eda9ac;
+    --op-structure: #eda9ac;
+    --op-mauve: #c79a92;
+    --op-text: #e8ecf2;
+    --op-muted: #a3acbb;
+    --op-background: #12151b;
+    --op-panel: #181c24;
+    --op-border: #2c3340;
+  }
+}
+:root[data-appearance='dark'] {
+  --op-accent: #e7a066;
+  --op-focus: #e7a066;
+  --op-brand-pink: #eda9ac;
+  --op-structure: #eda9ac;
+  --op-mauve: #c79a92;
+  --op-text: #e8ecf2;
+  --op-muted: #a3acbb;
+  --op-background: #12151b;
+  --op-panel: #181c24;
+  --op-border: #2c3340;
+}
