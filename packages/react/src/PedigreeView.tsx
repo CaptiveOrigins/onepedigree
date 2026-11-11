@@ -1,4 +1,4 @@
-import { estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
+import { candidateWords, estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
 import type {
   Individual,
   IndividualOccurrence,
@@ -247,6 +247,13 @@ function groupBox(group: ProjectionGroup, nodes: Map<string, PositionedNode>, pa
   return { x, y, width: Math.max(...ns.map((n) => n.x + n.width)) - x + pad, height: Math.max(...ns.map((n) => n.y + n.height)) - y + pad }
 }
 
+/** Where a branch's percentage goes: on the first stretch of the connector, just past the parent. */
+function branchLabelAt(points: readonly { x: number; y: number }[], orientation: 'vertical' | 'horizontal') {
+  const [a, b = a] = points
+  if (!a) return { x: 0, y: 0, anchor: 'start' as const }
+  return orientation === 'vertical' ? { x: a.x + 4, y: (a.y + b!.y) / 2 + 4, anchor: 'start' as const } : { x: (a.x + b!.x) / 2, y: a.y - 4, anchor: 'middle' as const }
+}
+
 /**
  * A pedigree view as SVG. Renders on the server with no client JavaScript;
  * links stay ordinary links. Every node carries stable `.op-*` classes and
@@ -311,17 +318,29 @@ export function PedigreeView(props: PedigreeViewProps) {
           const child = occById.get(e.target)
           const s = child ? p.structures[child.individualId] : undefined
           const highlighted = props.highlightedOccurrenceIds?.has(e.source) && props.highlightedOccurrenceIds?.has(e.target)
-          return (
+          const path = (
             <path
               key={e.id}
               className={cx('op-connector', c.connector)}
               d={e.points.map((pt, i) => `${i ? 'L' : 'M'} ${pt.x} ${pt.y}`).join(' ')}
               data-role={e.role ?? undefined}
-              data-uncertain={occById.get(e.source)?.uncertain || undefined}
+              data-uncertain={e.uncertain || occById.get(e.source)?.uncertain || undefined}
+              data-branch={e.probability !== undefined || undefined}
               data-reproductive-mode={s?.reproductiveMode ?? undefined}
               data-completeness={s?.completeness}
               data-highlighted={highlighted || undefined}
             />
+          )
+          if (e.probability === undefined) return path
+          // One of several possible parents: its chance by the parent's end of the line. The parent's spoken name says it too.
+          const at = branchLabelAt(e.points, layout.orientation)
+          return (
+            <g key={e.id} className="op-branch">
+              {path}
+              <text className="op-connector-label" x={at.x} y={at.y} textAnchor={at.anchor} aria-hidden="true">
+                {`${Math.round(e.probability * 100)}%`}
+              </text>
+            </g>
           )
         })}
       </g>
@@ -340,6 +359,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const label = labelOf(individual, terms)
           const aria = (uncertain ? [label, uncertainSublabel(uncertain)] : [
             label,
+            occurrence.candidate ? candidateWords(occurrence.candidate) : null,
             sexWord(individual?.sex, terms),
             lifeLabel(lifeSpan(individual)) || null,
             occurrence.ahnentafel !== undefined ? `Ahnentafel ${occurrence.ahnentafel}` : null,
@@ -367,6 +387,7 @@ export function PedigreeView(props: PedigreeViewProps) {
             'data-repeated': occurrence.repeated || undefined,
             'data-private': individual?.data?.private ? true : undefined,
             'data-uncertain': uncertain?.kind,
+            'data-candidate': occurrence.candidate ? true : undefined,
             'data-collapsed': occurrence.collapsedInto ? true : undefined,
             'data-cohort': individual?.parentage?.cohort ?? undefined,
             'data-reproductive-mode': structure?.reproductiveMode ?? undefined,

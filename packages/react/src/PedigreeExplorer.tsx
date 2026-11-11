@@ -1,6 +1,6 @@
 'use client'
 
-import { REORDERABLE_VIEWS, type Individual, type IndividualOccurrence } from '@captiveorigins/onepedigree-core'
+import { candidateWords, REORDERABLE_VIEWS, type Individual, type IndividualOccurrence } from '@captiveorigins/onepedigree-core'
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
 import { AhnentafelList } from './AhnentafelList.js'
@@ -348,6 +348,7 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
             <>
               <p className="op-quick-view-title">{labelOf(individual, terms)}</p>
               {individual?.sex && <p>{sexWord(individual.sex, terms)}</p>}
+              {occurrence.candidate && <p>{candidateWords(occurrence.candidate, 'Possible')}</p>}
               <p>{describeStructure(projection.structures[occurrence.individualId])}</p>
               {occurrence.repeated && <p>{terms.repeated}</p>}
               <div className="op-quick-view-actions">

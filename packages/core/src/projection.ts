@@ -54,7 +54,16 @@ export type ProjectionOptions = {
   /** Cohort of the cohort view (default: the focal individual's). */
   cohortId?: CohortId
   lineageRoles?: LineageRoleConfig
+  /**
+   * How parents known only as candidates (studbook MULT) are drawn. `placeholder` (default): one made-up node per slot
+   * listing the candidates and their chances. `branches`: each candidate the reader can see is drawn as its own parent
+   * occurrence of the real individual, side by side, on a connector marked `uncertain` with its `probability`; private
+   * candidates and the unrecorded remainder are one placeholder each. Display only: no calculation reads this.
+   */
+  uncertainParents?: UncertainParentsMode
 }
+
+export type UncertainParentsMode = 'placeholder' | 'branches'
 
 export type IndividualOccurrence = {
   occurrenceId: string
@@ -76,7 +85,14 @@ export type IndividualOccurrence = {
    * up for the view (see `UncertainParentDisplay` in its `data.uncertain`): don't link to it or look it up elsewhere.
    */
   uncertain?: true
+  /**
+   * `uncertainParents: 'branches'`: this is a real individual drawn as one possible parent of the child it's linked to,
+   * with that slot's role, its chance and where the chances come from. Its own parents aren't drawn.
+   */
+  candidate?: UncertainCandidate
 }
+
+export type UncertainCandidate = { role: string | null; probability: number; basis: string | null }
 
 /** What a placeholder for an uncertain parent shows. Candidates the reader can't see are only counted. */
 export type UncertainParentDisplay = {
@@ -90,6 +106,12 @@ export type UncertainParentDisplay = {
   hiddenCandidates: number
   /** Probability left over for an unrecorded parent, and what it is. */
   remainder: { probability: number; kind: 'wild' | 'unknown' } | null
+  /**
+   * `uncertainParents: 'branches'`: this placeholder is one part of a slot drawn as alternative branches, either its
+   * private candidates (counted in `hiddenCandidates`) or the unrecorded remainder (`remainder`), and its share.
+   * `other` marks a remainder whose kind wasn't recorded.
+   */
+  branch?: { part: 'private' | 'remainder'; probability: number; other?: true }
 }
 
 export type ProjectedEdge = {
@@ -99,6 +121,9 @@ export type ProjectedEdge = {
   /** Child occurrence. */
   target: string
   role: string | null
+  /** `uncertainParents: 'branches'`: the parent is one of several possibilities, with this chance. Draw it dashed and labelled. */
+  uncertain?: true
+  probability?: number
 }
 
 export type ProjectionGroup = { id: string; kind: 'cohort' | 'generation' | 'other-parent' | 'path'; label: string | null; occurrenceIds: readonly string[] }
@@ -130,6 +155,7 @@ export class ProjectionBuilder {
   private readonly byIdentity = new Map<IndividualId, string[]>()
   private readonly edgeKeys = new Set<string>()
   private readonly placeholders = new Map<IndividualId, Individual>()
+  private readonly candidateCounts = new Map<IndividualId, number>()
 
   constructor(
     readonly index: PedigreeIndex,
@@ -151,11 +177,7 @@ export class ProjectionBuilder {
   add(id: IndividualId, generation: number, lineagePath: readonly IndividualId[], extra: Partial<IndividualOccurrence> = {}) {
     const existing = this.byIdentity.get(id)
     if (existing && this.options.occurrenceMode === 'merge') return { occurrenceId: existing[0]!, expand: false, added: false }
-    if (this.full) {
-      if (!this.truncated) this.issues.push(notice('NODE_LIMIT', `The view stops at ${this.options.maxNodes} individuals.`))
-      this.truncated = true
-      return null
-    }
+    if (this.stopAtLimit()) return null
     const occurrenceId = `${id}#${existing?.length ?? 0}`
     const collapsed = existing && this.options.occurrenceMode === 'hybrid' ? existing[0] : undefined
     this.occurrences.push({ occurrenceId, individualId: id, generation, lineagePath, repeated: false, ...(collapsed ? { collapsedInto: collapsed } : {}), ...extra })
@@ -163,11 +185,32 @@ export class ProjectionBuilder {
     return { occurrenceId, expand: !collapsed, added: true }
   }
 
-  edge(source: string, target: string, role: string | null) {
+  private stopAtLimit() {
+    if (!this.full) return false
+    if (!this.truncated) this.issues.push(notice('NODE_LIMIT', `The view stops at ${this.options.maxNodes} individuals.`))
+    this.truncated = true
+    return true
+  }
+
+  edge(source: string, target: string, role: string | null, extra: Pick<ProjectedEdge, 'uncertain' | 'probability'> = {}) {
     const key = `${source}>${target}`
     if (this.edgeKeys.has(key)) return
     this.edgeKeys.add(key)
-    this.edges.push({ id: `e${this.edges.length}`, source, target, role })
+    this.edges.push({ id: `e${this.edges.length}`, source, target, role, ...extra })
+  }
+
+  /**
+   * An occurrence of a real individual as one possible parent (`uncertainParents: 'branches'`). Always its own
+   * occurrence, whatever the occurrence mode, so a candidate is never merged with (and never stops the expansion of)
+   * the same individual drawn as a known ancestor elsewhere. Never expanded.
+   */
+  addCandidate(id: IndividualId, generation: number, lineagePath: readonly IndividualId[], candidate: UncertainCandidate) {
+    if (this.stopAtLimit()) return null
+    const n = this.candidateCounts.get(id) ?? 0
+    this.candidateCounts.set(id, n + 1)
+    const occurrenceId = `${id}#candidate${n}`
+    this.occurrences.push({ occurrenceId, individualId: id, generation, lineagePath, repeated: false, candidate })
+    return { occurrenceId }
   }
 
   /**
@@ -175,13 +218,9 @@ export class ProjectionBuilder {
    * for every sibling (merged where the occurrence mode merges). Placeholders are never expanded further.
    */
   addUncertain(childId: IndividualId, slot: UncertainParent, slotIndex: number, generation: number, lineagePath: readonly IndividualId[]) {
-    let id = slot.shared ? `~uncertain:shared:${slot.role ?? ''}:${slot.shared}` : `~uncertain:${childId}:${slotIndex}`
-    while (this.index.individuals.has(id)) id = `~${id}`
+    const id = this.placeholderId(childId, slot, slotIndex)
     if (!this.placeholders.has(id)) {
-      const visible = slot.candidates.filter((c) => {
-        const ind = this.index.individuals.get(c.individual)
-        return ind && !ind.data?.private
-      })
+      const visible = this.visibleCandidates(slot)
       const total = slot.candidates.reduce((sum, c) => sum + c.probability, 0)
       const kind = slot.kind ?? 'unknown'
       const display: UncertainParentDisplay = {
@@ -203,9 +242,68 @@ export class ProjectionBuilder {
     return this.add(id, generation, [...lineagePath, id], { uncertain: true })
   }
 
+  /** Candidates the reader may see: in the document and not private. Every other candidate is only ever counted. */
+  visibleCandidates(slot: UncertainParent) {
+    return slot.candidates.filter((c) => {
+      const ind = this.index.individuals.get(c.individual)
+      return ind && !ind.data?.private
+    })
+  }
+
+  private placeholderId(childId: IndividualId, slot: UncertainParent, slotIndex: number, suffix = '') {
+    let id = (slot.shared ? `~uncertain:shared:${slot.role ?? ''}:${slot.shared}` : `~uncertain:${childId}:${slotIndex}`) + suffix
+    while (this.index.individuals.has(id)) id = `~${id}`
+    return id
+  }
+
+  /**
+   * One uncertain slot as alternative branches (`uncertainParents: 'branches'`): each visible candidate as its own
+   * occurrence, then one placeholder for the private candidates and one for the unrecorded remainder, each on a
+   * connector marked `uncertain` with its chance. A slot without visible candidates is one placeholder, as by default.
+   * Returns false when the node limit stopped it.
+   */
+  addUncertainBranches(child: { occurrenceId: string; id: IndividualId; path: readonly IndividualId[] }, slot: UncertainParent, slotIndex: number, generation: number) {
+    const role = slot.role ?? null
+    const visible = this.visibleCandidates(slot)
+    if (!visible.length) {
+      const r = this.addUncertain(child.id, slot, slotIndex, generation, child.path)
+      if (!r) return false
+      this.edge(r.occurrenceId, child.occurrenceId, role)
+      return true
+    }
+    // A candidate's own ancestry isn't followed: each candidate would bring a whole tree, the view would multiply with
+    // every uncertain slot above it, and lines from different hypotheses would mix in one drawing as if all were true.
+    for (const c of visible) {
+      const r = this.addCandidate(c.individual, generation, [...child.path, c.individual], { role, probability: c.probability, basis: slot.basis ?? null })
+      if (!r) return false
+      this.edge(r.occurrenceId, child.occurrenceId, role, { uncertain: true, probability: c.probability })
+    }
+    const hidden = slot.candidates.filter((c) => !visible.includes(c))
+    const hiddenShare = hidden.reduce((sum, c) => sum + c.probability, 0)
+    const total = slot.candidates.reduce((sum, c) => sum + c.probability, 0)
+    const label = `Possible ${slot.role ?? 'parent'}`
+    const base = { kind: 'multiple' as const, role, shared: slot.shared ?? null, basis: slot.basis ?? null, candidates: [] }
+    const parts: { suffix: string; probability: number; display: UncertainParentDisplay }[] = []
+    if (hidden.length)
+      parts.push({ suffix: ':private', probability: hiddenShare, display: { ...base, hiddenCandidates: hidden.length, remainder: null, branch: { part: 'private', probability: hiddenShare } } })
+    if (total < 1 - 1e-9) {
+      const remainder = { probability: 1 - total, kind: slot.kind ?? 'unknown' }
+      parts.push({ suffix: ':remainder', probability: remainder.probability, display: { ...base, hiddenCandidates: 0, remainder, branch: { part: 'remainder', probability: remainder.probability, ...(slot.kind ? {} : { other: true as const }) } } })
+    }
+    for (const part of parts) {
+      const id = this.placeholderId(child.id, slot, slotIndex, part.suffix)
+      if (!this.placeholders.has(id)) this.placeholders.set(id, { id, label, data: { uncertain: part.display } })
+      const r = this.add(id, generation, [...child.path, id], { uncertain: true })
+      if (!r) return false
+      this.edge(r.occurrenceId, child.occurrenceId, role, { uncertain: true, probability: part.probability })
+    }
+    return true
+  }
+
   build(view: PedigreeViewId): PedigreeViewProjection {
-    for (const [, occ] of this.byIdentity)
-      if (occ.length > 1) for (const o of this.occurrences) if (occ.includes(o.occurrenceId)) o.repeated = true
+    const count = new Map<IndividualId, number>()
+    for (const o of this.occurrences) count.set(o.individualId, (count.get(o.individualId) ?? 0) + 1)
+    for (const o of this.occurrences) if (count.get(o.individualId)! > 1) o.repeated = true
     const individuals: Record<IndividualId, Individual> = {}
     const structures: Record<IndividualId, ReproductiveStructure> = {}
     for (const o of this.occurrences) {
@@ -243,10 +341,15 @@ export function addAncestors(b: ProjectionBuilder, focal: { occurrenceId: string
         b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null)
         if (r.expand) next.push({ occurrenceId: r.occurrenceId, id: p.individual, path: [...child.path, p.individual] })
       }
-    // Parents known only as candidates, wild or unknown: one placeholder per slot, not followed further.
+    // Parents known only as candidates, wild or unknown: one placeholder per slot (or, opted in, the visible candidates
+    // as alternative branches), not followed further.
     for (const child of frontier)
       for (const [i, slot] of (b.index.individuals.get(child.id)?.parentage?.uncertainParents ?? []).entries()) {
         if (filter && !filter(slot.role ?? null)) continue
+        if (b.options.uncertainParents === 'branches') {
+          if (!b.addUncertainBranches(child, slot, i, g)) return
+          continue
+        }
         const r = b.addUncertain(child.id, slot, i, g, child.path)
         if (!r) return
         b.edge(r.occurrenceId, child.occurrenceId, slot.role ?? null)
@@ -291,7 +394,8 @@ function addSiblings(b: ProjectionBuilder) {
     const r = b.add(s, 0, [s])
     if (!r) return
     for (const p of b.index.parentsOf.get(s) ?? []) {
-      const parentOcc = b.occurrences.find((o) => o.individualId === p.individual && o.generation === 1)
+      // Not a candidate occurrence: that one stands for a possibility for the focal individual only.
+      const parentOcc = b.occurrences.find((o) => o.individualId === p.individual && o.generation === 1 && !o.candidate)
       if (parentOcc) b.edge(parentOcc.occurrenceId, r.occurrenceId, p.role ?? null)
     }
   }
