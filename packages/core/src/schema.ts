@@ -9,7 +9,7 @@ export const parentReferenceSchema = {
     individual: { type: 'string', minLength: 1 },
     role: nullableString,
     // No kind means biological. Built-in kinds: biological, legal, adoptive, social, donor; any other text is allowed.
-    kind: { type: ['string', 'null'], examples: ['biological', 'legal', 'adoptive', 'social', 'donor'] },
+    kind: { type: ['string', 'null'], examples: ['biological', 'donor', 'surrogate', 'legal', 'adoptive', 'social'] },
   },
 } as const
 

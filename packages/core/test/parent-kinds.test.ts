@@ -51,14 +51,14 @@ describe('parent kinds: the model', () => {
   it('puts kind in the JSON Schema as optional, nullable text', () => {
     const ref = pedigreeDocumentSchema.properties.individuals.items.properties.parentage.oneOf[0].properties.parents.items
     expect(ref.properties.kind.type).toEqual(['string', 'null'])
-    expect(ref.properties.kind.examples).toEqual(['biological', 'legal', 'adoptive', 'social', 'donor'])
+    expect(ref.properties.kind.examples).toEqual(['biological', 'donor', 'surrogate', 'legal', 'adoptive', 'social'])
     expect(ref.required).toEqual(['individual'])
     expect(ref.additionalProperties).toBe(false)
   })
 })
 
 describe('parent kinds: biologicalParents, the one helper for calculations', () => {
-  it('counts links with no kind or kind biological, and nothing else', () => {
+  it('counts links with no kind, biological or donor (a gamete donor is a genetic parent), and nothing else', () => {
     const parents = [
       { individual: 'a', role: 'mother' },
       { individual: 'b', role: 'father', kind: 'biological' },
@@ -66,10 +66,11 @@ describe('parent kinds: biologicalParents, the one helper for calculations', () 
       { individual: 'd', role: 'mother', kind: 'adoptive' },
       { individual: 'e', role: 'dam', kind: 'social' },
       { individual: 'f', role: 'mother', kind: 'donor' },
+      { individual: 's', role: 'mother', kind: 'surrogate' },
       { individual: 'g', role: 'parent', kind: 'godparent' },
       { individual: 'h', role: 'father', kind: null },
     ]
-    expect(biologicalParents({ parents }).map((p) => p.individual)).toEqual(['a', 'b', 'h'])
+    expect(biologicalParents({ parents }).map((p) => p.individual)).toEqual(['a', 'b', 'f', 'h'])
     expect(biologicalParents(null)).toEqual([])
     expect(biologicalParents(undefined)).toEqual([])
   })

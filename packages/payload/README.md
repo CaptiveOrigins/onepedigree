@@ -44,7 +44,7 @@ React's `Terminology.identifierFormat` (default `{label} ({id})`) changes how th
   or `{ kind: 'parent-array', path: 'lineage', individualField: 'animal', roleField: 'role' }`.
   A row's kind is read from `kindField` (default `kind`); without one, every link is biological.
 
-Each parents row has an optional `kind`: empty means biological, or legal, adoptive, social or donor (add your own
+Each parents row has an optional `kind`: empty means biological, or donor (a gamete donor, also genetic), surrogate, legal, adoptive or social (add your own
 with `kinds`). Only biological links count for siblings, relatedness and genetics; the others, such as a foster dam,
 are shown dotted and labelled. The Mother/Father pickers edit only the biological rows.
 

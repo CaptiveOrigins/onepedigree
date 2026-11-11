@@ -57,7 +57,7 @@ export type OnePedigreePluginOptions = {
   selectors?: boolean
   /** Role options in the parent editor (extend the built-ins). */
   roles?: readonly string[]
-  /** Kind options in the parent editor, beyond biological, legal, adoptive, social and donor. Empty means biological. */
+  /** Kind options in the parent editor, beyond biological, donor, surrogate, legal, adoptive and social. Empty means biological. */
   kinds?: readonly string[]
   lineageRoles?: LineageRoleConfig
   navigation?: { individualUrl?: string; cohortUrl?: string }

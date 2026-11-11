@@ -16,15 +16,16 @@ export type ParentRole = 'mother' | 'father' | 'egg' | 'sperm' | 'donor' | 'pare
 
 /**
  * What kind of link a parent reference is. Absent (null/undefined) means biological, as before kinds existed.
- * `biological`: the genetic parent. `legal`, `adoptive`, `social`: a parent by law, adoption or upbringing (a foster
- * dam is `social`). `donor`: a link recorded as a donation, e.g. a surrogate who carried the young. Any other string is
- * allowed. Every kind except `biological` is non-biological: only links with no kind or `biological` are used for
- * relatedness and genetics (see `biologicalParents`). So a gamete donor who is the genetic parent belongs on a
- * biological link, or kinship leaves them out.
+ * - `biological`: the genetic parent.
+ * - `donor`: a gamete donor (egg or sperm). Also a genetic parent, so it counts in every genetic calculation.
+ * - `surrogate`: carried the young without being its genetic parent (gestational).
+ * - `legal`, `adoptive`, `social`: a parent by law, adoption or upbringing. A foster dam is `social`.
+ * Any other string is allowed. Only links with no kind, `biological` or `donor` are used for relatedness and genetics
+ * (see `biologicalParents`); every other kind is drawn but never counted.
  */
-export type ParentKind = 'biological' | 'legal' | 'adoptive' | 'social' | 'donor' | (string & {})
+export type ParentKind = 'biological' | 'donor' | 'surrogate' | 'legal' | 'adoptive' | 'social' | (string & {})
 
-export const PARENT_KINDS: readonly ParentKind[] = ['biological', 'legal', 'adoptive', 'social', 'donor']
+export const PARENT_KINDS: readonly ParentKind[] = ['biological', 'donor', 'surrogate', 'legal', 'adoptive', 'social']
 
 export type ParentReference = {
   individual: IndividualId
