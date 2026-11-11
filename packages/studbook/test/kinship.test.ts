@@ -1,4 +1,4 @@
-import { normalizePedigree } from '@captiveorigins/onepedigree-core'
+import { normalizePedigree, projectPedigree } from '@captiveorigins/onepedigree-core'
 import { describe, expect, it } from 'vitest'
 import { kinshipAnalysis } from '../src/index.js'
 
@@ -75,5 +75,26 @@ describe('kinship and inbreeding (textbook values)', () => {
     const loop = doc([{ id: 'a', parentage: { parents: [{ individual: 'b' }] } }, { id: 'b', parentage: { parents: [{ individual: 'a' }] } }])
     expect(() => kinshipAnalysis(loop)).toThrow(/cycle/)
     expect(() => kinshipAnalysis(doc([{ id: 'a' }]), { population: ['z'] })).toThrow(/isn't in this pedigree/)
+  })
+})
+
+describe('drawing uncertain parents as branches is display only', () => {
+  it("gives identical kinship results whichever way the views draw candidates, and leaves the document as it was", () => {
+    // Kinship reads the document, never a projection: no code path is shared. This guards against a projection that
+    // changes the document it reads, which would change every number after it.
+    const d = doc([
+      { id: 'S1' }, { id: 'S2' }, { id: 'D' },
+      { id: 'X', parentage: { parents: [{ individual: 'D', role: 'mother' }], uncertainParents: [{ role: 'father', basis: 'multi-sire mating', candidates: [{ individual: 'S1', probability: 0.5 }, { individual: 'S2', probability: 0.3 }] }] } },
+      { id: 'Y', parentage: { parents: [{ individual: 'D', role: 'mother' }], uncertainParents: [{ role: 'father', candidates: [], kind: 'wild', shared: 'WILD1' }] } },
+      { id: 'Z', parentage: { parents: [{ individual: 'D', role: 'mother' }], uncertainParents: [{ role: 'father', candidates: [], kind: 'wild', shared: 'WILD1' }] } },
+    ])
+    const summary = (r: ReturnType<typeof kinshipAnalysis>) => ({ individuals: r.individuals, population: r.population, founders: r.founders, unknownShare: r.unknownShare, xy: r.kinship('X', 'Y'), yz: r.kinship('Y', 'Z') })
+    const before = JSON.stringify(d)
+    const plain = summary(kinshipAnalysis(d))
+    for (const uncertainParents of ['placeholder', 'branches'] as const) {
+      for (const focalId of ['X', 'Y']) for (const view of ['pedigree', 'hourglass', 'fan'] as const) projectPedigree(d, { view, focalId, uncertainParents })
+      expect(summary(kinshipAnalysis(d))).toEqual(plain)
+    }
+    expect(JSON.stringify(d)).toBe(before)
   })
 })

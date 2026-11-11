@@ -65,6 +65,10 @@
    Its connector keeps a data-uncertain hook but no pattern, because line patterns already mean reproductive mode. */
 .op-individual[data-uncertain] { --op-node-border-dash: 10 4; }
 .op-individual[data-uncertain] .op-label { font-style: italic; }
+/* uncertainParents: 'branches': each possible parent's connector is long-dashed like a placeholder's border, a pattern no
+   reproductive mode uses, and carries its chance as a label, so the dashes are never the only signal. */
+.op-connector[data-branch] { stroke-dasharray: 10 4; }
+.op-connector-label { fill: var(--op-sublabel); font-size: 11px; font-weight: 600; }
 .op-individual[data-focal] .op-node-box { stroke: var(--op-focal-border); stroke-width: 2.5px; }
 .op-individual[data-highlighted] .op-node-box,
 .op-individual[data-highlighted] .op-fan-segment { stroke: var(--op-highlight); stroke-width: 2.5px; }

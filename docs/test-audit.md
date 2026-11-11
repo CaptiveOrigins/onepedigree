@@ -2,6 +2,14 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-11: uncertain parents as alternative branches
+
+The opt-in `uncertainParents: 'branches'` projection option. Tests went from 220 to 236: core 77 to 86, react 40 to 46, studbook 44 to 45. Payload and desktop are unchanged.
+
+- **Promises:** the default draws exactly as before; visible candidates become real, linkable parent occurrences on dashed, labelled connectors; private candidates are only counted, never named, linked or drawn; the remainder is one placeholder; slots without visible candidates and shared WILD/UNK keys look as by default; candidates' ancestry isn't followed; spoken names give role, chance and basis; nothing is calculated from it.
+- **Covered** (`packages/core/test/uncertain-views.test.ts`, 9 tests): the default and `'placeholder'` give identical projections across seven views with no new fields; 2 visible + 1 private + remainder gives two candidate occurrences, a private placeholder ("1 private, 25%") and a remainder ("other, 5%"), with uncertain edges whose chances add to 1; the private candidate appears nowhere the view adds; a candidate who is also a known ancestor is still expanded there, in separate and merge modes, and its own parents aren't drawn as a candidate; a slot of only private or missing candidates and a shared WILD1 project identically in both modes; maternal and paternal lines keep their role; layout carries the marks only in branches mode; candidate wording; the document is unchanged after projecting. (`packages/react/test/uncertain.test.tsx`, 6 tests): byte-identical default markup; four dashed connectors marked `data-uncertain` and `data-branch` with "70%", "5%", "20%", "5%" labels; candidates link and placeholders and the private candidate never do; spoken names for candidates and both placeholders; only-private slot unchanged; the explorer's quick view for a candidate. (`packages/studbook/test/kinship.test.ts`, 1 test): kinship, F, MK, GD, FGE and founders are identical after projecting in either mode, and the document is unchanged. Kinship shares no code path with the projection, so this guards against a projection that changes its input.
+- **Gaps left:** not looked at in a browser, so how the branches and their labels sit on real layouts, and whether labels overlap in crowded generations, is unchecked. The fan chart gives candidates segments but has no connectors, so its chances are only in spoken names; the Ahnentafel ignores uncertain parents in both modes. No VoiceOver run. No contrast measurement of the label colour beyond reusing the sublabel colour.
+
 ## 2026-11-11: basis on uncertain parents
 
 - **Promise:** `basis` is display only, optional, and changes nothing for documents without it.

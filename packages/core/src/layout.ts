@@ -1,5 +1,5 @@
 import { lifeLabel, lifeSpan, type LifeSpan } from './life'
-import type { IndividualOccurrence, PedigreeViewId, PedigreeViewProjection, UncertainParentDisplay } from './projection'
+import type { IndividualOccurrence, PedigreeViewId, PedigreeViewProjection, ProjectedEdge, UncertainCandidate, UncertainParentDisplay } from './projection'
 import type { Individual } from './types'
 
 export type LayoutOptions = {
@@ -72,7 +72,15 @@ export function nodeSublabel(individual: Individual | undefined, span = lifeSpan
 const percent = (p: number) => `${Math.round(p * 100)}%`
 
 /** An uncertain parent's candidates with their chances ("A 60% · B 40%"), the hidden and leftover share, and whether clutchmates share it. */
-export function uncertainSublabel(u: UncertainParentDisplay, words: { private: string; wild: string; unknown: string; shared: string } = { private: 'private', wild: 'wild', unknown: 'unknown', shared: 'shared by clutchmates' }): string {
+export function uncertainSublabel(
+  u: UncertainParentDisplay,
+  words: { private: string; wild: string; unknown: string; shared: string; other?: string } = { private: 'private', wild: 'wild', unknown: 'unknown', shared: 'shared by clutchmates' },
+): string {
+  // One part of a slot drawn as branches: "2 private, 25%" or "other, 5%".
+  if (u.branch) {
+    const what = u.branch.part === 'private' ? `${u.hiddenCandidates} ${words.private}` : u.branch.other ? (words.other ?? 'other') : u.remainder?.kind === 'wild' ? words.wild : words.unknown
+    return [`${what}, ${percent(u.branch.probability)}`, u.shared ? words.shared : null, u.basis].filter(Boolean).join(' · ')
+  }
   const parts = u.candidates.map((c) => `${c.label} ${percent(c.probability)}`)
   if (u.hiddenCandidates) parts.push(`${u.hiddenCandidates} ${words.private}`)
   if (u.remainder) parts.push(`${u.remainder.kind === 'wild' ? words.wild : words.unknown} ${percent(u.remainder.probability)}`)
@@ -80,6 +88,14 @@ export function uncertainSublabel(u: UncertainParentDisplay, words: { private: s
   if (u.basis) parts.push(u.basis)
   return parts.join(' · ')
 }
+
+/** What a candidate occurrence is, for its spoken name: "possible father, 70%, multi-sire mating". */
+export function candidateWords(c: UncertainCandidate, possible = 'possible'): string {
+  return [`${possible} ${c.role ?? 'parent'}`, percent(c.probability), c.basis].filter(Boolean).join(', ')
+}
+
+/** An edge's `uncertain` and `probability`, carried to its positioned edge only when set. */
+const edgeMarks = (e: ProjectedEdge) => ({ ...(e.uncertain ? { uncertain: true as const } : {}), ...(e.probability !== undefined ? { probability: e.probability } : {}) })
 
 export type Point = { x: number; y: number }
 
@@ -96,7 +112,16 @@ export type PositionedNode = {
   life?: { open: boolean; undated: boolean }
 }
 
-export type PositionedEdge = { id: string; source: string; target: string; role: string | null; points: readonly Point[] }
+export type PositionedEdge = {
+  id: string
+  source: string
+  target: string
+  role: string | null
+  points: readonly Point[]
+  /** One of several possible parents (`uncertainParents: 'branches'`), with its chance. */
+  uncertain?: true
+  probability?: number
+}
 
 export type LayoutResult = {
   kind: 'tree' | 'layered' | 'radial' | 'timeline'
@@ -272,7 +297,7 @@ function place(projection: PedigreeViewProjection, slots: Map<string, Slot>, kin
       const mid = start.x + (end.x - start.x) * share
       points = [start, { x: mid, y: start.y }, { x: mid, y: end.y }, end]
     }
-    return { id: e.id, source: e.source, target: e.target, role: e.role, points }
+    return { id: e.id, source: e.source, target: e.target, role: e.role, points, ...edgeMarks(e) }
   })
   const width = Math.max(0, ...nodes.map((n) => n.x + n.width))
   const height = Math.max(0, ...nodes.map((n) => n.y + n.height))
@@ -393,7 +418,7 @@ function timeline(projection: PedigreeViewProjection, o: Resolved, lifeOf: (i: I
     const x = child.x
     const py = parent.y + parent.height / 2
     const points: Point[] = parent.x <= x && x <= parent.x + parent.width ? [{ x, y: py }] : [{ x: parent.x + parent.width, y: py }, { x, y: py }]
-    return [{ id: e.id, source: e.source, target: e.target, role: e.role, points: [...points, { x, y: child.y + child.height / 2 }] }]
+    return [{ id: e.id, source: e.source, target: e.target, role: e.role, points: [...points, { x, y: child.y + child.height / 2 }], ...edgeMarks(e) }]
   })
   const width = Math.max(rowWidth, ...nodes.map((n) => n.x + (n.life?.undated || n.width >= labelWidth(n.occurrenceId) ? n.width : n.width + labelWidth(n.occurrenceId))))
   const height = Math.max(top, ...nodes.map((n) => n.y + n.height))

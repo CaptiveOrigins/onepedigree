@@ -46,7 +46,9 @@ export {
   type ProjectedEdge,
   type ProjectionGroup,
   type ProjectionOptions,
+  type UncertainCandidate,
   type UncertainParentDisplay,
+  type UncertainParentsMode,
 } from './projection'
 export {
   defaultLayoutEngine,
@@ -57,6 +59,7 @@ export {
   layoutPedigree,
   nodeSublabel,
   uncertainSublabel,
+  candidateWords,
   layoutSync,
   type LayoutOptions,
   type LayoutResult,
