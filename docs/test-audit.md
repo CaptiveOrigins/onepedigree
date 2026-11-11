@@ -2,6 +2,16 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-11: focus ring colour
+
+Owner decision N154 (2026-11-11, option A): "keep the brand orange everywhere else, but use the darker orange #a65f20 for focus rings on light backgrounds (4.6 to 1 or better). Dark mode keeps the lighter orange, which already passes." Tests went from 277 to 281: react 55 to 57 (`themes.test.tsx`), desktop 13 to 15 (`apps/desktop/test/theme.test.ts`, new). Core, studbook and payload are unchanged.
+
+- **Promises:** `brand/README.md`, "Focus ring": light focus rings are `#a65f20` and pass 3:1 on every light background (WCAG 2.2 1.4.11, 2.4.13); dark rings stay `#e7a066`; the brand orange stays for everything else.
+- **Before and after (focus colour on the background it sits on):** light, toolbar and quick-view buttons: `#cf8137` 3.07:1 on the white card, now `#a65f20` 4.91:1. Light, a focused person in the chart: the default theme's selection colour `#f0b35a`, 1.86:1 on the white card, now 4.91:1 (4.83:1 on Terracotta's `#fffdfa`; 3.55:1 on Midnight's `#161a22` when the system is light). Light, studbook controls: the `#2563eb` fallback, 5.17:1 on white, now 4.91:1, in the family's colour. Light, Mac app controls: the browser default, now 4.91:1 on the page and fields, 4.62:1 on the panel (`#f7f8fa`). Dark, unchanged: `#e7a066` 7.98:1 on the dark card (`#161a22`), 8.37:1 on the app page, 7.82:1 on the panel, 7.11:1 on fields.
+- **Covered:** `themes.test.tsx` (2 new): the stylesheet's light `--op-focus` is `#a65f20` and dark `#e7a066`; the light ring passes 3:1 on every light preset's card, and both rings pass on Midnight; every `:focus-visible` outline or stroke uses `var(--op-focus)`, and no fixed `#cf8137` is left. `apps/desktop/test/theme.test.ts` (2 new): `--focus` is `#a65f20` in light with the accent still `#cf8137`, `#e7a066` in both dark blocks, 3:1 or better on page, panel and fields in each; a chosen appearance sets `--op-focus`; app controls use `var(--focus)`.
+- **Gaps left:** not looked at in the built app or a browser; the ratios are computed from the CSS. An explicit light preset on a dark system (a host passing `theme="classic"` while the system is dark) gets the dark ring, `#e7a066`, on a white card: 2.18:1, up from 1.86:1 before. The Mac app avoids it by choosing Midnight in dark and setting `--op-focus` for a chosen appearance; a theme token for focus would fix it for every host, and is a bigger change to the theme format.
+- **Left out as overkill:** a rendered test per focusable control. They share the rules the test reads.
+
 ## 2026-11-11: a recorded parent who is also a candidate
 
 - **Promise (asked for by OneLineage):** in the `both` view, a man recorded as the legal father who is also a DNA candidate reads as one person, not two.
