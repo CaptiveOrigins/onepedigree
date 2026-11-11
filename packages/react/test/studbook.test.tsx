@@ -49,13 +49,15 @@ describe('studbook table', () => {
   it('sorts permanent numbers numerically, then temporary ones, and by mean kinship, unknowns last, with aria-sort', () => {
     render(<StudbookTable rows={rows} caption="Book" showAll />)
     expect(firstCells().slice(0, 3)).toEqual(['2', '10', 'T3'])
-    const mk = screen.getByRole('button', { name: 'Sort by Mean kinship' })
+    const mk = screen.getByRole('button', { name: 'Sort by MK (Mean kinship)' })
     fireEvent.click(mk)
     expect(firstCells().slice(0, 3)).toEqual(['2', '10', 'T3'])
     expect(mk.closest('th')!.getAttribute('aria-sort')).toBe('ascending')
     fireEvent.click(mk)
     expect(firstCells().slice(0, 3)).toEqual(['10', '2', 'T3'])
     expect(mk.closest('th')!.getAttribute('aria-sort')).toBe('descending')
+    // Label in name (WCAG 2.5.3): each sort button's name contains the text shown on it.
+    for (const b of screen.getAllByRole('button', { name: /^Sort by/ })) expect(b.getAttribute('aria-label')).toContain(b.textContent!.replace(/[▲▼]/g, '').trim())
     fireEvent.click(screen.getByRole('button', { name: 'Sort by Born or hatched' }))
     expect(firstCells().slice(0, 3)).toEqual(['2', '10', 'T3'])
   })

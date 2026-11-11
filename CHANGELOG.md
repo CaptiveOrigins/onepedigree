@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **React, `StudbookTable`, accessibility:** the MK and F sort buttons' accessible names now include the text shown on them ("Sort by MK (Mean kinship)"), so voice control can use what's on screen (WCAG 2.5.3, label in name).
+
 ## 0.1.0-alpha.21
 
 Replaces 0.1.0-alpha.20 before the studbook package's first publish, which will be this version. Core, React and the Payload plugin are unchanged apart from tests.
