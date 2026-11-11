@@ -2,6 +2,14 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-10: screen-reader review of the studbook table and uncertain-parent placeholders
+
+A code-level review (K212), not a run with a screen reader.
+
+- **Fixed:** the MK and F sort buttons showed "MK" and "F" but were named "Sort by Mean kinship" and "Sort by Inbreeding", so voice control couldn't use the visible words (WCAG 2.5.3). Names now include both. `studbook.test.tsx` checks that every sort button's name contains its visible text.
+- **Checked and fine:** the table has a caption and a labelled, focusable scroll region; the search has a label and a hint; sort state is on the header (`aria-sort`); dashes carry visually hidden words ("Not shown to you", "None recorded"); private rows say what they are; the count is a status. Placeholders carry their candidates and chances in their names; they're never links; in the explorer they can be selected to read them, by design (#21), and offer nothing to open.
+- **Gaps left:** no VoiceOver or NVDA run yet, and no automated contrast check of the dashed placeholder border. The count announces on every keystroke, which some may find chatty; left as is until someone uses it.
+
 ## 2026-11-10: full audit
 
 Scope: every package and the desktop app, against the README, the invariants (I1 to I7), `studbook.md`, `decisions.md` and the dated audits below. No coverage output exists in the repo, so this maps promises to tests by reading them. Tests went from 206 to 210: studbook 42 to 44, desktop 3 to 5. Core (75), react (40) and payload (46) are unchanged.

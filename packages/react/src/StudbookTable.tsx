@@ -158,7 +158,8 @@ export function StudbookTable({ rows, caption, currentness, onSelect, labels: pa
       <button
         type="button"
         className="op-studbook-sort"
-        aria-label={l.sortBy(title ?? text)}
+        // The visible text stays in the name (WCAG 2.5.3), so "MK" works for voice control as well as "Mean kinship".
+        aria-label={l.sortBy(title ? `${text} (${title})` : text)}
         onClick={() => setSort((s) => ({ key, dir: s.key === key && s.dir === 'ascending' ? 'descending' : 'ascending' }))}
       >
         {title ? <abbr title={title}>{text}</abbr> : text}
