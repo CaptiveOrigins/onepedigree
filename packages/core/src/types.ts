@@ -38,6 +38,11 @@ export type UncertainParent = {
    * together). Without it, every unknown parent is unique and unrelated to all others.
    */
   shared?: string | null
+  /**
+   * Where the candidates and their chances come from, in a few words: "multi-sire mating", "parentage test 2026-03",
+   * "DNA hypothesis run 2026-11-10". Shown with the slot; never used in any calculation.
+   */
+  basis?: string | null
 }
 
 export type Parentage = {

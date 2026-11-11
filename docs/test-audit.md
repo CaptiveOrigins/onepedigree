@@ -2,6 +2,12 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-11: basis on uncertain parents
+
+- **Promise:** `basis` is display only, optional, and changes nothing for documents without it.
+- **Covered** (`packages/core/test/uncertain-views.test.ts`, 2 tests): kept by the normalizer, carried to the placeholder and its sublabel; absent when not recorded.
+- **Gaps left:** the JSON Schema entry is covered by code reading only.
+
 ## 2026-11-11: foreign companion files and temporary-file cleanup in the desktop app
 
 Closes the two desktop gaps left by the full audit of 2026-11-10. Desktop tests went from 5 to 13, the repo from 210 to 218. The packages are unchanged.

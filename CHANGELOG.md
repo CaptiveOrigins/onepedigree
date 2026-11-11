@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Where uncertain parents come from:** an uncertain parent slot can carry an optional `basis`, a few words on where its candidates and chances came from ("multi-sire mating", "parentage test 2026-03"). It's kept, shown after the slot's candidates in the pedigree views and their spoken names, and never used in a calculation. Documents without it are unchanged. Asked for by OneLineage (agreed 2026-11-10).
 - **Desktop, saving:** a file at `<name>.companion.json` that isn't a OnePedigree companion is never replaced. Opening the GEDCOM says it's there, and saving refuses and offers to keep your extras in another companion file beside the GEDCOM, which opens them back. A failed save also removes its temporary file, or says it couldn't.
 - **React, `StudbookTable`, accessibility:** the MK and F sort buttons' accessible names now include the text shown on them ("Sort by MK (Mean kinship)"), so voice control can use what's on screen (WCAG 2.5.3, label in name).
 

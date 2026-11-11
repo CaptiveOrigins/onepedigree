@@ -95,7 +95,8 @@ export function normalizeParentage(input: unknown, path = 'parentage') {
     const kind = optText(u.kind, `${at}.kind`)
     if (kind !== null && kind !== 'wild' && kind !== 'unknown') throw new PedigreeFormatError('Expected kind "wild" or "unknown"', `${at}.kind`)
     const shared = optText(u.shared, `${at}.shared`)
-    return Object.freeze({ role: optText(u.role, `${at}.role`), candidates: Object.freeze(candidates), ...(kind ? { kind } : {}), ...(shared ? { shared } : {}) })
+    const basis = optText(u.basis, `${at}.basis`)
+    return Object.freeze({ role: optText(u.role, `${at}.role`), candidates: Object.freeze(candidates), ...(kind ? { kind } : {}), ...(shared ? { shared } : {}), ...(basis ? { basis } : {}) })
   })
   return Object.freeze({
     parents: Object.freeze(parents),

@@ -77,6 +77,7 @@ export function uncertainSublabel(u: UncertainParentDisplay, words: { private: s
   if (u.hiddenCandidates) parts.push(`${u.hiddenCandidates} ${words.private}`)
   if (u.remainder) parts.push(`${u.remainder.kind === 'wild' ? words.wild : words.unknown} ${percent(u.remainder.probability)}`)
   if (u.shared) parts.push(words.shared)
+  if (u.basis) parts.push(u.basis)
   return parts.join(' · ')
 }
 
