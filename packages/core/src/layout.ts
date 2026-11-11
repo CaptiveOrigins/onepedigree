@@ -94,8 +94,17 @@ export function candidateWords(c: UncertainCandidate, possible = 'possible'): st
   return [`${possible} ${c.role ?? 'parent'}`, percent(c.probability), c.basis].filter(Boolean).join(', ')
 }
 
-/** An edge's `uncertain` and `probability`, carried to its positioned edge only when set. */
-const edgeMarks = (e: ProjectedEdge) => ({ ...(e.uncertain ? { uncertain: true as const } : {}), ...(e.probability !== undefined ? { probability: e.probability } : {}) })
+/** A parent link by its kind and role, for spoken names and labels: "legal father", "social dam", "biological parent". */
+export function parentLinkWords(link: { kind?: string | null; role?: string | null }): string {
+  return [link.kind, link.role ?? 'parent'].filter(Boolean).join(' ')
+}
+
+/** An edge's `uncertain`, `probability` and `kind`, carried to its positioned edge only when set. */
+const edgeMarks = (e: ProjectedEdge) => ({
+  ...(e.uncertain ? { uncertain: true as const } : {}),
+  ...(e.probability !== undefined ? { probability: e.probability } : {}),
+  ...(e.kind ? { kind: e.kind } : {}),
+})
 
 export type Point = { x: number; y: number }
 
@@ -121,6 +130,8 @@ export type PositionedEdge = {
   /** One of several possible parents (`uncertainParents: 'branches'`), with its chance. */
   uncertain?: true
   probability?: number
+  /** The parent link's kind, only when recorded ("legal", "social"). Anything but `biological` is drawn dotted. */
+  kind?: string
 }
 
 export type LayoutResult = {

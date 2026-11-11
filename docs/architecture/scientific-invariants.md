@@ -13,4 +13,6 @@ The rules OnePedigree keeps, from its README and its tests. A rule without a pas
 
 | I7 | **A candidate is never a parent.** A parent known only as candidates with probabilities (a studbook's MULT), or explicitly unknown (UNK), is kept in `uncertainParents`. It is never counted, traversed or used for siblings or cycles as a parent, and its probabilities sum to at most 1. | `core.test.ts` (uncertain parents: kept, never counted, refused when inconsistent) |
 
+| I8 | **Only biological links count.** A parent link with a `kind` other than `biological` (no kind counts as biological) is kept and drawn, but never used for relatedness, siblings, kinship, inbreeding, MK, GD, founders, PMx or GEDCOM export. Every such calculation reads `biologicalParents`. | `parent-kinds.test.ts` in core (relatedness matches the document without the foster link), studbook (kinship, rows and PMx match the document without it) |
+
 Access rules for the Payload plugin are listed in the [test audit](../test-audit.md).

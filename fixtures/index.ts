@@ -183,3 +183,29 @@ export const privateAncestor = doc([
   { id: 'flint', label: 'Flint', sex: 'male' },
   { id: 'pebble', label: 'Pebble', sex: 'female', parentage: sexual('sage', 'flint') },
 ])
+
+/**
+ * A foster dam (parent kinds, agreed with OneLineage 2026-11-10): Pip is a half-sibling mating's kit, raised by
+ * Saffron, its father's own mother, whose link is `social`. Saffron's other young, Sorrel, shares only the foster link
+ * with Pip. Kinship, siblings and every calculation must ignore that link; views draw it dotted.
+ */
+export const fosterDam = doc([
+  { id: 'kingston', label: 'Kingston', sex: 'male' },
+  { id: 'saffron', label: 'Saffron', sex: 'female' },
+  { id: 'willow', label: 'Willow', sex: 'female' },
+  { id: 'harbor', label: 'Harbor', sex: 'male' },
+  { id: 'rio', label: 'Rio', sex: 'male', parentage: sexual('saffron', 'kingston') },
+  { id: 'maya', label: 'Maya', sex: 'female', parentage: sexual('willow', 'kingston') },
+  { id: 'sorrel', label: 'Sorrel', sex: 'female', parentage: sexual('saffron', 'harbor') },
+  {
+    id: 'pip',
+    label: 'Pip',
+    sex: 'female',
+    parentage: { ...sexual('maya', 'rio'), parents: [...sexual('maya', 'rio').parents, { individual: 'saffron', role: 'mother', kind: 'social' }] },
+  },
+])
+
+/** `fosterDam` with the foster link left out: what every calculation on `fosterDam` must match. */
+export const fosterDamBiological = doc(
+  fosterDam.individuals.map((i) => (i.parentage ? { ...i, parentage: { ...i.parentage, parents: i.parentage.parents.filter((p) => !p.kind) } } : i)),
+)

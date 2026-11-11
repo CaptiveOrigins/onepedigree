@@ -1,4 +1,5 @@
 import type { Individual, PedigreeDocument } from '../types'
+import { biologicalParents } from '../kinds'
 
 /**
  * GEDCOM (5.5.1 and 7.0) to and from OnePedigree. GEDCOM is a human genealogy
@@ -134,13 +135,16 @@ export function parseGedcom(text: string): GedcomParseResult {
 
 const SEX_OUT: Record<string, string> = { male: 'M', female: 'F', other: 'X', m: 'M', f: 'F' }
 
-/** Write GEDCOM 5.5.1 (UTF-8). Families are formed by each child's mother and father. */
+/**
+ * Write GEDCOM 5.5.1 (UTF-8). Families are formed by each child's biological mother and father: a plain FAMC is a
+ * birth family. Legal, adoptive, social and other non-biological links aren't written yet.
+ */
 export function serializeGedcom(doc: PedigreeDocument, opts: { source?: string } = {}): string {
   const out: string[] = ['0 HEAD', `1 SOUR ${opts.source ?? 'OnePedigree'}`, '1 GEDC', '2 VERS 5.5.1', '2 FORM LINEAGE-LINKED', '1 CHAR UTF-8']
   const xref = new Map(doc.individuals.map((ind, i) => [ind.id, `@I${i + 1}@`]))
   const families = new Map<string, { mother?: string; father?: string; children: string[] }>()
   for (const ind of doc.individuals) {
-    const ps = ind.parentage?.parents ?? []
+    const ps = biologicalParents(ind.parentage)
     const mother = ps.find((p) => p.role === 'mother' || p.role === 'dam')?.individual
     const father = ps.find((p) => p.role === 'father' || p.role === 'sire')?.individual
     if (!mother && !father) continue

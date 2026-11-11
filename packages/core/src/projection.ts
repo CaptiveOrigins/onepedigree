@@ -1,6 +1,7 @@
-import { getDescendants, getRelationshipPaths } from './graph'
+import { getBiologicalParents, getDescendants, getRelationshipPaths } from './graph'
+import { biologicalParents, isBiologicalKind } from './kinds'
 import { indexPedigree, reproductiveStructure, type PedigreeIndex } from './normalize'
-import type { CohortId, Individual, IndividualId, PedigreeDocument, PedigreeIssue, ReproductiveStructure, UncertainParent } from './types'
+import type { CohortId, Individual, IndividualId, ParentKind, ParentReference, PedigreeDocument, PedigreeIssue, ReproductiveStructure, UncertainParent } from './types'
 import { nameWithIdentifier } from './layout'
 
 export type PedigreeViewId =
@@ -61,9 +62,24 @@ export type ProjectionOptions = {
    * candidates and the unrecorded remainder are one placeholder each. Display only: no calculation reads this.
    */
   uncertainParents?: UncertainParentsMode
+  /**
+   * Which kinds of parent link are drawn (see `ParentReference.kind`; no kind means biological).
+   * - `both` (default): every link. A non-biological one (legal, adoptive, social, donor, …) is on an edge marked with
+   *   its `kind`. A document without kinds projects exactly as before kinds existed.
+   * - `biological`: biological links only: the genetic pedigree. Non-biological links and anyone reached only
+   *   through them are left out.
+   * - `recorded`: the parents of record, a family tree of law and upbringing. Where a role has a non-biological link
+   *   (a legal father, an adoptive mother, a foster dam recorded as `dam`), that link is drawn and the biological link
+   *   and any uncertain slot in the same role are hidden. Every other link is drawn as in `both`.
+   * Display only: relatedness, the relationship view's paths and the inbreeding view's converging ancestors always
+   * follow biological links, whichever links are drawn.
+   */
+  parentLinks?: ParentLinksMode
 }
 
 export type UncertainParentsMode = 'placeholder' | 'branches'
+
+export type ParentLinksMode = 'both' | 'biological' | 'recorded'
 
 export type IndividualOccurrence = {
   occurrenceId: string
@@ -124,7 +140,12 @@ export type ProjectedEdge = {
   /** `uncertainParents: 'branches'`: the parent is one of several possibilities, with this chance. Draw it dashed and labelled. */
   uncertain?: true
   probability?: number
+  /** The link's kind, only when recorded on it ("legal", "social"). Anything but `biological` is drawn dotted. */
+  kind?: ParentKind
 }
+
+/** An edge's `kind`, carried only when the parent reference records one. */
+const linkMarks = (p: Pick<ParentReference, 'kind'> | undefined): Pick<ProjectedEdge, 'kind'> => (p?.kind ? { kind: p.kind } : {})
 
 export type ProjectionGroup = { id: string; kind: 'cohort' | 'generation' | 'other-parent' | 'path'; label: string | null; occurrenceIds: readonly string[] }
 
@@ -192,7 +213,7 @@ export class ProjectionBuilder {
     return true
   }
 
-  edge(source: string, target: string, role: string | null, extra: Pick<ProjectedEdge, 'uncertain' | 'probability'> = {}) {
+  edge(source: string, target: string, role: string | null, extra: Pick<ProjectedEdge, 'uncertain' | 'probability' | 'kind'> = {}) {
     const key = `${source}>${target}`
     if (this.edgeKeys.has(key)) return
     this.edgeKeys.add(key)
@@ -338,7 +359,7 @@ export function addAncestors(b: ProjectionBuilder, focal: { occurrenceId: string
         if (filter && !filter(p.role ?? null)) continue
         const r = b.add(p.individual, g, [...child.path, p.individual])
         if (!r) return
-        b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null)
+        b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null, linkMarks(p))
         if (r.expand) next.push({ occurrenceId: r.occurrenceId, id: p.individual, path: [...child.path, p.individual] })
       }
     // Parents known only as candidates, wild or unknown: one placeholder per slot (or, opted in, the visible candidates
@@ -369,10 +390,10 @@ export function addDescendants(b: ProjectionBuilder, focal: { occurrenceId: stri
     for (const parent of frontier)
       for (const c of [...(b.index.childrenOf.get(parent.id) ?? [])].sort((x, y) => cohortOf(x).localeCompare(cohortOf(y)) || x.localeCompare(y))) {
         if (parent.path.includes(c)) continue
-        const role = (b.index.parentsOf.get(c) ?? []).find((p) => p.individual === parent.id)?.role ?? null
+        const link = (b.index.parentsOf.get(c) ?? []).find((p) => p.individual === parent.id)
         const r = b.add(c, -g, [...parent.path, c])
         if (!r) return
-        b.edge(parent.occurrenceId, r.occurrenceId, role)
+        b.edge(parent.occurrenceId, r.occurrenceId, link?.role ?? null, linkMarks(link))
         if (r.expand) next.push({ occurrenceId: r.occurrenceId, id: c, path: [...parent.path, c] })
       }
     frontier = next
@@ -396,7 +417,7 @@ function addSiblings(b: ProjectionBuilder) {
     for (const p of b.index.parentsOf.get(s) ?? []) {
       // Not a candidate occurrence: that one stands for a possibility for the focal individual only.
       const parentOcc = b.occurrences.find((o) => o.individualId === p.individual && o.generation === 1 && !o.candidate)
-      if (parentOcc) b.edge(parentOcc.occurrenceId, r.occurrenceId, p.role ?? null)
+      if (parentOcc) b.edge(parentOcc.occurrenceId, r.occurrenceId, p.role ?? null, linkMarks(p))
     }
   }
 }
@@ -493,8 +514,35 @@ function addLayered(b: ProjectionBuilder, ids: Set<IndividualId>, layers: Map<In
     for (const p of b.index.parentsOf.get(id) ?? []) {
       const s = b.firstOccurrence(p.individual)
       const t = b.firstOccurrence(id)
-      if (s && t) b.edge(s, t, p.role ?? null)
+      if (s && t) b.edge(s, t, p.role ?? null, linkMarks(p))
     }
+}
+
+/** The links one individual shows under `parentLinks` (see `ProjectionOptions.parentLinks`). */
+function shownLinks(parentage: NonNullable<Individual['parentage']>, mode: ParentLinksMode) {
+  if (mode === 'biological') return { parents: biologicalParents(parentage), uncertain: parentage.uncertainParents }
+  // recorded: a role with a non-biological link shows that link instead of the biological one and any uncertain slot.
+  const replaced = new Set(parentage.parents.filter((p) => !isBiologicalKind(p.kind)).map((p) => p.role ?? null))
+  if (!replaced.size) return { parents: parentage.parents, uncertain: parentage.uncertainParents }
+  return {
+    parents: parentage.parents.filter((p) => !isBiologicalKind(p.kind) || !replaced.has(p.role ?? null)),
+    uncertain: parentage.uncertainParents?.filter((u) => !replaced.has(u.role ?? null)),
+  }
+}
+
+/** The index a view draws from: the source itself for `both`, or a copy with only the links that mode shows. */
+function withParentLinks(index: PedigreeIndex, mode: ParentLinksMode): PedigreeIndex {
+  if (mode === 'both') return index
+  let changed = false
+  const individuals = index.document.individuals.map((ind) => {
+    if (!ind.parentage) return ind
+    const { parents, uncertain } = shownLinks(ind.parentage, mode)
+    if (parents === ind.parentage.parents && uncertain === ind.parentage.uncertainParents) return ind
+    changed = true
+    const { uncertainParents: _, ...rest } = ind.parentage
+    return { ...ind, parentage: { ...rest, parents, ...(uncertain?.length ? { uncertainParents: uncertain } : {}) } }
+  })
+  return changed ? indexPedigree({ ...index.document, individuals }) : index
 }
 
 /**
@@ -503,7 +551,11 @@ function addLayered(b: ProjectionBuilder, ids: Set<IndividualId>, layers: Map<In
  * explain gaps (missing roles, node limits, unsupported numbering).
  */
 export function projectPedigree(source: PedigreeDocument | PedigreeIndex, options: ProjectionOptions): PedigreeViewProjection {
-  const index = 'individuals' in source && source.individuals instanceof Map ? (source as PedigreeIndex) : indexPedigree(source as PedigreeDocument)
+  const full = 'individuals' in source && source.individuals instanceof Map ? (source as PedigreeIndex) : indexPedigree(source as PedigreeDocument)
+  const parentLinks = options.parentLinks ?? 'both'
+  // The relationship view's paths are biological; 'recorded' would cut the very links they run along, so there it
+  // draws as 'both'. Every other view draws only the links its mode shows.
+  const index = withParentLinks(full, options.view === 'relationship' && parentLinks === 'recorded' ? 'both' : parentLinks)
   const view = options.view
   const defaults: Partial<Record<PedigreeViewId, OccurrenceMode>> = {
     descendants: 'separate',
@@ -560,17 +612,24 @@ export function projectPedigree(source: PedigreeDocument | PedigreeIndex, option
         for (const child of frontier) {
           for (const p of index.parentsOf.get(child.id) ?? []) {
             if (!index.individuals.has(p.individual) || child.path.includes(p.individual)) continue
-            const n = p.role && roles.paternal.includes(p.role) ? child.n * 2 : p.role && roles.maternal.includes(p.role) ? child.n * 2 + 1 : undefined
+            // Ahnentafel numbers follow biological parents; a legal or foster parent would take the same number.
+            const biological = isBiologicalKind(p.kind)
+            const n = !biological ? undefined : p.role && roles.paternal.includes(p.role) ? child.n * 2 : p.role && roles.maternal.includes(p.role) ? child.n * 2 + 1 : undefined
             if (n === undefined)
               b.issues.push(
-                notice('UNSUPPORTED_NUMBERING', p.role ? `Role "${p.role}" has no Ahnentafel number; shown unnumbered.` : 'A parent without a role is shown unnumbered.', {
-                  individualId: child.id,
-                  relatedIds: [p.individual],
-                }),
+                notice(
+                  'UNSUPPORTED_NUMBERING',
+                  !biological
+                    ? `A ${p.kind} ${p.role ?? 'parent'} has no Ahnentafel number; shown unnumbered.`
+                    : p.role
+                      ? `Role "${p.role}" has no Ahnentafel number; shown unnumbered.`
+                      : 'A parent without a role is shown unnumbered.',
+                  { individualId: child.id, relatedIds: [p.individual] },
+                ),
               )
             const r = b.add(p.individual, g, [...child.path, p.individual], n !== undefined ? { ahnentafel: n } : {})
             if (!r) break
-            b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null)
+            b.edge(r.occurrenceId, child.occurrenceId, p.role ?? null, linkMarks(p))
             if (n !== undefined) next.push({ occurrenceId: r.occurrenceId, id: p.individual, n, path: [...child.path, p.individual] })
           }
         }
@@ -608,7 +667,7 @@ export function projectPedigree(source: PedigreeDocument | PedigreeIndex, option
         for (const p of index.parentsOf.get(m) ?? []) {
           const s = b.firstOccurrence(p.individual)
           const t = b.firstOccurrence(m)
-          if (s && t) b.edge(s, t, p.role ?? null)
+          if (s && t) b.edge(s, t, p.role ?? null, linkMarks(p))
         }
       b.groups.push({ id: `cohort:${cohort}`, kind: 'cohort', label: index.cohorts.get(cohort)?.label ?? null, occurrenceIds: members.map((m) => b.firstOccurrence(m)!).filter(Boolean) })
       break
@@ -620,7 +679,7 @@ export function projectPedigree(source: PedigreeDocument | PedigreeIndex, option
         focal()
         break
       }
-      const { paths, truncated } = getRelationshipPaths(index, options.focalId, other, { maxGenerations: depth(10) })
+      const { paths, truncated } = getRelationshipPaths(full, options.focalId, other, { maxGenerations: depth(10) })
       b.truncated ||= truncated
       if (!paths.length) {
         b.issues.push(notice('NO_DOCUMENTED_RELATIONSHIP', 'No documented connection within the searched generations. This does not show the two are unrelated.'))
@@ -648,17 +707,21 @@ export function projectPedigree(source: PedigreeDocument | PedigreeIndex, option
     }
     case 'inbreeding': {
       addAncestors(b, focal(), depth(6))
-      // Merge mode: an identity reached by several paths is a converging (repeated) ancestor.
+      // Merge mode: an identity reached by several paths is a converging (repeated) ancestor. Only biological paths
+      // converge, counted on the whole document whichever links are drawn: a foster dam who is also a grandmother
+      // doesn't make anyone inbred, and hiding a biological link in 'recorded' doesn't make anyone less inbred.
       const paths = new Map<IndividualId, number>()
       const count = (id: IndividualId, seen: IndividualId[]) => {
-        for (const p of index.parentsOf.get(id) ?? []) {
-          if (!b.firstOccurrence(p.individual) || seen.includes(p.individual)) continue
+        for (const p of getBiologicalParents(full, id)) {
+          // Through the drawn ancestors, as before kinds; in 'recorded', also through biological parents it hides.
+          const reachable = parentLinks === 'recorded' ? full.individuals.has(p.individual) : Boolean(b.firstOccurrence(p.individual))
+          if (!reachable || seen.includes(p.individual)) continue
           paths.set(p.individual, (paths.get(p.individual) ?? 0) + 1)
           if (seen.length < depth(6)) count(p.individual, [...seen, p.individual])
         }
       }
       count(options.focalId, [options.focalId])
-      const converging = new Set([...paths].filter(([, n]) => n > 1).map(([id]) => id))
+      const converging = new Set([...paths].filter(([id, n]) => n > 1 && b.firstOccurrence(id)).map(([id]) => id))
       for (const o of b.occurrences) if (converging.has(o.individualId)) Object.assign(o, { repeated: true, highlighted: true })
       if (!converging.size) b.issues.push(notice('NO_REPEATED_ANCESTORS', 'No ancestor is reached through more than one path in the shown generations.'))
       break

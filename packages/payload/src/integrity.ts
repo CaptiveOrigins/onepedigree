@@ -1,4 +1,5 @@
 import {
+  biologicalParents,
   reproductiveStructure,
   validatePedigree,
   type Individual,
@@ -119,7 +120,8 @@ export async function checkParentage(
       req,
     })
     const birthParent = idOf(cohort ? getAt(cohort, opts.cohorts.birthParentField) : null)
-    const mothers = proposal.parents.filter((p) => p.role && maternalRoles(opts).includes(p.role)).map((p) => p.individual)
+    // The birthing mother: a foster dam is a social link, not the cohort's birthing parent.
+    const mothers = biologicalParents(proposal).filter((p) => p.role && maternalRoles(opts).includes(p.role)).map((p) => p.individual)
     if (birthParent && mothers.some((m) => m !== birthParent))
       issues.push(err('COHORT_BIRTH_PARENT_MISMATCH', 'This mother differs from the mother of the selected birthing event (cohort).', opts.fields.parentage.cohort ?? path))
   }
@@ -140,7 +142,7 @@ export async function checkParentage(
 }
 
 const same = (a: readonly ParentReference[], b: readonly ParentReference[]) =>
-  a.length === b.length && a.every((p, i) => p.individual === b[i]!.individual && (p.role ?? null) === (b[i]!.role ?? null))
+  a.length === b.length && a.every((p, i) => p.individual === b[i]!.individual && (p.role ?? null) === (b[i]!.role ?? null) && (p.kind ?? null) === (b[i]!.kind ?? null))
 
 /**
  * Validates parentage on every write path (Admin, REST, GraphQL, Local API,
@@ -248,7 +250,7 @@ export const cohortBirthParentBeforeChange =
       req,
     })
     const conflicting = (docs as unknown as Record<string, unknown>[]).filter((d) =>
-      readParents(d, opts).some((p) => p.role && maternalRoles(opts).includes(p.role) && p.individual !== next),
+      biologicalParents({ parents: readParents(d, opts) }).some((p) => p.role && maternalRoles(opts).includes(p.role) && p.individual !== next),
     ).length
     if (conflicting)
       throw new ValidationError({

@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from 'payload'
-import type { PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { biologicalParents, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
 import { KinshipError, kinshipAnalysis, PEDIGREE_BASED, type KinshipResult } from './kinship.js'
 import { DAM_ROLES, PmxError, SIRE_ROLES, toPed } from './pmx.js'
 import type { Studbook, StudbookAnimal, StudbookDate } from './types.js'
@@ -79,7 +79,8 @@ const yes = async (decide: () => Promise<boolean> | boolean) => {
 const inPopulation = (a: StudbookAnimal) => a.selected ?? a.status === 'alive'
 
 function parentCode(a: StudbookAnimal, roles: readonly string[], byId: Map<string, StudbookAnimal>): StudbookParentCode {
-  const known = a.parentage?.parents.find((p) => p.role && roles.includes(p.role))
+  // Sire and dam are the genetic parents, as in the analysis and PMx: a foster dam is never shown as the dam.
+  const known = biologicalParents(a.parentage).find((p) => p.role && roles.includes(p.role))
   if (known) {
     const parent = byId.get(known.individual)
     // A parent with no record in the studbook is treated as unknown (PopLink).
@@ -92,7 +93,7 @@ function parentCode(a: StudbookAnimal, roles: readonly string[], byId: Map<strin
 
 function candidates(a: StudbookAnimal, roles: readonly string[], byId: Map<string, StudbookAnimal>): StudbookCandidate[] | undefined {
   // Only for a MULT slot: a known parent takes precedence, as in parentCode.
-  if (a.parentage?.parents.some((p) => p.role && roles.includes(p.role))) return undefined
+  if (biologicalParents(a.parentage).some((p) => p.role && roles.includes(p.role))) return undefined
   const slot = a.parentage?.uncertainParents?.find((u) => u.role && roles.includes(u.role))
   if (!slot?.candidates.length) return undefined
   return slot.candidates.map((c) => {

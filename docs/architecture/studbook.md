@@ -13,6 +13,8 @@
 | UNK | an uncertain slot with no candidates (`kind` `unknown` or absent) |
 | UNKn | the same, with a `shared` key |
 
+A foster dam, surrogate or any other non-biological parent is a link with a `kind` (`social`, `donor`, …). The analysis, the rows' sire and dam, and PMx use biological links only (`biologicalParents`), so such a link never reaches PMx.
+
 ## Shapes the platform supplies
 
 - **`StudbookAnimal`:**

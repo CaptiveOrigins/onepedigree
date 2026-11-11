@@ -4,12 +4,13 @@ import type { Access, CollectionConfig, Field } from 'payload'
 /** How parentage is stored on the host collection. */
 export type ParentageMapping =
   | {
-      /** `parents[{ individual, role }]`, `reproductiveMode`, `cohort` in a group (default path `parentage`). */
+      /** `parents[{ individual, role, kind }]`, `reproductiveMode`, `cohort` in a group (default path `parentage`). */
       kind: 'parent-array'
       path?: string
-      /** Names inside each parent row (defaults: `individual`, `role`). */
+      /** Names inside each parent row (defaults: `individual`, `role`, `kind`). An empty kind means biological. */
       individualField?: string
       roleField?: string
+      kindField?: string
       reproductiveMode?: string
       cohort?: string
     }
@@ -56,6 +57,8 @@ export type OnePedigreePluginOptions = {
   selectors?: boolean
   /** Role options in the parent editor (extend the built-ins). */
   roles?: readonly string[]
+  /** Kind options in the parent editor, beyond biological, legal, adoptive, social and donor. Empty means biological. */
+  kinds?: readonly string[]
   lineageRoles?: LineageRoleConfig
   navigation?: { individualUrl?: string; cohortUrl?: string }
   views?: { enabled?: readonly PedigreeViewId[]; default?: PedigreeViewId }

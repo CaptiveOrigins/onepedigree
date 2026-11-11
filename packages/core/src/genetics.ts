@@ -280,7 +280,8 @@ export type GenotypeIssue = { code: 'impossible-offspring'; gene: string; messag
 /**
  * Whether a recorded offspring state could come from the recorded parents. A
  * mismatch usually means a misrecorded parent or genotype: it is a notice to check,
- * never an automatic correction.
+ * never an automatic correction. Pass biological parents only (`biologicalParents`):
+ * a foster dam or legal father passes on no genes.
  */
 export function checkOffspring(
   catalog: readonly GeneDefinition[],
@@ -313,7 +314,8 @@ export function checkOffspring(
  * What offspring prove about a parent, for recessive genes: a visual offspring
  * proves each parent carries at least one copy. Suggestions only (`basis:
  * 'inferred'`); the host asks the keeper to confirm. Nothing is suggested when the
- * parent's record already says as much.
+ * parent's record already says as much. Pass only offspring of a biological link
+ * (`biologicalParents`): a fostered young proves nothing about its foster dam.
  */
 export function carrierFromOffspring(
   catalog: readonly GeneDefinition[],

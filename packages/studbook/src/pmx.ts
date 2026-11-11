@@ -1,3 +1,4 @@
+import { biologicalParents } from '@captiveorigins/onepedigree-core'
 import type { Studbook, StudbookAnimal, StudbookDate, StudbookEvent } from './types.js'
 
 /**
@@ -73,7 +74,9 @@ export function toPed(book: Studbook, options: PmxOptions = {}): string {
       if (role && DAM_ROLES.includes(role)) return 'dam' as const
       throw new PmxError(`Studbook ${a.studbookNumber} has a parent with role "${role ?? 'none'}"; PMx needs each parent as sire or dam`)
     }
-    for (const p of a.parentage?.parents ?? []) {
+    // PMx's sire and dam are the genetic parents, so only biological links are written: a foster dam, a legal owner's
+    // pick or any other non-biological link would put the wrong animal into PMx's kinship.
+    for (const p of biologicalParents(a.parentage)) {
       const which = slot(p.role)
       // A parent with no studbook record is unknown to PMx (research: "a name or number with no record is unknown").
       out[which] = { code: numberOf.get(p.individual) ?? 'UNK' }
