@@ -10,10 +10,13 @@ import {
 } from '@captiveorigins/onepedigree-core'
 import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS } from '@captiveorigins/onepedigree-react'
 import { invoke } from '@tauri-apps/api/core'
+import { ask } from '@tauri-apps/plugin-dialog'
 import { useEffect, useMemo, useState } from 'react'
 
-import { exportAs, newProject, pickAndOpen, projectDisplay, projectDoc, projectTitle, saveProject, type Display, type Project } from './files'
+import { exportAs, ForeignCompanionError, newProject, pickAndOpen, projectDisplay, projectDoc, projectTitle, saveProject, type Display, type Project } from './files'
 import { checkForUpdates, loadSettings, saveSettings, type Appearance, type Settings } from './updates'
+
+const projectFileName = (path: string) => path.split('/').pop() ?? path
 
 /** Views that only make sense for managed populations (breeding programs), not family trees of people. */
 const NOT_FOR_PEOPLE: readonly PedigreeViewId[] = ['population', 'inbreeding', 'cohort']
@@ -153,9 +156,29 @@ export function App() {
       if (saved) {
         setProject(saved)
         setDirty(false)
-        setStatus({ text: saved.kind === 'gedcom' ? 'Saved your extras in the companion file (the GEDCOM is unchanged).' : 'Saved.' })
+        const elsewhere = saved.kind === 'gedcom' && project.kind === 'gedcom' && saved.companionPath !== project.companionPath
+        setStatus({
+          text:
+            saved.kind !== 'gedcom'
+              ? 'Saved.'
+              : elsewhere
+                ? `Saved your extras in ${projectFileName(saved.companionPath)} (the GEDCOM is unchanged). Next time, open that file to get them back with the GEDCOM.`
+                : 'Saved your extras in the companion file (the GEDCOM is unchanged).',
+        })
       }
     } catch (e) {
+      if (e instanceof ForeignCompanionError) {
+        // Never replace a file this app didn't write: say so, and offer another file instead.
+        setStatus({ text: `Not saved: ${e.message} Your changes are still open here.` })
+        const elsewhere = await ask(`${e.message} Save your extras in a new companion file beside the GEDCOM instead?`, {
+          title: 'A different file has the companion name',
+          kind: 'warning',
+          okLabel: 'Choose a file…',
+          cancelLabel: "Don't save",
+        })
+        if (elsewhere) await save(true)
+        return
+      }
       setStatus({ text: `Could not save: ${(e as Error).message} Your changes are still open here. Try Save As to pick another location.` })
     }
   }
@@ -285,21 +308,23 @@ export function App() {
       </header>
       <div className="app-status">
         {project ? `${projectTitle(project)}${display.species ? ` · ${display.species}` : ''} · ${people.length} individuals${issues.length ? ` · ${issues.length} notices` : ''}` : ''}
-        {status && (
-          <span style={{ marginInlineStart: 12 }}>
-            {status.text}
-            {status.details?.length ? (
-              <details>
-                <summary> {status.details.length} more</summary>
-                <ul className="app-notices">
-                  {grouped(status.details).map((d) => (
-                    <li key={d}>{d}</li>
-                  ))}
-                </ul>
-              </details>
-            ) : null}
-          </span>
-        )}
+        <span role="status">
+          {status && (
+            <span style={{ marginInlineStart: 12 }}>
+              {status.text}
+              {status.details?.length ? (
+                <details>
+                  <summary> {status.details.length} more</summary>
+                  <ul className="app-notices">
+                    {grouped(status.details).map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+            </span>
+          )}
+        </span>
       </div>
       <main className="app-main" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', minHeight: 0 }}>
         <section style={{ minWidth: 0, overflow: 'hidden' }}>

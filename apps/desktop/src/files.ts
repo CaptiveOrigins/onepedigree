@@ -12,7 +12,7 @@ import {
   type PedigreeDocument,
 } from '@captiveorigins/onepedigree-core'
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog'
-import { exists, readTextFile, rename, writeTextFile } from '@tauri-apps/plugin-fs'
+import { exists, readTextFile, remove, rename, writeTextFile } from '@tauri-apps/plugin-fs'
 
 /** How a project looks: view, theme, parent words, species; saved with the project. */
 export type Display = {
@@ -41,11 +41,48 @@ export const projectDoc = (p: Project) => (p.kind === 'json' ? p.doc : applyComp
 export const projectDisplay = (p: Project): Display => (p.kind === 'json' ? p.display : ((p.companion.display ?? {}) as Display))
 export const projectTitle = (p: Project) => baseName(p.kind === 'json' ? (p.path ?? 'Untitled') : p.sourcePath)
 
-/** Atomic: a crash while saving leaves the old file or the new one, never half of one. */
+const describe = (e: unknown) => (e instanceof Error ? e.message : String(e))
+const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`)
+
+/**
+ * Atomic: a crash while saving leaves the old file or the new one, never half of one. If the write or the rename
+ * fails, the temporary file is removed and the original error is still reported. If it can't be removed either,
+ * the error says so, so a leftover `.tmp` file is never a surprise.
+ */
 async function writeFileSafely(path: string, text: string) {
   const temp = `${path}.tmp`
-  await writeTextFile(temp, text)
-  await rename(temp, path)
+  try {
+    await writeTextFile(temp, text)
+    await rename(temp, path)
+  } catch (error) {
+    try {
+      if (await exists(temp)) await remove(temp)
+    } catch (cleanup) {
+      throw new Error(`${sentence(describe(error))} The temporary file ${temp} couldn't be removed either (${describe(cleanup)}); you can delete it.`, { cause: error })
+    }
+    throw error
+  }
+}
+
+/** A file is at the companion's path, but it isn't a companion this app wrote, so it must not be replaced. */
+export class ForeignCompanionError extends Error {
+  constructor(readonly path: string) {
+    super(`${baseName(path)} is already there and isn't a OnePedigree companion file, so it wasn't replaced.`)
+    this.name = 'ForeignCompanionError'
+  }
+}
+
+/**
+ * What's at a companion path: nothing, a companion, or a file this app didn't write. A file that can't be read
+ * or parsed counts as foreign, so a doubt never ends with the file overwritten.
+ */
+async function companionAt(path: string): Promise<'none' | 'companion' | 'foreign'> {
+  if (!(await exists(path))) return 'none'
+  try {
+    return isCompanion(JSON.parse(await readTextFile(path))) ? 'companion' : 'foreign'
+  } catch {
+    return 'foreign'
+  }
 }
 
 const baseName = (path: string) => path.split('/').pop() ?? path
@@ -61,21 +98,22 @@ export function newProject(species = ''): Project {
   return { kind: 'json', path: null, doc: { schemaVersion: 1, individuals: [] }, display: { species, parentTerms: 'mother-father', view: 'pedigree' }, warnings: [] }
 }
 
-async function openGedcom(path: string): Promise<Project> {
+/** `companionPath` is the companion beside it by default, or the one the person opened to get here. */
+async function openGedcom(path: string, companionPath = companionPathFor(path)): Promise<Project> {
   const text = await readTextFile(path)
   const hash = await sha256(text)
   const { document, warnings } = parseGedcom(text)
-  const companionPath = companionPathFor(path)
   let companion = emptyCompanion({ format: 'gedcom', file: baseName(path), sha256: hash })
   // GEDCOM is for people: human words by default.
   companion.display = { parentTerms: 'mother-father', species: 'Humans', view: 'pedigree' }
-  if (await exists(companionPath)) {
-    const saved = JSON.parse(await readTextFile(companionPath)) as unknown
-    if (isCompanion(saved)) {
-      companion = saved
-      if (!companionMatches(saved, hash)) warnings.push('The GEDCOM changed since its companion was saved; extras for people no longer in it are ignored.')
-      companion.source.sha256 = hash
-    }
+  const found = await companionAt(companionPath)
+  if (found === 'companion') {
+    const saved = JSON.parse(await readTextFile(companionPath)) as Companion
+    companion = saved
+    if (!companionMatches(saved, hash)) warnings.push('The GEDCOM changed since its companion was saved; extras for people no longer in it are ignored.')
+    companion.source.sha256 = hash
+  } else if (found === 'foreign') {
+    warnings.push(`${baseName(companionPath)} is already there and isn't a OnePedigree companion file. It won't be changed: when you save, you'll be asked where to keep your extras instead.`)
   }
   return { kind: 'gedcom', sourcePath: path, companionPath, source: document, sha256: hash, companion, warnings }
 }
@@ -90,7 +128,7 @@ export async function openPath(path: string): Promise<Project> {
     return { kind: 'json', path: null, doc: document, display: { parentTerms: 'dam-sire', view: 'pedigree' }, warnings: [`Imported from ${baseName(path)}; save it as a OnePedigree file.`, ...warnings] }
   }
   const raw = JSON.parse(text) as Record<string, unknown>
-  if (isCompanion(raw)) return openGedcom(`${dirName(path)}/${raw.source.file}`)
+  if (isCompanion(raw)) return openGedcom(`${dirName(path)}/${raw.source.file}`, path)
   return { kind: 'json', path, doc: parsePedigree(text), display: (raw.display ?? {}) as Display, warnings: [] }
 }
 
@@ -107,11 +145,24 @@ export async function pickAndOpen(): Promise<Project | null> {
   return typeof path === 'string' ? openPath(path) : null
 }
 
-/** Save: a JSON project to its file (asking where the first time); a GEDCOM project's companion. */
+/**
+ * Save: a JSON project to its file (asking where the first time); a GEDCOM project's companion. A companion is
+ * never written over a file that isn't one (`ForeignCompanionError`). With `saveAs`, the person picks another
+ * companion file; it must sit beside the GEDCOM, because a companion names its GEDCOM by file name only.
+ */
 export async function saveProject(p: Project, saveAs = false): Promise<Project | null> {
   if (p.kind === 'gedcom') {
-    await writeFileSafely(p.companionPath, `${JSON.stringify(p.companion, null, 2)}\n`)
-    return p
+    let companionPath = p.companionPath
+    if (saveAs) {
+      const stem = baseName(p.sourcePath).replace(/\.(ged|gedcom)$/i, '')
+      const chosen = await saveDialog({ defaultPath: `${dirName(p.sourcePath)}/${stem}.extras.companion.json`, filters: [{ name: 'OnePedigree companion', extensions: ['json'] }] })
+      if (!chosen) return null
+      if (dirName(chosen) !== dirName(p.sourcePath)) throw new Error(`Save the companion in the same folder as ${baseName(p.sourcePath)}, so it can find the GEDCOM.`)
+      companionPath = chosen
+    }
+    if ((await companionAt(companionPath)) === 'foreign') throw new ForeignCompanionError(companionPath)
+    await writeFileSafely(companionPath, `${JSON.stringify(p.companion, null, 2)}\n`)
+    return { ...p, companionPath }
   }
   let path = p.path
   if (!path || saveAs) {
