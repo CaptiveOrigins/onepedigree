@@ -2,6 +2,14 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-11: foreign companion files and temporary-file cleanup in the desktop app
+
+Closes the two desktop gaps left by the full audit of 2026-11-10. Desktop tests went from 5 to 13, the repo from 210 to 218. The packages are unchanged.
+
+- **Fixed: a file at `<family>.companion.json` that isn't a companion was replaced on the next save.** Before writing a companion, the app now reads what's there; anything that isn't valid JSON in the companion format, or can't be read, counts as foreign and is never overwritten. Opening the GEDCOM warns about it (a non-JSON file there used to make opening fail). Saving refuses with `ForeignCompanionError`, says why in the status line (now a `role="status"` region), and asks whether to keep the extras in another companion file. That file must sit beside the GEDCOM, because a companion names its GEDCOM by file name only, and opening it brings the extras back. A chosen file that isn't a companion, the GEDCOM itself included, is refused the same way. Tests (`files.test.ts`, 6): non-companion JSON and non-JSON are left byte for byte, a foreign file that appears after opening is still refused, saving elsewhere keeps the foreign file and reopens the extras, a chosen GEDCOM or other folder is refused, and a companion the app wrote is still replaced.
+- **Fixed: a failed rename left `<file>.tmp`.** A failed write or rename now removes the temporary file and reports the original error unchanged, as the OnePhylogeny CLI store has done since 2026-11-09. If removing fails too, the error says so and names the file, with the original as its `cause`. The capabilities grant `fs:allow-remove` (`files.test.ts`, 2 tests).
+- **Gaps left:** Tauri's file calls and dialogs are mocked. The "Choose a file…" prompt in `App.tsx` isn't tested, since the app has no component tests; it's a thin wrapper over the tested `saveProject`. A real save in a built app, and how VoiceOver reads the status line, need a check by hand.
+
 ## 2026-11-10: screen-reader review of the studbook table and uncertain-parent placeholders
 
 A code-level review (K212), not a run with a screen reader.

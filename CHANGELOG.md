@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Desktop, saving:** a file at `<name>.companion.json` that isn't a OnePedigree companion is never replaced. Opening the GEDCOM says it's there, and saving refuses and offers to keep your extras in another companion file beside the GEDCOM, which opens them back. A failed save also removes its temporary file, or says it couldn't.
 - **React, `StudbookTable`, accessibility:** the MK and F sort buttons' accessible names now include the text shown on them ("Sort by MK (Mean kinship)"), so voice control can use what's on screen (WCAG 2.5.3, label in name).
 
 ## 0.1.0-alpha.21

@@ -79,6 +79,8 @@ A desktop app (`apps/desktop`, Tauri) for anyone, any species:
   spreadsheet (CSV/TSV with ID, mother/dam and father/sire columns).
 - **A GEDCOM is never changed.** Your extra fields and view settings live in a companion
   file beside it (`family.companion.json`), which follows the GEDCOM by its fingerprint.
+  If a different file already has that name, the app leaves it alone and asks where else
+  to keep your extras, beside the GEDCOM.
 - **Build your own tree** for any species and save it as plain OnePedigree JSON (no special
   file type); export to GEDCOM or JSON at any time.
 - Every pedigree view, colours, Mother/Father or Dam/Sire wording.
