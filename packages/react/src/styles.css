@@ -69,6 +69,10 @@
    reproductive mode uses, and carries its chance as a label, so the dashes are never the only signal. */
 .op-connector[data-branch] { stroke-dasharray: 10 4; }
 .op-connector-label { fill: var(--op-sublabel); font-size: 11px; font-weight: 600; }
+/* parent link kinds: a legal, adoptive, social, donor or other non-biological link is drawn as large, round, widely spaced
+   dots, unlike every reproductive-mode pattern and the long dash of an uncertain parent, and labelled with its kind on
+   the line ("legal"), so the dots are never the only signal. Its spoken text names the kind ("legal father of Ann"). */
+.op-connector[data-non-biological] { stroke-dasharray: 0 6; stroke-linecap: round; stroke-width: calc(var(--op-connector-width) * 2); }
 .op-individual[data-focal] .op-node-box { stroke: var(--op-focal-border); stroke-width: 2.5px; }
 .op-individual[data-highlighted] .op-node-box,
 .op-individual[data-highlighted] .op-fan-segment { stroke: var(--op-highlight); stroke-width: 2.5px; }
@@ -105,9 +109,13 @@
 .op-icon { flex: none; }
 .op-explorer[data-reorderable] .op-node { cursor: grab; }
 .op-node[data-dragging] { cursor: grabbing; opacity: 0.85; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18)); }
-.op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid #cf8137; outline-offset: 2px; }
+.op-toolbar select {
+  height: 32px; border-radius: 8px; border: 1px solid var(--op-node-border, #6b7a90); padding: 0 6px;
+  background: var(--op-node-background, #fff); color: inherit; font: inherit; cursor: pointer;
+}
+.op-toolbar :is(button, select):focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid #cf8137; outline-offset: 2px; }
 @media (prefers-color-scheme: dark) {
-  .op-toolbar button:focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline-color: #e7a066; }
+  .op-toolbar :is(button, select):focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline-color: #e7a066; }
 }
 .op-quick-view {
   position: absolute; left: 8px; bottom: 8px; max-width: 18rem; padding: 12px 14px; border-radius: 10px;

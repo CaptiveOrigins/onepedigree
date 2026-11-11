@@ -5,7 +5,12 @@ export const parentReferenceSchema = {
   type: 'object',
   required: ['individual'],
   additionalProperties: false,
-  properties: { individual: { type: 'string', minLength: 1 }, role: nullableString },
+  properties: {
+    individual: { type: 'string', minLength: 1 },
+    role: nullableString,
+    // No kind means biological. Built-in kinds: biological, legal, adoptive, social, donor; any other text is allowed.
+    kind: { type: ['string', 'null'], examples: ['biological', 'donor', 'surrogate', 'legal', 'adoptive', 'social'] },
+  },
 } as const
 
 export const parentageSchema = {

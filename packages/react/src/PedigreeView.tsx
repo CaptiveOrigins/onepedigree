@@ -1,4 +1,4 @@
-import { candidateWords, estimateNodeWidth, lifeLabel, lifeSpan, nodeSublabel, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
+import { candidateWords, estimateNodeWidth, isBiologicalKind, lifeLabel, lifeSpan, nodeSublabel, parentLinkWords, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
 import type {
   Individual,
   IndividualOccurrence,
@@ -255,6 +255,22 @@ function branchLabelAt(points: readonly { x: number; y: number }[], orientation:
 }
 
 /**
+ * What each occurrence is to the child it's linked to, when the link records a kind: "legal father of Ann". For the
+ * parent's spoken name, so keyboard and screen-reader users hear the kind on the node they reach, not only on the line.
+ */
+export function parentLinkNames(p: PedigreeViewProjection, terms: Terminology): Map<string, string[]> {
+  const out = new Map<string, string[]>()
+  const occ = new Map(p.occurrences.map((o) => [o.occurrenceId, o]))
+  for (const e of p.edges) {
+    if (!e.kind) continue
+    const child = occ.get(e.target)
+    const words = `${parentLinkWords(e)} of ${labelOf(child ? p.individuals[child.individualId] : undefined, terms)}`
+    out.set(e.source, [...(out.get(e.source) ?? []), words])
+  }
+  return out
+}
+
+/**
  * A pedigree view as SVG. Renders on the server with no client JavaScript;
  * links stay ordinary links. Every node carries stable `.op-*` classes and
  * `data-*` attributes for styling; color is never the only signal.
@@ -270,6 +286,7 @@ export function PedigreeView(props: PedigreeViewProps) {
   const title = props.title ?? `${VIEW_LABELS[p.view]}: ${labelOf(p.individuals[p.focalId], terms)}`
   const summary = describeProjection(p, terms)
   const c = props.classNames ?? {}
+  const linkNames = parentLinkNames(p, terms)
 
   return (
     <svg
@@ -318,19 +335,39 @@ export function PedigreeView(props: PedigreeViewProps) {
           const child = occById.get(e.target)
           const s = child ? p.structures[child.individualId] : undefined
           const highlighted = props.highlightedOccurrenceIds?.has(e.source) && props.highlightedOccurrenceIds?.has(e.target)
+          // A link with a recorded kind says so in its spoken text ("Rex, legal father of Ann"); a non-biological one is
+          // dotted and carries its kind as a visible label, so the dots are never the only signal.
+          const parent = occById.get(e.source)
+          const spoken = e.kind ? `${labelOf(parent ? p.individuals[parent.individualId] : undefined, terms)}, ${parentLinkWords(e)} of ${labelOf(child ? p.individuals[child.individualId] : undefined, terms)}` : null
+          const nonBiological = Boolean(e.kind) && !isBiologicalKind(e.kind)
           const path = (
             <path
               key={e.id}
               className={cx('op-connector', c.connector)}
               d={e.points.map((pt, i) => `${i ? 'L' : 'M'} ${pt.x} ${pt.y}`).join(' ')}
               data-role={e.role ?? undefined}
+              data-kind={e.kind ?? undefined}
+              data-non-biological={nonBiological || undefined}
               data-uncertain={e.uncertain || occById.get(e.source)?.uncertain || undefined}
               data-branch={e.probability !== undefined || undefined}
               data-reproductive-mode={s?.reproductiveMode ?? undefined}
               data-completeness={s?.completeness}
               data-highlighted={highlighted || undefined}
-            />
+            >
+              {spoken && <title>{spoken}</title>}
+            </path>
           )
+          if (nonBiological) {
+            const at = branchLabelAt(e.points, layout.orientation)
+            return (
+              <g key={e.id} className="op-parent-link" data-kind={e.kind}>
+                {path}
+                <text className="op-connector-label" x={at.x} y={at.y} textAnchor={at.anchor} aria-hidden="true">
+                  {e.kind}
+                </text>
+              </g>
+            )
+          }
           if (e.probability === undefined) return path
           // One of several possible parents: its chance by the parent's end of the line. The parent's spoken name says it too.
           const at = branchLabelAt(e.points, layout.orientation)
@@ -360,6 +397,7 @@ export function PedigreeView(props: PedigreeViewProps) {
           const aria = (uncertain ? [label, uncertainSublabel(uncertain)] : [
             label,
             occurrence.candidate ? candidateWords(occurrence.candidate) : null,
+            ...(linkNames.get(occurrence.occurrenceId) ?? []),
             sexWord(individual?.sex, terms),
             lifeLabel(lifeSpan(individual)) || null,
             occurrence.ahnentafel !== undefined ? `Ahnentafel ${occurrence.ahnentafel}` : null,

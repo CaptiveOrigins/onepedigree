@@ -1,3 +1,4 @@
+import { biologicalParents, isBiologicalKind } from './kinds'
 import { indexPedigree, reproductiveStructure, type PedigreeIndex } from './normalize'
 import { REPRODUCTIVE_MODES, type Individual, type IndividualId, type ParentReference, type PedigreeDocument, type UncertainParent, type PedigreeIssue } from './types'
 
@@ -31,28 +32,63 @@ const issue = (severity: PedigreeIssue['severity'], code: string, message: strin
 /** Parent-reference problems of one parent list (shared by document and change validation). */
 function parentIssues(childId: IndividualId, parents: readonly ParentReference[], resolves: (id: string) => boolean | null): PedigreeIssue[] {
   const out: PedigreeIssue[] = []
-  const seen = new Set<string>()
+  const seen = new Map<string, ParentReference>()
   parents.forEach((p, i) => {
     const path = `parentage.parents[${i}]`
     if (p.individual === childId) out.push(issue('error', 'SELF_PARENT', 'An individual cannot be its own parent.', { individualId: childId, path }))
-    if (seen.has(p.individual))
-      out.push(issue('error', 'DUPLICATE_PARENT', 'The same parent appears more than once.', { individualId: childId, path, relatedIds: [p.individual] }))
-    seen.add(p.individual)
+    const first = seen.get(p.individual)
+    // One link per parent. A biological and a legal (or other) link to the same parent is the same mistake: the
+    // biological link says it all, so the message says which to remove.
+    if (first)
+      out.push(
+        issue(
+          'error',
+          'DUPLICATE_PARENT',
+          isBiologicalKind(first.kind) !== isBiologicalKind(p.kind)
+            ? `The same parent appears more than once, as a biological and a ${(isBiologicalKind(p.kind) ? first.kind : p.kind) ?? 'non-biological'} link. Keep one link.`
+            : 'The same parent appears more than once.',
+          { individualId: childId, path, relatedIds: [p.individual] },
+        ),
+      )
+    else seen.set(p.individual, p)
     if (resolves(p.individual) === false)
       out.push(issue('error', 'UNRESOLVED_PARENT', 'The parent reference does not resolve.', { individualId: childId, path, relatedIds: [p.individual] }))
   })
   return out
 }
 
+/** Roles one individual holds at most once biologically. Generic roles (parent, contributor, donor) may repeat. */
+const SINGLE_ROLES = ['mother', 'father', 'dam', 'sire', 'egg', 'sperm']
+
+/**
+ * Two biological links in one of the single roles: two biological fathers, say. Usually one of them is a legal,
+ * adoptive or social parent recorded without its kind, so kinship would count the wrong animal. A notice, not an
+ * error: the record may be mid-edit, and nothing here is unsafe to keep.
+ */
+function biologicalRoleIssues(childId: IndividualId, parents: readonly ParentReference[]): PedigreeIssue[] {
+  const byRole = new Map<string, IndividualId[]>()
+  for (const p of biologicalParents({ parents })) if (p.role && SINGLE_ROLES.includes(p.role)) byRole.set(p.role, [...(byRole.get(p.role) ?? []), p.individual])
+  return [...byRole]
+    .filter(([, ids]) => new Set(ids).size > 1)
+    .map(([role, ids]) =>
+      issue('notice', 'DUPLICATE_BIOLOGICAL_ROLE', `More than one biological ${role} is recorded. If one is a legal, adoptive or social parent, give that link its kind.`, {
+        individualId: childId,
+        path: 'parentage.parents',
+        relatedIds: [...new Set(ids)],
+      }),
+    )
+}
+
 /**
  * Uncertain parent slots (studbook "MULT" and "UNK"): probabilities in (0, 1] summing to at most 1, each candidate
- * once, never the child, never already a recorded parent, never a descendant of the child, and no role both known
- * and uncertain.
+ * once, never the child, never already a recorded biological parent, never a descendant of the child, and no role
+ * both known and uncertain. A legal or foster father may also be a candidate sire, so only biological links count.
  */
 function uncertainIssues(childId: IndividualId, parents: readonly ParentReference[], slots: readonly UncertainParent[], resolves: (id: string) => boolean | null, index: PedigreeIndex): PedigreeIssue[] {
   const out: PedigreeIssue[] = []
-  const known = new Set(parents.map((p) => p.individual))
-  const knownRoles = new Set(parents.map((p) => p.role).filter(Boolean))
+  const biological = biologicalParents({ parents })
+  const known = new Set(biological.map((p) => p.individual))
+  const knownRoles = new Set(biological.map((p) => p.role).filter(Boolean))
   let descendants: Set<IndividualId> | null = null
   const below = () => {
     if (descendants) return descendants
@@ -97,6 +133,7 @@ function findCycles(index: PedigreeIndex): IndividualId[][] {
     state.set(start, 1)
     while (stack.length) {
       const top = stack[stack.length - 1]!
+      // Every recorded link, of any kind: no one may be their own ancestor by law or upbringing either.
       const parents = (index.parentsOf.get(top.id) ?? []).map((p) => p.individual).filter((p) => index.individuals.has(p) && p !== top.id)
       if (top.next < parents.length) {
         const p = parents[top.next++]!
@@ -139,6 +176,7 @@ export function validatePedigree(document: PedigreeDocument, options: Validation
   for (const ind of index.individuals.values()) {
     const parents = ind.parentage?.parents ?? []
     issues.push(...parentIssues(ind.id, parents, (p) => (index.individuals.has(p) ? true : complete ? false : null)))
+    issues.push(...biologicalRoleIssues(ind.id, parents))
     issues.push(...uncertainIssues(ind.id, parents, ind.parentage?.uncertainParents ?? [], (p) => (index.individuals.has(p) ? true : complete ? false : null), index))
     const mode = ind.parentage?.reproductiveMode
     if (mode && !(REPRODUCTIVE_MODES as readonly string[]).includes(mode))
@@ -166,11 +204,11 @@ export function validatePedigree(document: PedigreeDocument, options: Validation
   for (const cycle of findCycles(index))
     issues.push(issue('error', 'ANCESTRY_CYCLE', 'Parentage forms a cycle: an individual would be its own ancestor.', { individualId: cycle[0], relatedIds: cycle }))
 
-  // A cohort is one birthing event: one birthing parent (fathers may differ per member).
+  // A cohort is one birthing event: one birthing parent (fathers may differ per member). A foster dam isn't it.
   const birthRoles = options.birthParentRoles ?? ['mother', 'dam', 'egg']
   for (const [cohort, members] of index.membersOf) {
     const mothers = new Set(
-      members.flatMap((m) => (index.parentsOf.get(m) ?? []).filter((p) => p.role && birthRoles.includes(p.role)).map((p) => p.individual)),
+      members.flatMap((m) => biologicalParents({ parents: index.parentsOf.get(m) ?? [] }).filter((p) => p.role && birthRoles.includes(p.role)).map((p) => p.individual)),
     )
     if (mothers.size > 1)
       issues.push(
@@ -182,7 +220,7 @@ export function validatePedigree(document: PedigreeDocument, options: Validation
 
   for (const [cohort, members] of index.membersOf) {
     if (members.length < 2) continue
-    const sets = members.map((m) => new Set((index.parentsOf.get(m) ?? []).map((p) => p.individual)))
+    const sets = members.map((m) => new Set(biologicalParents({ parents: index.parentsOf.get(m) ?? [] }).map((p) => p.individual)))
     const shared = [...sets[0]!].some((p) => sets.every((s) => s.has(p)))
     if (!shared && sets.every((s) => s.size > 0))
       issues.push(issue('notice', 'COHORT_WITHOUT_SHARED_PARENT', 'Cohort members share no recorded parent.', { relatedIds: [cohort, ...members] }))

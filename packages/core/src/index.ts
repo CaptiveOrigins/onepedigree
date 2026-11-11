@@ -1,4 +1,5 @@
 export * from './types'
+export { biologicalParents, isBiologicalKind } from './kinds'
 export {
   indexPedigree,
   normalizeIndividual,
@@ -11,6 +12,7 @@ export {
 export { validateParentageChange, validatePedigree, type ValidationOptions, type ValidationResult, type ValidationRule } from './validate'
 export {
   getAncestors,
+  getBiologicalParents,
   getChildren,
   getCohortMembers,
   getCommonAncestors,
@@ -41,6 +43,7 @@ export {
   type IndividualOccurrence,
   type LineageRoleConfig,
   type OccurrenceMode,
+  type ParentLinksMode,
   type PedigreeViewId,
   type PedigreeViewProjection,
   type ProjectedEdge,
@@ -60,6 +63,7 @@ export {
   nodeSublabel,
   uncertainSublabel,
   candidateWords,
+  parentLinkWords,
   layoutSync,
   type LayoutOptions,
   type LayoutResult,

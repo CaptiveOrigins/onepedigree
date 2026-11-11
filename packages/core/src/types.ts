@@ -14,9 +14,24 @@ export const REPRODUCTIVE_MODES: readonly ReproductiveModeId[] = ['sexual', 'par
 /** Built-in parent roles; any other string is allowed. Roles are never inferred from sex. */
 export type ParentRole = 'mother' | 'father' | 'egg' | 'sperm' | 'donor' | 'parent' | 'contributor' | (string & {})
 
+/**
+ * What kind of link a parent reference is. Absent (null/undefined) means biological, as before kinds existed.
+ * - `biological`: the genetic parent.
+ * - `donor`: a gamete donor (egg or sperm). Also a genetic parent, so it counts in every genetic calculation.
+ * - `surrogate`: carried the young without being its genetic parent (gestational).
+ * - `legal`, `adoptive`, `social`: a parent by law, adoption or upbringing. A foster dam is `social`.
+ * Any other string is allowed. Only links with no kind, `biological` or `donor` are used for relatedness and genetics
+ * (see `biologicalParents`); every other kind is drawn but never counted.
+ */
+export type ParentKind = 'biological' | 'donor' | 'surrogate' | 'legal' | 'adoptive' | 'social' | (string & {})
+
+export const PARENT_KINDS: readonly ParentKind[] = ['biological', 'donor', 'surrogate', 'legal', 'adoptive', 'social']
+
 export type ParentReference = {
   individual: IndividualId
   role?: ParentRole | null
+  /** Present only when recorded. No kind means biological. */
+  kind?: ParentKind | null
 }
 
 /**
@@ -46,7 +61,10 @@ export type UncertainParent = {
 }
 
 export type Parentage = {
-  /** Zero or more identified contributors. The parent count is always `parents.length`. */
+  /**
+   * Zero or more identified contributors, as recorded. Links with a non-biological `kind` are kept and drawn, but
+   * every calculation reads `biologicalParents(parentage)` instead of this list.
+   */
   parents: readonly ParentReference[]
   /** Parent slots that aren't known for certain. Present only when recorded. */
   uncertainParents?: readonly UncertainParent[]

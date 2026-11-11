@@ -98,7 +98,7 @@ export const onePedigree =
       if (!collections.some((c) => c.slug === opts.collection))
         collections.push(
           (options.overrides?.individuals ?? ((c) => c))(
-            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles, selectors: opts.selectors, terms: opts.terminology?.parents, userPreference: opts.terminology?.userPreference }),
+            createIndividualsCollection({ slug: opts.collection, cohorts: opts.cohorts?.collection ?? null, roles: opts.roles, kinds: opts.kinds, selectors: opts.selectors, terms: opts.terminology?.parents, userPreference: opts.terminology?.userPreference }),
           ),
         )
     }
@@ -112,6 +112,7 @@ export const onePedigree =
                 individuals: opts.collection,
                 cohorts: opts.cohorts?.collection,
                 roles: opts.roles,
+                kinds: opts.kinds,
                 defaultMode: opts.reproductiveModes?.default,
                 selectors: opts.selectors,
                 terms: opts.terminology?.parents,

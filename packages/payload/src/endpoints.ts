@@ -69,7 +69,8 @@ export function redact(individuals: Individual[], hidden: ReadonlySet<string>, o
         hiddenSeen = true
         if (opts.hiddenRecords === 'placeholder') {
           if (!placeholders.has(p.individual)) placeholders.set(p.individual, `private-${placeholders.size + 1}`)
-          parents.push({ individual: placeholders.get(p.individual)!, role: p.role ?? null })
+          // The kind stays with the role, so a hidden legal father is still drawn as a legal (not biological) link.
+          parents.push({ individual: placeholders.get(p.individual)!, role: p.role ?? null, ...(p.kind ? { kind: p.kind } : {}) })
         }
       } else beyond = true
     }
@@ -220,7 +221,7 @@ export async function getRelatives(req: PayloadRequest, opts: ResolvedOptions, i
   const cohortMates = cohort ? [...(index.membersOf.get(cohort) ?? [])].filter((m) => m !== id) : []
   const terms = await termsFor(opts, req.user)
   return {
-    parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, label: roleLabel(p.role, terms, opts.lineageRoles), individual: at(p.individual) })),
+    parents: (self.parentage?.parents ?? []).map((p) => ({ role: p.role ?? null, ...(p.kind ? { kind: p.kind } : {}), label: roleLabel(p.role, terms, opts.lineageRoles), individual: at(p.individual) })),
     children: [...(index.childrenOf.get(id) ?? [])].map(at),
     siblings: { full: s.full.map(at), partial: s.partial.map(at), unresolved: s.unresolved.map(at) },
     cohort: cohort ? { id: cohort, mates: cohortMates.map(at) } : null,
@@ -249,7 +250,13 @@ export const validateEndpoint = (opts: ResolvedOptions): Endpoint => ({
     const parents = Array.isArray(body.parents)
       ? body.parents.flatMap((p) =>
           p && typeof p === 'object' && typeof (p as ParentReference).individual === 'string'
-            ? [{ individual: (p as ParentReference).individual, role: typeof (p as ParentReference).role === 'string' ? (p as ParentReference).role : null }]
+            ? [
+                {
+                  individual: (p as ParentReference).individual,
+                  role: typeof (p as ParentReference).role === 'string' ? (p as ParentReference).role : null,
+                  ...(typeof (p as ParentReference).kind === 'string' && (p as ParentReference).kind ? { kind: (p as ParentReference).kind } : {}),
+                },
+              ]
             : [],
         )
       : []

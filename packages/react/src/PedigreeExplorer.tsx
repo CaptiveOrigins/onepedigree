@@ -1,12 +1,12 @@
 'use client'
 
-import { candidateWords, REORDERABLE_VIEWS, type Individual, type IndividualOccurrence } from '@captiveorigins/onepedigree-core'
+import { candidateWords, REORDERABLE_VIEWS, type Individual, type IndividualOccurrence, type ParentLinksMode } from '@captiveorigins/onepedigree-core'
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
 import { AhnentafelList } from './AhnentafelList.js'
 import { DEFAULT_TERMS, describeStructure, labelOf, sexWord } from './describe.js'
 import { nearestNode, useOccurrenceHighlighting, usePedigreeSelection, type Direction } from './hooks.js'
-import { PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
+import { parentLinkNames, PedigreeView, type PedigreeViewProps } from './PedigreeView.js'
 import { GeneLegend, GenotypeKey } from './genetics.js'
 import { Icon } from './icons.js'
 import { dropNodeOrder } from './reorder.js'
@@ -44,8 +44,14 @@ export type PedigreeExplorerProps = Omit<PedigreeViewProps, 'interactive' | 'vie
   onNodeOrderChange?: (nodeOrder: string[]) => void
   /** The current chosen order (what you passed to the layout), so a drag extends it. */
   nodeOrder?: readonly string[]
+  /**
+   * Which parent links the projection draws (its `parentLinks` option), for the toolbar's chooser. The chooser shows
+   * only with `onParentLinksChange`; pass the choice back to `projectPedigree`.
+   */
+  parentLinks?: ParentLinksMode
+  onParentLinksChange?: (mode: ParentLinksMode) => void
   /** Accessible labels for the controls. */
-  labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls' | 'colors', string>>
+  labels?: Partial<Record<'zoomIn' | 'zoomOut' | 'fit' | 'download' | 'print' | 'close' | 'open' | 'controls' | 'colors' | 'parentLinks' | ParentLinksMode, string>>
 }
 
 const LABELS = {
@@ -58,9 +64,14 @@ const LABELS = {
   open: 'Open profile',
   controls: 'Pedigree controls',
   colors: 'Colors',
+  parentLinks: 'Parent links',
+  both: 'All links',
+  biological: 'Biological only',
+  recorded: 'Parents of record',
 }
+const PARENT_LINK_MODES: readonly ParentLinksMode[] = ['both', 'biological', 'recorded']
 /** Properties copied into downloaded SVGs (they have no stylesheet). */
-const INLINE = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity', 'opacity', 'font-family', 'font-size', 'font-weight', 'font-style', 'visibility', 'display']
+const INLINE = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-opacity', 'opacity', 'font-family', 'font-size', 'font-weight', 'font-style', 'visibility', 'display']
 
 /** Prints only this chart: everything else on the page is hidden while printing. */
 function printChart(el: HTMLElement | null) {
@@ -160,6 +171,8 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
   }
 
   const onKeyDown = (e: KeyboardEvent) => {
+    // Typing in a form control (the parent-links chooser, the color editor's fields) never zooms or pans.
+    if ((e.target as Element | null)?.closest?.('select, input, textarea')) return
     if (e.key === 'Escape') choose(null)
     else if (e.key === '+' || e.key === '=') zoom(0.8)
     else if (e.key === '-') zoom(1.25)
@@ -311,6 +324,18 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
             <Icon name="palette" />
           </button>
         )}
+        {props.onParentLinksChange && (
+          <label className="op-toolbar-select">
+            <span className="op-visually-hidden">{labels.parentLinks}</span>
+            <select value={props.parentLinks ?? 'both'} onChange={(e) => props.onParentLinksChange?.(e.target.value as ParentLinksMode)}>
+              {PARENT_LINK_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {labels[m]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {props.toolbar}
       </div>
       {props.themeEditor && editing && (
@@ -349,6 +374,9 @@ export function PedigreeExplorer(props: PedigreeExplorerProps) {
               <p className="op-quick-view-title">{labelOf(individual, terms)}</p>
               {individual?.sex && <p>{sexWord(individual.sex, terms)}</p>}
               {occurrence.candidate && <p>{candidateWords(occurrence.candidate, 'Possible')}</p>}
+              {(parentLinkNames(projection, terms).get(occurrence.occurrenceId) ?? []).map((words) => (
+                <p key={words}>{words[0]!.toUpperCase() + words.slice(1)}</p>
+              ))}
               <p>{describeStructure(projection.structures[occurrence.individualId])}</p>
               {occurrence.repeated && <p>{terms.repeated}</p>}
               <div className="op-quick-view-actions">

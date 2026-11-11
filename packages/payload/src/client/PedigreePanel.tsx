@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 
 type Summary = { id: string; label: string | null; href: string | null } | { private: true }
 type Relatives = {
-  parents: { role: string | null; label: string; individual: Summary }[]
+  parents: { role: string | null; kind?: string; label: string; individual: Summary }[]
   children: Summary[]
   siblings: { full: Summary[]; partial: Summary[]; unresolved: Summary[] }
   cohort: { id: string; mates: Summary[] } | null
@@ -81,7 +81,7 @@ export function PedigreePanel(props: PedigreePanelProps) {
       {relatives && (
         <dl className="onepedigree-relatives">
           <dt>Parents</dt>
-          <dd>{relatives.parents.length ? relatives.parents.map((p) => `${name(p.individual)} (${p.label})`).join(', ') : '—'}</dd>
+          <dd>{relatives.parents.length ? relatives.parents.map((p) => `${name(p.individual)} (${p.kind ? `${p.kind} ${p.label.toLowerCase()}` : p.label})`).join(', ') : '—'}</dd>
           <dt>Offspring</dt>
           <dd>{list(relatives.children)}</dd>
           <dt>Full siblings</dt>

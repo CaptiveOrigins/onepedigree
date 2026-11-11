@@ -10,6 +10,7 @@ import {
   type ReproductiveModeId,
   type ReproductiveStructure,
 } from './types'
+import { biologicalParents } from './kinds'
 
 /** Input that cannot be read as a pedigree at all (not a validation finding). */
 export class PedigreeFormatError extends Error {
@@ -78,7 +79,9 @@ export function normalizeParentage(input: unknown, path = 'parentage') {
   const parents = raw.map((p, i): ParentReference => {
     const at = `${path}.parents[${i}]`
     if (!isRecord(p)) throw new PedigreeFormatError('Expected a parent reference object', at)
-    return Object.freeze({ individual: id(p.individual, `${at}.individual`), role: optText(p.role, `${at}.role`) })
+    const kind = optText(p.kind, `${at}.kind`)
+    // Only when recorded, so documents without kinds are unchanged.
+    return Object.freeze({ individual: id(p.individual, `${at}.individual`), role: optText(p.role, `${at}.role`), ...(kind ? { kind } : {}) })
   })
   const rawUncertain = input.uncertainParents
   if (rawUncertain !== undefined && rawUncertain !== null && !Array.isArray(rawUncertain)) throw new PedigreeFormatError('Expected an uncertainParents array', `${path}.uncertainParents`)
@@ -157,9 +160,12 @@ export function indexPedigree(document: PedigreeDocument): PedigreeIndex {
   return { document, individuals, cohorts, hasCohortRegistry: document.cohorts !== undefined, parentsOf, childrenOf, membersOf }
 }
 
-/** How an individual's recorded parents compare with its reproductive mode. */
+/**
+ * How an individual's biological parents compare with its reproductive mode. Legal, adoptive, social and other
+ * non-biological links aren't counted: a foster dam doesn't make a sexual birth atypical.
+ */
 export function reproductiveStructure(individual: Individual): ReproductiveStructure {
-  const count = individual.parentage?.parents.length ?? 0
+  const count = biologicalParents(individual.parentage).length
   const raw = individual.parentage?.reproductiveMode ?? null
   const mode = raw && (REPRODUCTIVE_MODES as readonly string[]).includes(raw) ? raw : null
   const typical = mode ? MODE_STRUCTURE[mode] : null

@@ -1,4 +1,5 @@
 import {
+  isBiologicalKind,
   layoutSync,
   PEDIGREE_VIEWS,
   PARENT_TERM_PRESETS,
@@ -214,7 +215,8 @@ export function App() {
   }
   const setParent = (role: 'mother' | 'father', parentId: string) => {
     if (!person) return
-    const others = (person.parentage?.parents ?? []).filter((p) => p.role !== role)
+    // The picker edits the biological parent in this role; a legal or foster parent recorded in the file stays.
+    const others = (person.parentage?.parents ?? []).filter((p) => p.role !== role || !isBiologicalKind(p.kind))
     const parents = parentId ? [...others, { individual: parentId, role }] : others
     updatePerson({ parentage: parents.length ? { ...(person.parentage ?? {}), parents } : null })
   }
@@ -417,7 +419,7 @@ export function App() {
                       {(['mother', 'father'] as const).map((role) => (
                         <label key={role} className="app-field">
                           {role === 'mother' ? terms.maternal : terms.paternal}
-                          <select value={person.parentage?.parents.find((p) => p.role === role)?.individual ?? ''} onChange={(e) => setParent(role, e.target.value)}>
+                          <select value={person.parentage?.parents.find((p) => p.role === role && isBiologicalKind(p.kind))?.individual ?? ''} onChange={(e) => setParent(role, e.target.value)}>
                             <option value="">Unknown</option>
                             {people
                               .filter((i) => i.id !== person.id)

@@ -21,7 +21,7 @@ Dependencies only point downward. `core` has no runtime dependencies and no Reac
 
 ## Data flow
 
-Parentage lives on the individual. Children and siblings are derived, never stored. Each view is a projection, then a layout, then a renderer, and custom layout engines plug in through `PedigreeLayoutEngine`. Large datasets implement `PedigreeRepository`, which loads a bounded neighborhood one query per generation.
+Parentage lives on the individual. Children and siblings are derived, never stored. Each parent link may say what kind it is (`biological`, `donor`, `surrogate`, `legal`, `adoptive`, `social`, or other text; none means biological; `biological` and `donor`, a gamete donor, are the genetic kinds). Views draw every kind, and can be limited with the projection's `parentLinks` option, but every calculation (relatedness, siblings, kinship and the studbook numbers, PMx and GEDCOM export) reads `biologicalParents(parentage)` and so follows biological links only (agreed with OneLineage, 2026-11-10). Each view is a projection, then a layout, then a renderer, and custom layout engines plug in through `PedigreeLayoutEngine`. Large datasets implement `PedigreeRepository`, which loads a bounded neighborhood one query per generation.
 
 ## In the suite
 

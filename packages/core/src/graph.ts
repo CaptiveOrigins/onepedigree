@@ -1,3 +1,4 @@
+import { biologicalParents } from './kinds'
 import { reproductiveStructure, type PedigreeIndex } from './normalize'
 import type { CohortId, IndividualId, ParentReference, TraversalOptions, TraversalResult } from './types'
 
@@ -9,8 +10,12 @@ const bounds = (o: TraversalOptions = {}) => ({
   maxIndividuals: Math.max(1, Math.floor(o.maxIndividuals ?? DEFAULT_INDIVIDUALS)),
 })
 
-/** Direct parent references (as recorded, in order). */
+/** Direct parent references (as recorded, in order, every kind of link). Calculations use `getBiologicalParents`. */
 export const getParents = (index: PedigreeIndex, id: IndividualId): readonly ParentReference[] => index.parentsOf.get(id) ?? []
+
+/** Direct biological parent references (see `biologicalParents`): what relatedness, siblings and genetics follow. */
+export const getBiologicalParents = (index: PedigreeIndex, id: IndividualId): readonly ParentReference[] =>
+  biologicalParents({ parents: getParents(index, id) })
 
 /** Direct offspring, derived in reverse from their parentage. */
 export const getChildren = (index: PedigreeIndex, id: IndividualId): readonly IndividualId[] => index.childrenOf.get(id) ?? []
@@ -43,15 +48,19 @@ function walk(index: PedigreeIndex, start: IndividualId, step: (id: IndividualId
   return { individuals: found, truncated }
 }
 
-/** Ancestors to a bounded depth; each identity once, at the nearest generation it is reached. */
+/** Ancestors to a bounded depth through every recorded link; each identity once, at the nearest generation it is reached. */
 export const getAncestors = (index: PedigreeIndex, id: IndividualId, options?: TraversalOptions) =>
   walk(index, id, (x) => getParents(index, x).map((p) => p.individual), options)
+
+/** Ancestors through biological links only (for relatedness). */
+const biologicalAncestors = (index: PedigreeIndex, id: IndividualId, options?: TraversalOptions) =>
+  walk(index, id, (x) => getBiologicalParents(index, x).map((p) => p.individual), options)
 
 /** Descendants to a bounded depth, batched by generation. */
 export const getDescendants = (index: PedigreeIndex, id: IndividualId, options?: TraversalOptions) => walk(index, id, (x) => getChildren(index, x), options)
 
 const parentKey = (index: PedigreeIndex, id: IndividualId) =>
-  [...new Set(getParents(index, id).map((p) => p.individual))].sort().join('\u0000')
+  [...new Set(getBiologicalParents(index, id).map((p) => p.individual))].sort().join('\u0000')
 
 /** Parentage is complete enough to compare: the mode's typical count is recorded, or two parents when the mode is unknown. */
 const parentSetComplete = (index: PedigreeIndex, id: IndividualId) => {
@@ -70,14 +79,17 @@ export type SiblingGroups = {
   unresolved: readonly IndividualId[]
 }
 
-/** Siblings by recorded parentage. Missing parentage is never treated as proof of relatedness or unrelatedness. */
+/**
+ * Siblings by recorded biological parentage. Missing parentage is never treated as proof of relatedness or
+ * unrelatedness. Young who share only a foster, legal or other non-biological parent aren't siblings here.
+ */
 export function getSiblings(index: PedigreeIndex, id: IndividualId): SiblingGroups {
-  const mine = new Set(getParents(index, id).map((p) => p.individual))
+  const mine = new Set(getBiologicalParents(index, id).map((p) => p.individual))
   const full: IndividualId[] = []
   const partial: IndividualId[] = []
   const unresolved: IndividualId[] = []
   if (!mine.size) return { full, partial, unresolved }
-  const candidates = new Set([...mine].flatMap((p) => getChildren(index, p)))
+  const candidates = new Set([...mine].flatMap((p) => getChildren(index, p)).filter((c) => getBiologicalParents(index, c).some((p) => mine.has(p.individual))))
   candidates.delete(id)
   // In a backcross a parent is also a child of the other parent (and an offspring shares a parent):
   // ancestors and descendants are never listed as siblings.
@@ -100,12 +112,12 @@ export const getHalfSiblings = (index: PedigreeIndex, id: IndividualId) => getSi
 /** Members of a cohort, from each member's own parentage. */
 export const getCohortMembers = (index: PedigreeIndex, cohort: CohortId): readonly IndividualId[] => [...(index.membersOf.get(cohort) ?? [])].sort()
 
-/** Ancestors shared by every given individual (an individual counts as its own generation-0 ancestor), nearest first. */
+/** Biological ancestors shared by every given individual (an individual counts as its own generation-0 ancestor), nearest first. */
 export function getCommonAncestors(index: PedigreeIndex, ids: readonly IndividualId[], options?: TraversalOptions) {
   if (!ids.length) return []
   const distances = ids.map((id) => {
     const m = new Map<IndividualId, number>([[id, 0]])
-    for (const a of getAncestors(index, id, options).individuals) m.set(a.id, a.generation)
+    for (const a of biologicalAncestors(index, id, options).individuals) m.set(a.id, a.generation)
     return m
   })
   return [...distances[0]!.keys()]
@@ -117,7 +129,7 @@ export function getCommonAncestors(index: PedigreeIndex, ids: readonly Individua
     })
 }
 
-/** Every upward lineage path from `start` (start first), bounded in depth and count. */
+/** Every upward biological lineage path from `start` (start first), bounded in depth and count. */
 function lineagePaths(index: PedigreeIndex, start: IndividualId, maxGenerations: number, maxPaths: number) {
   const paths: IndividualId[][] = []
   let truncated = false
@@ -130,7 +142,7 @@ function lineagePaths(index: PedigreeIndex, start: IndividualId, maxGenerations:
       break
     }
     if (path.length - 1 >= maxGenerations) continue
-    const parents = getParents(index, path[path.length - 1]!)
+    const parents = getBiologicalParents(index, path[path.length - 1]!)
       .map((p) => p.individual)
       .filter((p) => index.individuals.has(p))
     for (const p of [...parents].reverse()) if (!path.includes(p)) stack.push([...path, p])
@@ -148,9 +160,10 @@ export type RelationshipPath = {
 }
 
 /**
- * Documented lineage paths connecting two individuals, through each common
- * ancestor (lines meet only at the ancestor). No path found means no
- * documented connection, not that the two are unrelated.
+ * Documented biological lineage paths connecting two individuals, through each
+ * common ancestor (lines meet only at the ancestor). No path found means no
+ * documented connection, not that the two are unrelated. Legal, adoptive,
+ * social and other non-biological links don't connect anyone here.
  */
 export function getRelationshipPaths(
   index: PedigreeIndex,
@@ -183,7 +196,7 @@ export function getRelationshipPaths(
   return { paths, truncated }
 }
 
-/** Ancestors reached through more than one lineage path from the focal individual (pedigree collapse), with their path counts. */
+/** Ancestors reached through more than one biological lineage path from the focal individual (pedigree collapse), with their path counts. */
 export function getRepeatedIndividuals(index: PedigreeIndex, focal: IndividualId, options: { maxGenerations?: number; maxPaths?: number } = {}) {
   const { paths, truncated } = lineagePaths(index, focal, options.maxGenerations ?? DEFAULT_GENERATIONS, options.maxPaths ?? 10_000)
   const counts = new Map<IndividualId, number>()

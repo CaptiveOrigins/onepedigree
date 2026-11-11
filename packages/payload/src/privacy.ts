@@ -1,5 +1,7 @@
 import { validations, ValidationError, type CollectionAfterReadHook, type CollectionBeforeValidateHook, type CollectionSlug, type PayloadRequest, type Where } from 'payload'
 
+import { isBiologicalKind } from '@captiveorigins/onepedigree-core'
+
 import { getAt, idOf } from './mapping.js'
 import type { ResolvedOptions } from './types.js'
 
@@ -180,7 +182,8 @@ export const keepHiddenParents =
       const next = getAt(d, path)
       if (next === undefined) continue
       const rows = (getAt(originalDoc, `${m.path}.parents`) ?? []) as Record<string, unknown>[]
-      const before = idOf(rows.find((r) => r?.[m.roleField] === SELECTOR_ROLES[k])?.[m.individualField])
+      // The picker shows the biological row with its role (see `createRoleSelectorField`).
+      const before = idOf(rows.find((r) => r?.[m.roleField] === SELECTOR_ROLES[k] && isBiologicalKind(r?.[m.kindField] as string | null | undefined))?.[m.individualField])
       if (!before || !hidden.has(before)) continue
       // Leave the picker out of the write: the rows below keep the private parent.
       if (next === null || isPrivateParent(next) || idOf(next) === before) setAt(d, path, undefined)

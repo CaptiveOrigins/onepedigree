@@ -8,7 +8,7 @@ const signedIn: Access = ({ req }) => Boolean(req.user)
 
 /** A minimal individuals collection: name, optional external ID and sex label, parentage. */
 export const createIndividualsCollection = (
-  o: FactoryOptions & Pick<Parameters<typeof createParentageField>[0], 'cohorts' | 'roles' | 'selectors' | 'terms' | 'userPreference'>,
+  o: FactoryOptions & Pick<Parameters<typeof createParentageField>[0], 'cohorts' | 'roles' | 'kinds' | 'selectors' | 'terms' | 'userPreference'>,
 ): CollectionConfig => ({
   slug: o.slug,
   labels: o.labels ?? { singular: 'Individual', plural: 'Individuals' },
@@ -17,7 +17,7 @@ export const createIndividualsCollection = (
   fields: [
     { name: 'name', type: 'text' },
     { type: 'row', fields: [{ name: 'externalId', type: 'text', index: true }, { name: 'sex', type: 'text' }] },
-    createParentageField({ individuals: o.slug, cohorts: o.cohorts, roles: o.roles, selectors: o.selectors, terms: o.terms, userPreference: o.userPreference }),
+    createParentageField({ individuals: o.slug, cohorts: o.cohorts, roles: o.roles, kinds: o.kinds, selectors: o.selectors, terms: o.terms, userPreference: o.userPreference }),
     ...(o.additionalFields ?? []),
   ],
   timestamps: true,

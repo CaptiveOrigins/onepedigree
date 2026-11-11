@@ -1,4 +1,4 @@
-import type { IndividualId, PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { biologicalParents, type IndividualId, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
 
 /**
  * Pedigree-based genetics (owner, 2026-11-10; studbook research §3): kinship by the tabular method, and from it
@@ -11,6 +11,8 @@ import type { IndividualId, PedigreeDocument } from '@captiveorigins/onepedigree
  * - A parent known only as candidates (MULT) counts by expectation: each candidate weighted by its probability, any
  *   remainder as an unknown parent. This is an expected value, not the kinship of any one true pedigree.
  * - Every individual has at most two parents (sexual, diploid). Others are refused rather than guessed.
+ * - Only biological links count (`biologicalParents`): a legal, adoptive, social or donor link, such as a foster dam,
+ *   is left out of every number here.
  */
 export const PEDIGREE_BASED = 'pedigree-based' as const
 
@@ -45,7 +47,7 @@ export function kinshipAnalysis(doc: PedigreeDocument, options: KinshipOptions =
     const s: Slot[] = []
     let phantoms = 0
     const phantom = (kind: string, shared?: string | null) => (shared ? `~${kind}:${shared}` : `~${kind}:${ind.id}:${phantoms++}`)
-    for (const parent of p?.parents ?? []) s.push(ids.has(parent.individual) ? [{ source: parent.individual, weight: 1 }] : [{ source: phantom('unknown'), weight: 1 }])
+    for (const parent of biologicalParents(p)) s.push(ids.has(parent.individual) ? [{ source: parent.individual, weight: 1 }] : [{ source: phantom('unknown'), weight: 1 }])
     for (const u of p?.uncertainParents ?? []) {
       const known = u.candidates.filter((c) => ids.has(c.individual))
       const total = known.reduce((t, c) => t + c.probability, 0)

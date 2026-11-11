@@ -22,6 +22,7 @@ export function resolveOptions(o: OnePedigreePluginOptions): ResolvedOptions {
           path: mapping.path ?? 'parentage',
           individualField: mapping.individualField ?? 'individual',
           roleField: mapping.roleField ?? 'role',
+          kindField: mapping.kindField ?? 'kind',
           reproductiveMode: mapping.reproductiveMode ?? `${mapping.path ?? 'parentage'}.reproductiveMode`,
           cohort: mapping.cohort ?? `${mapping.path ?? 'parentage'}.cohort`,
         }
@@ -53,7 +54,9 @@ export function readParents(doc: unknown, opts: ResolvedOptions): ParentReferenc
   return rows.flatMap((r) => {
     const id = idOf((r as Record<string, unknown>)?.[m.individualField])
     const role = (r as Record<string, unknown>)?.[m.roleField]
-    return id ? [{ individual: id, role: typeof role === 'string' && role ? role : null }] : []
+    const kind = (r as Record<string, unknown>)?.[m.kindField]
+    // A kind only when stored, so records without one read exactly as before (biological).
+    return id ? [{ individual: id, role: typeof role === 'string' && role ? role : null, ...(typeof kind === 'string' && kind ? { kind } : {}) }] : []
   })
 }
 
