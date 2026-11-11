@@ -118,3 +118,29 @@ describe("uncertain parents as alternative branches (uncertainParents: 'branches
     expect(document.querySelector('a[href^="/animals/~"]')).toBeNull()
   })
 })
+
+describe('a recorded parent who is also a candidate', () => {
+  // OneLineage's misattribution case: the recorded man is the legal father and also one of the DNA candidates.
+  const misattributed = normalizePedigree({
+    schemaVersion: 1,
+    individuals: [
+      { id: 'rec', label: 'Recorded man' },
+      { id: 'other', label: 'Other man' },
+      { id: 'child', label: 'Child', parentage: { parents: [{ individual: 'rec', role: 'father', kind: 'legal' }], uncertainParents: [{ role: 'father', basis: 'DNA hypothesis', candidates: [{ individual: 'rec', probability: 0.3 }, { individual: 'other', probability: 0.6 }] }] } },
+    ],
+  })
+  const p = projectPedigree(misattributed, { view: 'pedigree', focalId: 'child', uncertainParents: 'branches', parentLinks: 'both' })
+
+  it('marks both occurrences as the same, repeated individual, in the drawing and the spoken name', () => {
+    const recs = p.occurrences.filter((o) => o.individualId === 'rec')
+    expect(recs).toHaveLength(2)
+    expect(recs.every((o) => o.repeated)).toBe(true)
+    const html = renderToStaticMarkup(<PedigreeView projection={p} layout={layoutSync(p)} />)
+    expect(html.match(/data-individual="rec"[^>]*data-repeated="true"/g)).toHaveLength(2)
+  })
+
+  it('selecting the person selects both of its occurrences', () => {
+    const html = renderToStaticMarkup(<PedigreeView projection={p} layout={layoutSync(p)} interactive selectedIndividualId="rec" />)
+    expect(html.match(/data-individual="rec"[^>]*data-selected="true"/g)).toHaveLength(2)
+  })
+})

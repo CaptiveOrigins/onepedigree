@@ -2,6 +2,11 @@
 
 Each audit lists what this repo promises, the tests that prove it, and the gaps: those closed in the same pass and those left, with why. Audits run after each feature or fix, and at least every 14 days while the repo has commits. Newest first.
 
+## 2026-11-11: a recorded parent who is also a candidate
+
+- **Promise (asked for by OneLineage):** in the `both` view, a man recorded as the legal father who is also a DNA candidate reads as one person, not two.
+- **Covered** (`packages/react/test/uncertain.test.tsx`, 2 tests): it already held. Both occurrences carry the same `data-individual`, are marked repeated (the repeat marker and "repeated" in the spoken name), and selecting him selects both. No code change was needed.
+
 ## 2026-11-11: parent kinds
 
 The optional `kind` on a parent link and the `parentLinks` projection option. Tests went from 236 to 275: core 86 to 109, react 46 to 53, studbook 45 to 49, payload 46 to 51. Desktop is unchanged (13).
