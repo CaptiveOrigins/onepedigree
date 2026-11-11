@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@captiveorigins/onepedigree-core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -35,6 +37,30 @@ describe('themes', () => {
     const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layout} theme="forest" />)
     expect(html).toContain('data-theme="forest"')
     expect(html).toContain(`--op-node-border:${resolveThemeColors('forest', 'maternal').nodeBorder}`)
+  })
+})
+
+describe('focus ring (owner decision N154, 2026-11-11)', () => {
+  const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8')
+  const darkAt = css.indexOf('@media (prefers-color-scheme: dark) {\n  .op-root, .op-explorer, .op-studbook')
+  const focusOf = (text: string) => /--op-focus: (#[0-9a-f]{6})/.exec(text)?.[1]
+
+  it('is the darker orange on light backgrounds, 3:1 or better on every preset card; dark keeps the lighter orange', () => {
+    expect(darkAt).toBeGreaterThan(0)
+    const light = focusOf(css.slice(0, darkAt))!
+    const dark = focusOf(css.slice(darkAt))!
+    expect(light).toBe('#a65f20')
+    expect(dark).toBe('#e7a066')
+    for (const t of THEME_PRESETS.filter((p) => p.id !== 'midnight')) expect(contrastRatio(light, t.colors.nodeBackground), `${t.id}`).toBeGreaterThanOrEqual(3)
+    // The one dark preset passes with either ring, since the ring follows the system, not the preset.
+    for (const ring of [light, dark]) expect(contrastRatio(ring, presetTheme('midnight')!.colors.nodeBackground)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('every focus style draws with --op-focus, not the selection color or a fixed color', () => {
+    const rules = [...css.matchAll(/:focus-visible[^{]*\{([^}]*)\}/g)].map((m) => m[1]!).filter((body) => /outline:|stroke:/.test(body))
+    expect(rules.length).toBeGreaterThanOrEqual(4)
+    for (const body of rules) expect(body).toMatch(/(outline: 2px solid|stroke:) var\(--op-focus\);/)
+    expect(css).not.toContain('#cf8137')
   })
 })
 

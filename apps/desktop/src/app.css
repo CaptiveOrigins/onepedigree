@@ -7,22 +7,28 @@
   --muted: #5b6577;
   --border: #d9dde5;
   --accent: #cf8137;
+  /* Focus rings: the darker orange on light backgrounds (owner decision N154, 2026-11-11), 4.62:1 on the panel. Dark keeps #e7a066. */
+  --focus: #a65f20;
   --field: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-appearance='light']) {
-    --bg: #12151b; --panel: #181c24; --text: #e8ecf2; --muted: #a3acbb; --border: #2c3340; --accent: #e7a066; --field: #1f2430;
+    --bg: #12151b; --panel: #181c24; --text: #e8ecf2; --muted: #a3acbb; --border: #2c3340; --accent: #e7a066; --focus: #e7a066; --field: #1f2430;
   }
 }
 :root[data-appearance='dark'] {
   color-scheme: dark;
-  --bg: #12151b; --panel: #181c24; --text: #e8ecf2; --muted: #a3acbb; --border: #2c3340; --accent: #e7a066; --field: #1f2430;
+  --bg: #12151b; --panel: #181c24; --text: #e8ecf2; --muted: #a3acbb; --border: #2c3340; --accent: #e7a066; --focus: #e7a066; --field: #1f2430;
 }
 :root[data-appearance='light'] { color-scheme: light; }
+/* The pedigree's focus ring follows the system through a media query, so a chosen appearance sets it too (test/theme.test.ts). */
+:root[data-appearance='light'] :is(.op-root, .op-explorer, .op-studbook) { --op-focus: #a65f20; }
+:root[data-appearance='dark'] :is(.op-root, .op-explorer, .op-studbook) { --op-focus: #e7a066; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 button, select, input { font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; }
 button { cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: default; }
+:is(button, select, input, summary, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .app-header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel); }
 .app-status { padding: 4px 12px; min-height: 22px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); }
 .app-status details { display: inline; }

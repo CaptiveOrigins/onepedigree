@@ -24,6 +24,14 @@
   font-family: var(--op-font);
   overflow: visible;
 }
+/*
+ * Focus ring (brand/README.md; owner decision N154, 2026-11-11): the darker orange #a65f20 on light backgrounds
+ * (4.91:1 on white), the lighter #e7a066 in dark (7.98:1 on the dark card). Fills and selection keep their colors.
+ */
+.op-root, .op-explorer, .op-studbook { --op-focus: #a65f20; }
+@media (prefers-color-scheme: dark) {
+  .op-root, .op-explorer, .op-studbook { --op-focus: #e7a066; }
+}
 @media (prefers-color-scheme: dark) {
   .op-root {
     --op-node-background: #161a22;
@@ -82,8 +90,8 @@
 .op-individual[role='button'] { cursor: pointer; }
 .op-individual:focus { outline: none; }
 .op-individual:focus-visible .op-node-box,
-.op-individual:focus-visible .op-fan-segment { stroke: var(--op-selected-ring); stroke-width: 3px; stroke-dasharray: 3 2; }
-.op-individual a:focus-visible .op-node-box { stroke: var(--op-selected-ring); stroke-width: 3px; }
+.op-individual:focus-visible .op-fan-segment { stroke: var(--op-focus); stroke-width: 3px; stroke-dasharray: 3 2; }
+.op-individual a:focus-visible .op-node-box { stroke: var(--op-focus); stroke-width: 3px; }
 .op-fan-segment { fill: var(--op-fan-fill); stroke: var(--op-node-border); stroke-width: 1px; }
 .op-individual[data-generation='1'] .op-fan-segment,
 .op-individual[data-generation='3'] .op-fan-segment,
@@ -105,7 +113,7 @@
   min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--op-node-border, #6b7a90);
   background: var(--op-node-background, #fff); color: inherit; font: inherit; cursor: pointer;
 }
-/* Brand family (brand/README.md): shared line icons, Captive Origins orange focus ring. */
+/* Brand family (brand/README.md): shared line icons, orange focus ring (--op-focus). */
 .op-icon { flex: none; }
 .op-explorer[data-reorderable] .op-node { cursor: grab; }
 .op-node[data-dragging] { cursor: grabbing; opacity: 0.85; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18)); }
@@ -113,10 +121,7 @@
   height: 32px; border-radius: 8px; border: 1px solid var(--op-node-border, #6b7a90); padding: 0 6px;
   background: var(--op-node-background, #fff); color: inherit; font: inherit; cursor: pointer;
 }
-.op-toolbar :is(button, select):focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid #cf8137; outline-offset: 2px; }
-@media (prefers-color-scheme: dark) {
-  .op-toolbar :is(button, select):focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline-color: #e7a066; }
-}
+.op-toolbar :is(button, select):focus-visible, .op-quick-view-actions :is(a, button):focus-visible { outline: 2px solid var(--op-focus); outline-offset: 2px; }
 .op-quick-view {
   position: absolute; left: 8px; bottom: 8px; max-width: 18rem; padding: 12px 14px; border-radius: 10px;
   background: var(--op-node-background, #fff); border: 1px solid var(--op-node-border, #6b7a90);
@@ -205,7 +210,7 @@
 .op-studbook-basis summary { cursor: pointer; font-weight: 600; }
 .op-studbook-basis p { margin: 4px 0 0; max-width: 60rem; }
 .op-studbook-scroll { overflow-x: auto; }
-.op-studbook-scroll:focus-visible, .op-studbook button:focus-visible, .op-studbook input:focus-visible, .op-studbook summary:focus-visible { outline: 2px solid var(--op-selected-ring, #2563eb); outline-offset: 2px; }
+.op-studbook-scroll:focus-visible, .op-studbook button:focus-visible, .op-studbook input:focus-visible, .op-studbook summary:focus-visible { outline: 2px solid var(--op-focus); outline-offset: 2px; }
 .op-studbook table { border-collapse: collapse; width: 100%; }
 .op-studbook caption { text-align: start; font-weight: 600; padding: 4px 0; }
 .op-studbook th, .op-studbook td { padding: 6px 10px; border-bottom: 1px solid #dfe3ea; text-align: start; vertical-align: top; white-space: nowrap; }
