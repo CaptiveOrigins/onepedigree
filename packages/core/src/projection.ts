@@ -84,6 +84,8 @@ export type UncertainParentDisplay = {
   role: string | null
   /** Siblings share this one unknown parent (studbook WILD1, UNK1). */
   shared: string | null
+  /** Where the candidates come from, as recorded ("multi-sire mating"). */
+  basis: string | null
   candidates: readonly { individual: IndividualId; label: string; probability: number }[]
   hiddenCandidates: number
   /** Probability left over for an unrecorded parent, and what it is. */
@@ -186,6 +188,7 @@ export class ProjectionBuilder {
         kind: slot.candidates.length ? 'multiple' : kind,
         role: slot.role ?? null,
         shared: slot.shared ?? null,
+        basis: slot.basis ?? null,
         candidates: visible.map((c) => {
           const ind = this.index.individuals.get(c.individual)!
           return { individual: c.individual, label: nameWithIdentifier(ind.label, ind.identifier) || ind.id, probability: c.probability }

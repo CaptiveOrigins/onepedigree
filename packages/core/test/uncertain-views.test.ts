@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { layoutSync, nodeSublabel, normalizePedigree, projectPedigree, type UncertainParentDisplay } from '../src/index.js'
+import { layoutSync, nodeSublabel, normalizePedigree, projectPedigree, uncertainSublabel, type UncertainParentDisplay } from '../src/index.js'
 
 // Made-up clutch: two siblings with the same wild-caught sire (WILD1), a dam known only as candidates (MULT),
 // one of them private, with 10% left over as unknown; and an animal whose mother is simply unknown (UNK).
@@ -77,5 +77,28 @@ describe('uncertain parents in pedigree views', () => {
     const u = p.occurrences.find((o) => o.uncertain)!
     expect(u.individualId).not.toBe('~uncertain:c:0')
     expect(p.individuals[u.individualId]!.label).toBe('Unknown mother')
+  })
+})
+
+describe('the basis of uncertain parents', () => {
+  const withBasis = normalizePedigree({
+    schemaVersion: 1,
+    individuals: [
+      { id: 's1', label: 'Sire one' },
+      { id: 'pup', label: 'Pup', parentage: { parents: [], uncertainParents: [{ role: 'father', basis: 'multi-sire mating', candidates: [{ individual: 's1', probability: 0.7 }] }] } },
+    ],
+  })
+
+  it('is kept by the normalizer and shown with the slot without changing anything else', () => {
+    expect(withBasis.individuals.find((i) => i.id === 'pup')!.parentage!.uncertainParents![0]!.basis).toBe('multi-sire mating')
+    const p = projectPedigree(withBasis, { view: 'pedigree', focalId: 'pup' })
+    const placeholder = Object.values(p.individuals).find((i) => i.data?.uncertain)!
+    expect((placeholder.data!.uncertain as UncertainParentDisplay).basis).toBe('multi-sire mating')
+    expect(uncertainSublabel(placeholder.data!.uncertain as UncertainParentDisplay)).toBe('Sire one 70% · unknown 30% · multi-sire mating')
+  })
+
+  it('is left out when not recorded, so documents without it are unchanged', () => {
+    const plain = normalizePedigree({ schemaVersion: 1, individuals: [{ id: 'pup', parentage: { parents: [], uncertainParents: [{ role: 'father', candidates: [] }] } }] })
+    expect(plain.individuals[0]!.parentage!.uncertainParents![0]).not.toHaveProperty('basis')
   })
 })
