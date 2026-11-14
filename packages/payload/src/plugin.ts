@@ -1,4 +1,4 @@
-import { PEDIGREE_VIEWS } from '@captiveorigins/onepedigree-core'
+import { PEDIGREE_VIEWS } from '@extantape/onepedigree-core'
 import type { CollectionConfig, Config, Field, GlobalConfig, Plugin } from 'payload'
 
 import { createCohortsCollection, createIndividualsCollection } from './collections.js'
@@ -9,7 +9,7 @@ import { resolveOptions } from './mapping.js'
 import { keepHiddenParents, keptParentValidate, parentageAfterRead } from './privacy.js'
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
 
-const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
+const CLIENT = '@extantape/payload-plugin-onepedigree/client'
 
 const panelField = (opts: ResolvedOptions): Field => ({
   name: 'pedigreePanel',

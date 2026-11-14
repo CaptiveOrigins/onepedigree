@@ -3,7 +3,7 @@ import { estimateCode, PmxError, toPed, type Studbook, type StudbookAnimal } fro
 
 const day = (date: string) => ({ date, precision: 'exact' as const })
 const animal = (id: string, n: string, over: Partial<StudbookAnimal> = {}): StudbookAnimal => ({
-  id, studbookNumber: n, coId: `CO-A${n}`, animalId: `K-${n}`, sex: 'female', birthType: 'captive', birth: day('2020-05-01'), parentage: null, status: 'alive', ...over,
+  id, studbookNumber: n, coId: `REG-A${n}`, animalId: `K-${n}`, sex: 'female', birthType: 'captive', birth: day('2020-05-01'), parentage: null, status: 'alive', ...over,
 })
 const wild = (role: string) => ({ role, kind: 'wild' as const, candidates: [] })
 const book: Studbook = {
@@ -18,10 +18,10 @@ const book: Studbook = {
     animal('a7', '7', { parentage: { parents: [{ individual: 'a1', role: 'mother' }], uncertainParents: [{ role: 'father', candidates: [], shared: 'clutch-7' }] } }),
   ],
   events: [
-    { animal: 'a4', type: 'birth', date: day('2020-05-01'), location: 'CO-G1', localId: 'L4' },
-    { animal: 'a4', type: 'transfer', date: { date: '2022-06-16', precision: 'month' }, location: 'CO-G2' },
-    { animal: 'a4', type: 'death', date: day('2024-01-02'), location: 'CO-G2', notes: 'cause: unknown; see vet' },
-    { animal: 'a3', type: 'birth', date: day('2020-05-01'), location: 'CO-G1', localId: 'L3' },
+    { animal: 'a4', type: 'birth', date: day('2020-05-01'), location: 'REG-G1', localId: 'L4' },
+    { animal: 'a4', type: 'transfer', date: { date: '2022-06-16', precision: 'month' }, location: 'REG-G2' },
+    { animal: 'a4', type: 'death', date: day('2024-01-02'), location: 'REG-G2', notes: 'cause: unknown; see vet' },
+    { animal: 'a3', type: 'birth', date: day('2020-05-01'), location: 'REG-G1', localId: 'L3' },
   ],
 }
 const lines = (text: string) => text.trimEnd().split('\n')
@@ -35,14 +35,14 @@ describe('PMx .ped export (manual v1.0, pp. 139–141)', () => {
 
   it('writes known parents by studbook number, sex codes, selected and dead flags, dates, and both IDs', () => {
     const l = lines(toPed(book))
-    expect(l).toContain('3; 2; 1; 0; T; F; 20200501; ; CO-G1; L3; CO-A3; K-3')
-    expect(l.find((x) => x.startsWith('2; '))).toBe('2; WILD; WILD; 1; T; F; ; ; ; ; CO-A2; K-2')
+    expect(l).toContain('3; 2; 1; 0; T; F; 20200501; ; REG-G1; L3; REG-A3; K-3')
+    expect(l.find((x) => x.startsWith('2; '))).toBe('2; WILD; WILD; 1; T; F; ; ; ; ; REG-A2; K-2')
   })
 
   it('writes a MULT sire followed by its *SIRE probability lines', () => {
     const l = lines(toPed(book))
     const at = l.findIndex((x) => x.startsWith('4; '))
-    expect(l[at]).toBe('4; MULT; 1; 1; F; T; 20200501; 20240102; CO-G2; ; CO-A4; K-4')
+    expect(l[at]).toBe('4; MULT; 1; 1; F; T; 20200501; 20240102; REG-G2; ; REG-A4; K-4')
     expect(l.slice(at + 1, at + 3)).toEqual(['*SIRE: 2; 0.6', '*SIRE: 5; 0.4'])
   })
 
@@ -54,9 +54,9 @@ describe('PMx .ped export (manual v1.0, pp. 139–141)', () => {
 
   it('writes *MOVE lines: birth to export, import to death, with estimate codes and cleaned notes', () => {
     const l = lines(toPed(book))
-    expect(l).toContain('*MOVE: 20200501; Exact; birth; 20220616; M; export; CO-G1; ')
-    expect(l).toContain('*MOVE: 20220616; M; import; 20240102; Exact; death; CO-G2; ')
-    expect(l).toContain('*MOVE: 20200501; Exact; birth; 20261110; Exact; alive; CO-G1; ')
+    expect(l).toContain('*MOVE: 20200501; Exact; birth; 20220616; M; export; REG-G1; ')
+    expect(l).toContain('*MOVE: 20220616; M; import; 20240102; Exact; death; REG-G2; ')
+    expect(l).toContain('*MOVE: 20200501; Exact; birth; 20261110; Exact; alive; REG-G1; ')
   })
 
   it('names holders only through holderLabel, and refuses IDs PMx can\'t read', () => {

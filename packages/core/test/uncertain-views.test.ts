@@ -6,7 +6,7 @@ import { candidateWords, layoutSync, nodeSublabel, normalizePedigree, projectPed
 const doc = normalizePedigree({
   schemaVersion: 1,
   individuals: [
-    { id: 'd1', label: 'Ruby', identifier: 'CO-A-0001' },
+    { id: 'd1', label: 'Ruby', identifier: 'REG-A-0001' },
     { id: 'd2', label: 'Hidden', data: { private: true } },
     { id: 'gm', label: 'Grandmother' },
     { id: 'k1', label: 'Kit one', parentage: { parents: [], uncertainParents: [
@@ -35,12 +35,12 @@ describe('uncertain parents in pedigree views', () => {
   it('lists visible candidates with their chances, only counts private ones, and gives the leftover share', () => {
     const p = projectPedigree(doc, { view: 'pedigree', focalId: 'k1' })
     const mult = uncertainOf(p).find((x) => x.d.kind === 'multiple')!
-    expect(mult.d.candidates).toEqual([{ individual: 'd1', label: 'Ruby (CO-A-0001)', probability: 0.6 }])
+    expect(mult.d.candidates).toEqual([{ individual: 'd1', label: 'Ruby (REG-A-0001)', probability: 0.6 }])
     expect(mult.d.hiddenCandidates).toBe(1)
     expect(mult.d.remainder!.kind).toBe('unknown')
     expect(mult.d.remainder!.probability).toBeCloseTo(0.1, 10)
     const sub = nodeSublabel(p.individuals[mult.o.individualId])
-    expect(sub).toBe('Ruby (CO-A-0001) 60% · 1 private · unknown 10%')
+    expect(sub).toBe('Ruby (REG-A-0001) 60% · 1 private · unknown 10%')
     // The placeholder names nothing private. (The child's own record is the host's to filter, as for known parents.)
     expect(JSON.stringify(mult.d)).not.toMatch(/Hidden|d2/)
     expect(p.individuals.d2).toBeUndefined()
@@ -111,7 +111,7 @@ describe("uncertain parents as alternative branches (uncertainParents: 'branches
     schemaVersion: 1,
     individuals: [
       { id: 'gs', label: 'Grandsire' },
-      { id: 's1', label: 'Sire one', identifier: 'CO-M-0001', parentage: { parents: [{ individual: 'gs', role: 'father' }] } },
+      { id: 's1', label: 'Sire one', identifier: 'REG-M-0001', parentage: { parents: [{ individual: 'gs', role: 'father' }] } },
       { id: 's2', label: 'Sire two' },
       { id: 'h', label: 'Hidden male', data: { private: true } },
       { id: 'dam', label: 'Dam', parentage: { parents: [{ individual: 's1', role: 'father' }] } },

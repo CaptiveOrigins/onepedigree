@@ -1,4 +1,4 @@
-import { biologicalParents, type IndividualId, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { biologicalParents, type IndividualId, type PedigreeDocument } from '@extantape/onepedigree-core'
 
 /**
  * Pedigree-based genetics (owner, 2026-11-10; studbook research §3): kinship by the tabular method, and from it

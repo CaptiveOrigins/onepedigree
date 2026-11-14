@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
-import { layoutSync, projectPedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { layoutSync, projectPedigree, type PedigreeDocument } from '@extantape/onepedigree-core'
 import { GenotypeDots, PedigreeExplorer, PedigreeView, GeneLegend, type GenotypeMark } from '../src'
 
 afterEach(cleanup)

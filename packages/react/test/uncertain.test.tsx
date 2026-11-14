@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { layoutSync, normalizePedigree, projectPedigree } from '@captiveorigins/onepedigree-core'
+import { layoutSync, normalizePedigree, projectPedigree } from '@extantape/onepedigree-core'
 import { PedigreeExplorer, PedigreeView } from '../src'
 
 afterEach(cleanup)

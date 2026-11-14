@@ -9,7 +9,7 @@ export type StudbookRow = {
   id: string
   studbookNumber: string
   oldNumbers?: readonly string[]
-  /** Captive Origins ID. */
+  /** The registry's own ID for the animal. */
   coId: string
   /** The keeper's own Animal ID. */
   animalId?: string
@@ -60,12 +60,12 @@ export type StudbookTableLabels = {
 
 export const STUDBOOK_TABLE_LABELS: StudbookTableLabels = {
   search: 'Find an animal',
-  searchHint: 'Studbook number, old number, Captive Origins ID or Animal ID',
+  searchHint: 'Studbook number, old number, registry ID or Animal ID',
   showing: (shown, total) => `Showing ${shown} of ${total} animals`,
   aliveOnly: 'Living animals only',
   number: 'Studbook no.',
   was: 'was',
-  coId: 'CO ID',
+  coId: 'Registry ID',
   animalId: 'Animal ID',
   sex: 'Sex',
   born: 'Born or hatched',

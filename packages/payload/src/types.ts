@@ -1,4 +1,4 @@
-import type { LineageRoleConfig, ParentTerms, ParentTermsPreset, PedigreeViewId, ReproductiveModeId, ValidationRule } from '@captiveorigins/onepedigree-core'
+import type { LineageRoleConfig, ParentTerms, ParentTermsPreset, PedigreeViewId, ReproductiveModeId, ValidationRule } from '@extantape/onepedigree-core'
 import type { Access, CollectionConfig, Field } from 'payload'
 
 /** How parentage is stored on the host collection. */
@@ -36,7 +36,7 @@ export type OnePedigreePluginOptions = {
     /** Display label field (default `name`, falling back to the ID). */
     label?: string
     /**
-     * A host identifier shown beside the label, e.g. "Mead (CO-AQCR6T)": a field path, or a function of the
+     * A host identifier shown beside the label, e.g. "Mead (REG-AQCR6T)": a field path, or a function of the
      * requester returning one (so each user can choose, say, a registry ID or their own studbook number).
      * Never shown for records the requester can't read.
      */

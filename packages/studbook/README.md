@@ -1,4 +1,4 @@
-# @captiveorigins/onepedigree-studbook
+# @extantape/onepedigree-studbook
 
 Studbook-style records and analysis for any managed population, built on OnePedigree. Early alpha: the calculations below are tested against textbook values, and nothing here has been checked against a real studbook or PMx run yet.
 
@@ -8,10 +8,10 @@ Studbook-style records and analysis for any managed population, built on OnePedi
 
 ## Payload
 
-`@captiveorigins/onepedigree-studbook/payload` adds `GET /<collection>/studbook/:studbook` to a Payload collection. Your app supplies the data and every access decision; the endpoint computes and redacts:
+`@extantape/onepedigree-studbook/payload` adds `GET /<collection>/studbook/:studbook` to a Payload collection. Your app supplies the data and every access decision; the endpoint computes and redacts:
 
 ```ts
-import { studbookEndpoint } from '@captiveorigins/onepedigree-studbook/payload'
+import { studbookEndpoint } from '@extantape/onepedigree-studbook/payload'
 
 endpoints: [studbookEndpoint({
   source: ({ studbook, req }) => loadStudbook(studbook, req),          // read as the request's user; null is a 404

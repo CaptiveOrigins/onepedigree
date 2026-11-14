@@ -1,6 +1,6 @@
 import { validations, ValidationError, type CollectionAfterReadHook, type CollectionBeforeValidateHook, type CollectionSlug, type PayloadRequest, type Where } from 'payload'
 
-import { isBiologicalKind } from '@captiveorigins/onepedigree-core'
+import { isBiologicalKind } from '@extantape/onepedigree-core'
 
 import { getAt, idOf } from './mapping.js'
 import type { ResolvedOptions } from './types.js'

@@ -1,4 +1,4 @@
-import type { LayoutResult } from '@captiveorigins/onepedigree-core'
+import type { LayoutResult } from '@extantape/onepedigree-core'
 
 /**
  * Where a dragged node lands in its row (click-and-drag rearranging, shared idea with

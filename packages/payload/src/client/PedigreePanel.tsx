@@ -1,9 +1,9 @@
 'use client'
 
-import '@captiveorigins/onepedigree-react/styles.css'
+import '@extantape/onepedigree-react/styles.css'
 
-import type { LayoutResult, PedigreeViewId, PedigreeViewProjection } from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, VIEW_LABELS, type PedigreeTheme } from '@captiveorigins/onepedigree-react'
+import type { LayoutResult, PedigreeViewId, PedigreeViewProjection } from '@extantape/onepedigree-core'
+import { PedigreeExplorer, VIEW_LABELS, type PedigreeTheme } from '@extantape/onepedigree-react'
 import { useConfig, useDocumentInfo } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 

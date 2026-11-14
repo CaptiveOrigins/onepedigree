@@ -8,8 +8,8 @@ import {
   type Individual,
   type PedigreeDocument,
   type PedigreeViewId,
-} from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS } from '@captiveorigins/onepedigree-react'
+} from '@extantape/onepedigree-core'
+import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS } from '@extantape/onepedigree-react'
 import { invoke } from '@tauri-apps/api/core'
 import { ask } from '@tauri-apps/plugin-dialog'
 import { useEffect, useMemo, useState } from 'react'

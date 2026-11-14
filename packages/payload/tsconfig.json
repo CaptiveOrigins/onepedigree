@@ -4,9 +4,9 @@
     "jsx": "react-jsx",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "paths": {
-      "@captiveorigins/onepedigree-core": ["../core/src/index.ts"],
-      "@captiveorigins/onepedigree-react": ["../react/src/index.ts"],
-      "@captiveorigins/onepedigree-react/headless": ["../react/src/headless.ts"]
+      "@extantape/onepedigree-core": ["../core/src/index.ts"],
+      "@extantape/onepedigree-react": ["../react/src/index.ts"],
+      "@extantape/onepedigree-react/headless": ["../react/src/headless.ts"]
     }
   },
   "include": ["src", "test", "../../fixtures"]

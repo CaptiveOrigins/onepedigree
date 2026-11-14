@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { layoutSync, projectPedigree } from '@captiveorigins/onepedigree-core'
+import { layoutSync, projectPedigree } from '@extantape/onepedigree-core'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
@@ -63,7 +63,7 @@ describe('explorer', () => {
 describe('click-and-drag rearranging', () => {
   it('computes the new row order from where a node is dropped', async () => {
     const { dropNodeOrder } = await import('../src')
-    const { layoutSync, projectPedigree } = await import('@captiveorigins/onepedigree-core')
+    const { layoutSync, projectPedigree } = await import('@extantape/onepedigree-core')
     const { reptileBreeding } = await import('../../../fixtures')
     const p = projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })
     const l = layoutSync(p)
@@ -82,7 +82,7 @@ describe('click-and-drag rearranging', () => {
 describe('rearranging keeps groups truthful', () => {
   it('does not move a node out of its clutch frame', async () => {
     const { dropNodeOrder } = await import('../src')
-    const { layoutSync, projectPedigree } = await import('@captiveorigins/onepedigree-core')
+    const { layoutSync, projectPedigree } = await import('@extantape/onepedigree-core')
     const { reptileBreeding } = await import('../../../fixtures')
     const p = projectPedigree(reptileBreeding, { focalId: 'rf-dam', view: 'descendants', descendantDepth: 1 })
     const l = layoutSync(p)

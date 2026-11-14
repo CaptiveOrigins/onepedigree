@@ -1,16 +1,16 @@
 # Studbook in the Mac app: plan
 
-The owner decided on 2026-11-10 that the studbook gets a Mac app counterpart ([decisions](decisions.md)). OnePedigree for Mac gets the studbook's two views, data model and exports, working on local files with no Captive Origins server. It's planned with Tier A/B and built after tour v3, alongside the platform's studbook work.
+The owner decided on 2026-11-10 that the studbook gets a Mac app counterpart ([decisions](decisions.md)). OnePedigree for Mac gets the studbook's two views, data model and exports, working on local files with no server. It's planned with Tier A/B and built after tour v3, alongside the platform's studbook work.
 
 ## What it reuses
 
-The science is already in `@captiveorigins/onepedigree-studbook` and runs anywhere: numbering, kinship (MK, F, GD, FGE, founders, Known), the PMx writer and the shared types. The React package has `StudbookTable` and the pedigree views, with MULT, WILD and UNK placeholders. The Mac app needs no server code: the Payload endpoint's work moves into a pure function both use.
+The science is already in `@extantape/onepedigree-studbook` and runs anywhere: numbering, kinship (MK, F, GD, FGE, founders, Known), the PMx writer and the shared types. The React package has `StudbookTable` and the pedigree views, with MULT, WILD and UNK placeholders. The Mac app needs no server code: the Payload endpoint's work moves into a pure function both use.
 
 ## The file
 
 A studbook is one plain JSON file, `<name>.studbook.json`, holding the agreed `Studbook` shape:
 
-- animals, with both IDs (Captive Origins ID and Animal ID);
+- animals, with both IDs (registry ID and Animal ID);
 - events and census;
 - a holder list (code → name), because a local file's owner already knows the holders;
 - the file's own settings.

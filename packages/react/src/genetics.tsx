@@ -1,4 +1,4 @@
-import type { GenotypeRecord, InheritanceMode, SexClass } from '@captiveorigins/onepedigree-core'
+import type { GenotypeRecord, InheritanceMode, SexClass } from '@extantape/onepedigree-core'
 
 /** One individual's state for the gene being shown (from its `GenotypeRecord`). */
 export type GenotypeMark = Pick<GenotypeRecord, 'state' | 'probability' | 'basis'>

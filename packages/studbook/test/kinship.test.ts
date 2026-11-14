@@ -1,4 +1,4 @@
-import { normalizePedigree, projectPedigree } from '@captiveorigins/onepedigree-core'
+import { normalizePedigree, projectPedigree } from '@extantape/onepedigree-core'
 import { describe, expect, it } from 'vitest'
 import { kinshipAnalysis } from '../src/index.js'
 

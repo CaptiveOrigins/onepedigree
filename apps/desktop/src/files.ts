@@ -10,7 +10,7 @@ import {
   serializePedigree,
   type Companion,
   type PedigreeDocument,
-} from '@captiveorigins/onepedigree-core'
+} from '@extantape/onepedigree-core'
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog'
 import { exists, readTextFile, remove, rename, writeTextFile } from '@tauri-apps/plugin-fs'
 

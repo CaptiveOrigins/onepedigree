@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs'
 
-import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@captiveorigins/onepedigree-core'
-import { PedigreeView, VIEW_LABELS } from '@captiveorigins/onepedigree-react'
+import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@extantape/onepedigree-core'
+import { PedigreeView, VIEW_LABELS } from '@extantape/onepedigree-react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 import { DATASETS } from './fixtures'

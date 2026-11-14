@@ -46,7 +46,7 @@ function applyOrder(ids: string[], rankOf: ReadonlyMap<string, number> | undefin
 export const IDENTIFIER_FORMAT = '{label} ({id})'
 
 /**
- * A name with the host's identifier, e.g. "Mead (CO-AQCR6T)". With no name, the identifier alone; with no
+ * A name with the host's identifier, e.g. "Mead (REG-AQCR6T)". With no name, the identifier alone; with no
  * identifier, the name alone. `format` uses `{label}` and `{id}`.
  */
 export function nameWithIdentifier(label: string | null | undefined, identifier: string | null | undefined, format = IDENTIFIER_FORMAT): string {

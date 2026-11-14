@@ -1,4 +1,4 @@
-import { normalizePedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { normalizePedigree, type PedigreeDocument } from '@extantape/onepedigree-core'
 import type { PayloadRequest } from 'payload'
 import { describe, expect, it } from 'vitest'
 
@@ -35,7 +35,7 @@ describe('kinship with parent kinds', () => {
 
 const day = (date: string) => ({ date, precision: 'exact' as const })
 const animal = (id: string, n: string, over: Partial<StudbookAnimal> = {}): StudbookAnimal => ({
-  id, studbookNumber: n, coId: `CO-A${n}`, sex: 'female', birthType: 'captive', birth: day('2020-05-01'), parentage: null, status: 'alive', ...over,
+  id, studbookNumber: n, coId: `REG-A${n}`, sex: 'female', birthType: 'captive', birth: day('2020-05-01'), parentage: null, status: 'alive', ...over,
 })
 const book: Studbook = {
   title: 'Made-up foster clutch',

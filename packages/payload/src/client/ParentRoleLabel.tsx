@@ -1,6 +1,6 @@
 'use client'
 
-import { resolveParentTerms, type ParentTerms } from '@captiveorigins/onepedigree-core'
+import { resolveParentTerms, type ParentTerms } from '@extantape/onepedigree-core'
 import { FieldLabel, useAuth } from '@payloadcms/ui'
 
 const getAt = (doc: unknown, path: string): unknown =>

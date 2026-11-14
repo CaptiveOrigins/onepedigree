@@ -1,10 +1,10 @@
 {
-  "name": "@captiveorigins/payload-plugin-onepedigree",
-  "version": "0.1.0-alpha.21",
+  "name": "@extantape/payload-plugin-onepedigree",
+  "version": "0.1.0-alpha.22",
   "description": "OnePedigree for Payload: parentage fields, cycle-safe parentage writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin previews.",
-  "homepage": "https://github.com/CaptiveOrigins/onepedigree#readme",
+  "homepage": "https://github.com/ExtantApe/OnePedigree#readme",
   "bugs": {
-    "url": "https://github.com/CaptiveOrigins/onepedigree/issues"
+    "url": "https://github.com/ExtantApe/OnePedigree/issues"
   },
   "keywords": [
     "payload",
@@ -17,7 +17,7 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CaptiveOrigins/onepedigree.git",
+    "url": "git+https://github.com/ExtantApe/OnePedigree.git",
     "directory": "packages/payload"
   },
   "type": "module",
@@ -48,8 +48,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@captiveorigins/onepedigree-core": "workspace:^",
-    "@captiveorigins/onepedigree-react": "workspace:^"
+    "@extantape/onepedigree-core": "workspace:^",
+    "@extantape/onepedigree-react": "workspace:^"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.80.0",

@@ -1,4 +1,4 @@
-import { isBiologicalKind, PARENT_KINDS, PARENT_TERM_PRESETS, REPRODUCTIVE_MODES, resolveParentTerms, type ParentTerms, type ParentTermsPreset, type ReproductiveModeId } from '@captiveorigins/onepedigree-core'
+import { isBiologicalKind, PARENT_KINDS, PARENT_TERM_PRESETS, REPRODUCTIVE_MODES, resolveParentTerms, type ParentTerms, type ParentTermsPreset, type ReproductiveModeId } from '@extantape/onepedigree-core'
 import type { CollectionSlug, Field } from 'payload'
 
 const BUILT_IN_ROLES = ['mother', 'father', 'dam', 'sire', 'egg', 'sperm', 'donor', 'parent', 'contributor']
@@ -63,7 +63,7 @@ export const createCohortField = (o: { cohorts: string }): Field => ({
   admin: { description: 'The birthing event: a clutch, litter or other group born to the same mother at the same time. Fathers may differ.' },
 })
 
-const CLIENT = '@captiveorigins/payload-plugin-onepedigree/client'
+const CLIENT = '@extantape/payload-plugin-onepedigree/client'
 
 const rowId = (v: unknown) => (v && typeof v === 'object' ? ('id' in v && (v as { id: unknown }).id != null ? String((v as { id: unknown }).id) : null) : v ? String(v) : null)
 type Row = { individual?: unknown; role?: string | null; kind?: string | null }

@@ -6,7 +6,7 @@ import {
   type ParentReference,
   type PedigreeIssue,
   type ReproductiveModeId,
-} from '@captiveorigins/onepedigree-core'
+} from '@extantape/onepedigree-core'
 import {
   APIError,
   ValidationError,

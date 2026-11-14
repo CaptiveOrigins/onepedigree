@@ -1,4 +1,4 @@
-import { candidateWords, estimateNodeWidth, isBiologicalKind, lifeLabel, lifeSpan, nodeSublabel, parentLinkWords, uncertainSublabel, type UncertainParentDisplay } from '@captiveorigins/onepedigree-core'
+import { candidateWords, estimateNodeWidth, isBiologicalKind, lifeLabel, lifeSpan, nodeSublabel, parentLinkWords, uncertainSublabel, type UncertainParentDisplay } from '@extantape/onepedigree-core'
 import type {
   Individual,
   IndividualOccurrence,
@@ -7,7 +7,7 @@ import type {
   PositionedNode,
   ProjectionGroup,
   ReproductiveStructure,
-} from '@captiveorigins/onepedigree-core'
+} from '@extantape/onepedigree-core'
 import type { KeyboardEvent, MouseEvent, ReactNode, SVGProps } from 'react'
 
 import { arcPath, DEFAULT_TERMS, describeProjection, describeStructure, labelOf, sexWord, VIEW_LABELS, type Terminology } from './describe.js'

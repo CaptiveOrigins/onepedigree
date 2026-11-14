@@ -1,4 +1,4 @@
-import type { Parentage } from '@captiveorigins/onepedigree-core'
+import type { Parentage } from '@extantape/onepedigree-core'
 
 /** The contract agreed with the platform (docs/architecture/studbook.md). */
 export type DatePrecision = 'exact' | 'day' | 'month' | 'year' | 'range' | 'unknown'

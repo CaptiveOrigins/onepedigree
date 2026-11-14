@@ -1,4 +1,4 @@
-// Focus ring colour, owner decision N154 (2026-11-11, brand/README.md): the darker orange #a65f20 on light backgrounds,
+// Focus ring colour, owner decision (2026-11-11, brand/README.md): the darker orange #a65f20 on light backgrounds,
 // the lighter #e7a066 in dark mode, the brand orange #cf8137 everywhere else. Contrast is computed from the stylesheet;
 // nothing here was looked at in the built app.
 /// <reference types="node" />
@@ -15,7 +15,7 @@ const vars = (start: string) => {
   return Object.fromEntries([...css.slice(at, css.indexOf('}', at)).matchAll(/(--[a-z-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1]!, m[2]!]))
 }
 
-describe('focus ring colour (N154)', () => {
+describe('focus ring colour', () => {
   it('is the darker orange in light, the lighter orange in dark, 3:1 or better on every background; the accent stays the brand orange', () => {
     const light = vars(':root {')
     expect(light['--focus']).toBe('#a65f20')

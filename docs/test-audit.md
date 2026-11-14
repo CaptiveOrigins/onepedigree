@@ -4,7 +4,7 @@ Each audit lists what this repo promises, the tests that prove it, and the gaps:
 
 ## 2026-11-11: OneOrigin brand source
 
-Owner decision N105 (2026-11-11): "A: send it, accept guidelines (Recommended)". Tests went from 281 to 282: Mac app 15 to 16 (`apps/desktop/test/theme.test.ts`). The rest are unchanged.
+Owner decision (2026-11-11): "A: send it, accept guidelines (Recommended)". Tests went from 281 to 282: Mac app 15 to 16 (`apps/desktop/test/theme.test.ts`). The rest are unchanged.
 
 - **Promises:** `brand/oneorigin/` matches `brand/oneorigin.lock` byte for byte, and CI fails on a hand edit; `apps/desktop/src/oneorigin.css` is what `build` writes from the copy's tokens; the app's shell colors are the suite's tokens; nothing that was drawn changes color.
 - **Covered:** `node scripts/oneorigin.mjs check` in CI (11 files and the built CSS). `theme.test.ts` (1 new): `--bg`, `--panel`, `--text`, `--muted`, `--border`, `--accent` and `--focus` in `app.css` equal the built `--op-` tokens in light, system dark and a chosen Dark. The script itself is tested in OnePhylogeny, where it comes from (`scripts/oneorigin.test.mjs`, 19 tests: build output, lock and check passing, a hand edit failing, the warning paths); this repo carries the same file.
@@ -13,7 +13,7 @@ Owner decision N105 (2026-11-11): "A: send it, accept guidelines (Recommended)".
 
 ## 2026-11-11: focus ring colour
 
-Owner decision N154 (2026-11-11, option A): "keep the brand orange everywhere else, but use the darker orange #a65f20 for focus rings on light backgrounds (4.6 to 1 or better). Dark mode keeps the lighter orange, which already passes." Tests went from 277 to 281: react 55 to 57 (`themes.test.tsx`), desktop 13 to 15 (`apps/desktop/test/theme.test.ts`, new). Core, studbook and payload are unchanged.
+Owner decision (2026-11-11, option A): "keep the brand orange everywhere else, but use the darker orange #a65f20 for focus rings on light backgrounds (4.6 to 1 or better). Dark mode keeps the lighter orange, which already passes." Tests went from 277 to 281: react 55 to 57 (`themes.test.tsx`), desktop 13 to 15 (`apps/desktop/test/theme.test.ts`, new). Core, studbook and payload are unchanged.
 
 - **Promises:** `brand/README.md`, "Focus ring": light focus rings are `#a65f20` and pass 3:1 on every light background (WCAG 2.2 1.4.11, 2.4.13); dark rings stay `#e7a066`; the brand orange stays for everything else.
 - **Before and after (focus colour on the background it sits on):** light, toolbar and quick-view buttons: `#cf8137` 3.07:1 on the white card, now `#a65f20` 4.91:1. Light, a focused person in the chart: the default theme's selection colour `#f0b35a`, 1.86:1 on the white card, now 4.91:1 (4.83:1 on Terracotta's `#fffdfa`; 3.55:1 on Midnight's `#161a22` when the system is light). Light, studbook controls: the `#2563eb` fallback, 5.17:1 on white, now 4.91:1, in the family's colour. Light, Mac app controls: the browser default, now 4.91:1 on the page and fields, 4.62:1 on the panel (`#f7f8fa`). Dark, unchanged: `#e7a066` 7.98:1 on the dark card (`#161a22`), 8.37:1 on the app page, 7.82:1 on the panel, 7.11:1 on fields.
@@ -58,7 +58,7 @@ Closes the two desktop gaps left by the full audit of 2026-11-10. Desktop tests 
 
 ## 2026-11-10: screen-reader review of the studbook table and uncertain-parent placeholders
 
-A code-level review (K212), not a run with a screen reader.
+A code-level review, not a run with a screen reader.
 
 - **Fixed:** the MK and F sort buttons showed "MK" and "F" but were named "Sort by Mean kinship" and "Sort by Inbreeding", so voice control couldn't use the visible words (WCAG 2.5.3). Names now include both. `studbook.test.tsx` checks that every sort button's name contains its visible text.
 - **Checked and fine:** the table has a caption and a labelled, focusable scroll region; the search has a label and a hint; sort state is on the header (`aria-sort`); dashes carry visually hidden words ("Not shown to you", "None recorded"); private rows say what they are; the count is a status. Placeholders carry their candidates and chances in their names; they're never links; in the explorer they can be selected to read them, by design (#21), and offer nothing to open.
@@ -153,8 +153,8 @@ Gaps left: the payload plugin doesn't store or serve `uncertainParents` yet. Whe
 `packages/react/test/studbook.test.tsx` (6 tests) covers what the table promises:
 
 - both IDs and old numbers on every row (decision 2026-11-09);
-- search by studbook number, old number, CO ID or Animal ID;
-- **privacy:** a private animal is a placeholder with no number, ID or name in the markup, never matches a search (by its number, CO ID or Animal ID), and stays in the count whether or not "living only" is on, so the filter doesn't reveal its status;
+- search by studbook number, old number, Registry ID or Animal ID;
+- **privacy:** a private animal is a placeholder with no number, ID or name in the markup, never matches a search (by its number, Registry ID or Animal ID), and stays in the count whether or not "living only" is on, so the filter doesn't reveal its status;
 - MK and F shown only where given, "Not shown to you" elsewhere, the pedigree-based note, and no genetics columns at all when nothing is given;
 - sorting by number (permanent, then T), mean kinship and birth, unknowns last, with `aria-sort`;
 - opening an animal from its number; the labelled scroll region and caption.
