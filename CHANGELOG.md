@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **New Mac app identifier:** the desktop app's identifier is now `com.extantape.onepedigree`. macOS treats it as a new app, so the first launch after updating starts with default settings and asks again for any permissions it needs. This happens once. Your files are untouched. The shared OneOrigin guidelines now say every tool's identifier is `com.extantape.<tool>`.
+
 ## 0.1.0-alpha.22
 
 - **New home and package names:** the packages now publish under `@extantape`: `@extantape/onepedigree-core`, `@extantape/onepedigree-react`, `@extantape/onepedigree-studbook` and `@extantape/payload-plugin-onepedigree`. The repo now lives at [ExtantApe/OnePedigree](https://github.com/ExtantApe/OnePedigree). The old package names are deprecated, with a pointer to these. To move, change the scope in your `package.json` and imports; nothing else in the API changes. EXTANT APE owns and licenses the tools, and the license is unchanged.
