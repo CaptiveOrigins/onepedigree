@@ -26,10 +26,10 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@captiveorigins/onepedigree-core':
+      '@extantape/onepedigree-core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@captiveorigins/onepedigree-react':
+      '@extantape/onepedigree-react':
         specifier: workspace:^
         version: link:../../packages/react
       '@tauri-apps/api':
@@ -78,10 +78,10 @@ importers:
 
   apps/playground:
     dependencies:
-      '@captiveorigins/onepedigree-core':
+      '@extantape/onepedigree-core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@captiveorigins/onepedigree-react':
+      '@extantape/onepedigree-react':
         specifier: workspace:^
         version: link:../../packages/react
       react:
@@ -99,10 +99,10 @@ importers:
 
   packages/payload:
     dependencies:
-      '@captiveorigins/onepedigree-core':
+      '@extantape/onepedigree-core':
         specifier: workspace:^
         version: link:../core
-      '@captiveorigins/onepedigree-react':
+      '@extantape/onepedigree-react':
         specifier: workspace:^
         version: link:../react
     devDependencies:
@@ -136,7 +136,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@captiveorigins/onepedigree-core':
+      '@extantape/onepedigree-core':
         specifier: workspace:^
         version: link:../core
     devDependencies:
@@ -161,7 +161,7 @@ importers:
 
   packages/studbook:
     dependencies:
-      '@captiveorigins/onepedigree-core':
+      '@extantape/onepedigree-core':
         specifier: workspace:^
         version: link:../core
     devDependencies:
@@ -2530,6 +2530,7 @@ packages:
 
   tldts-core@7.4.20:
     resolution: {integrity: sha512-C630TWXZCZmLq0F2bW4QqwnaaxCQ/svpAqvJwnC4JvgEM5ohhBnGsEzTLSOXcN+xjz+kEaHS5uoWIw2klnqd0A==}
+    deprecated: Partial release, see https://github.com/remusao/tldts/issues/2735. Use >=7.4.22.
 
   tldts@7.4.19:
     resolution: {integrity: sha512-48dH6aSpQnpbzDUc4vIQZ1VjB8tkK+e8c1yx05/SZK+rkssgjEOlxDd/yU8/a4vGYQ9vRgJr9dwMq9TJ0b3X2Q==}

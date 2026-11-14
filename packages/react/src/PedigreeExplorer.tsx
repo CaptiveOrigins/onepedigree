@@ -1,6 +1,6 @@
 'use client'
 
-import { candidateWords, REORDERABLE_VIEWS, type Individual, type IndividualOccurrence, type ParentLinksMode } from '@captiveorigins/onepedigree-core'
+import { candidateWords, REORDERABLE_VIEWS, type Individual, type IndividualOccurrence, type ParentLinksMode } from '@extantape/onepedigree-core'
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from 'react'
 
 import { AhnentafelList } from './AhnentafelList.js'

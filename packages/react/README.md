@@ -1,12 +1,12 @@
-# @captiveorigins/onepedigree-react
+# @extantape/onepedigree-react
 
 Server-renderable SVG pedigree views for React, built on
-[`@captiveorigins/onepedigree-core`](../core).
+[`@extantape/onepedigree-core`](../core).
 
 ```tsx
-import { layoutPedigree, projectPedigree } from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, PedigreeView } from '@captiveorigins/onepedigree-react'
-import '@captiveorigins/onepedigree-react/styles.css'
+import { layoutPedigree, projectPedigree } from '@extantape/onepedigree-core'
+import { PedigreeExplorer, PedigreeView } from '@extantape/onepedigree-react'
+import '@extantape/onepedigree-react/styles.css'
 
 // Static (server component, no client JavaScript; nodes are ordinary links):
 export async function AnimalPedigree({ document, focalId }) {
@@ -41,7 +41,7 @@ const layout = useMemo(() => layoutSync(projection, { nodeOrder }), [projection,
 
 ## Studbook table
 
-`StudbookTable` lists a studbook: studbook number (with any old numbers), Captive Origins ID and the keeper's Animal ID on every row, then sex, birth, origin, parents, status and holder. People can search by any of those numbers or IDs, show only living animals, and sort by studbook number, birth, mean kinship or inbreeding. Animals with no value for the sorted column go last.
+`StudbookTable` lists a studbook: studbook number (with any old numbers), the registry ID and the keeper's Animal ID on every row, then sex, birth, origin, parents, status and holder. People can search by any of those numbers or IDs, show only living animals, and sort by studbook number, birth, mean kinship or inbreeding. Animals with no value for the sorted column go last.
 
 The table shows what it's given, so visibility is decided before it: pass a private animal with `private: true` and it appears as a placeholder that never matches a search, pass holder names already resolved, and pass `genetics` only where the reader may see it. MK and F columns appear only when some row has them, with a note that they're pedigree-based. Labels can be replaced through `labels`.
 
@@ -68,7 +68,7 @@ rendered as inline custom properties, so they work in server rendering.
 
 ## Brand family
 
-OnePedigree and OneTaxonomy share a backbone (`brand/README.md`): the same line icons (`Icon`, `ICON_PATHS`), 32 px controls, a floating canvas toolbar and a Captive Origins orange focus ring, while each keeps its own views and character.
+OnePedigree and OneTaxonomy share a backbone (`brand/README.md`): the same line icons (`Icon`, `ICON_PATHS`), 32 px controls, a floating canvas toolbar and an orange focus ring, while each keeps its own views and character.
 
 ## Styling
 
@@ -81,7 +81,7 @@ OnePedigree and OneTaxonomy share a backbone (`brand/README.md`): the same line 
   `data-focal`, `data-selected`, `data-highlighted`).
 - `classNames` overrides, and render slots `renderIndividual`, `renderCohortMarker`,
   `renderQuickView`.
-- Headless: `@captiveorigins/onepedigree-react/headless` (hooks `usePedigreeProjection`,
+- Headless: `@extantape/onepedigree-react/headless` (hooks `usePedigreeProjection`,
   `usePedigreeLayout`, `usePedigreeSelection`, `usePedigreeNavigation`,
   `useOccurrenceHighlighting`, and `describeProjection`) for your own renderer.
 
@@ -98,4 +98,4 @@ father"), list the candidates with their chances in the node and its spoken name
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from Captive Origins. Versions published before this change remain under MIT.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from EXTANT APE. Versions published before this change remain under MIT.

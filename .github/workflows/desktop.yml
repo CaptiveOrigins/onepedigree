@@ -28,7 +28,7 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @captiveorigins/onepedigree-core --filter @captiveorigins/onepedigree-react run build
+      - run: pnpm --filter @extantape/onepedigree-core --filter @extantape/onepedigree-react run build
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

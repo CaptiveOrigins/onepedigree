@@ -202,15 +202,15 @@ describe('layout', () => {
   })
 
   it('shows a host identifier beside the name, and sizes the node for both', () => {
-    expect(nameWithIdentifier('Mead', 'CO-AQCR6T')).toBe('Mead (CO-AQCR6T)')
-    expect(nameWithIdentifier(null, 'CO-AQCR6T')).toBe('CO-AQCR6T')
+    expect(nameWithIdentifier('Mead', 'REG-AQCR6T')).toBe('Mead (REG-AQCR6T)')
+    expect(nameWithIdentifier(null, 'REG-AQCR6T')).toBe('REG-AQCR6T')
     expect(nameWithIdentifier('Mead', null)).toBe('Mead')
     expect(nameWithIdentifier('Mead', 'CHCA-2501', '{id} · {label}')).toBe('CHCA-2501 · Mead')
-    expect(normalizeIndividual({ id: 'm', label: 'Mead', identifier: 'CO-AQCR6T' }).identifier).toBe('CO-AQCR6T')
+    expect(normalizeIndividual({ id: 'm', label: 'Mead', identifier: 'REG-AQCR6T' }).identifier).toBe('REG-AQCR6T')
     expect('identifier' in normalizeIndividual({ id: 'm' })).toBe(false)
-    const doc = { schemaVersion: 1 as const, individuals: [{ id: 'm', label: 'Mead Pine Lagoon', identifier: 'CO-AQCR6T' }] }
+    const doc = { schemaVersion: 1 as const, individuals: [{ id: 'm', label: 'Mead Pine Lagoon', identifier: 'REG-AQCR6T' }] }
     const node = layoutSync(projectPedigree(doc, { focalId: 'm', view: 'pedigree' })).nodes[0]!
-    expect(node.width).toBeGreaterThanOrEqual(estimateNodeWidth('Mead Pine Lagoon (CO-AQCR6T)'))
+    expect(node.width).toBeGreaterThanOrEqual(estimateNodeWidth('Mead Pine Lagoon (REG-AQCR6T)'))
   })
 
   it('sizes a private placeholder for its "Private record" text, not its ID', () => {

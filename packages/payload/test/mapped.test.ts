@@ -1,4 +1,4 @@
-import { indexPedigree, validatePedigree } from '@captiveorigins/onepedigree-core'
+import { indexPedigree, validatePedigree } from '@extantape/onepedigree-core'
 import type { Access, CollectionConfig, Payload, TypedUser } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 

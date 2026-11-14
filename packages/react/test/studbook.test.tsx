@@ -8,10 +8,10 @@ afterEach(cleanup)
 
 const row = (over: Partial<StudbookRow> & Pick<StudbookRow, 'id' | 'studbookNumber' | 'coId'>): StudbookRow => ({ sex: 'female', birthType: 'captive', status: 'alive', ...over })
 const rows: StudbookRow[] = [
-  row({ id: 'a', studbookNumber: '10', coId: 'CO-A-0010', animalId: 'Shelly', birthSort: '2015', birthDate: '2015 (year only)', genetics: { meanKinship: 0.125, inbreeding: 0 }, holder: 'Holder 3' }),
-  row({ id: 'b', studbookNumber: '2', oldNumbers: ['T1'], coId: 'CO-A-0002', animalId: 'Tank', sex: 'male', birthType: 'wild', birthSort: '2001-04-02', birthDate: '2 Apr 2001', sire: 'WILD', dam: 'WILD', genetics: { meanKinship: 0.05, inbreeding: 0.0625 } }),
-  row({ id: 'c', studbookNumber: 'T3', coId: 'CO-A-0031', status: 'dead', sire: '2', dam: '10' }),
-  row({ id: 'secret', studbookNumber: '7', coId: 'CO-A-SECRET', animalId: 'Hidden', private: true, status: 'dead' }),
+  row({ id: 'a', studbookNumber: '10', coId: 'REG-A-0010', animalId: 'Shelly', birthSort: '2015', birthDate: '2015 (year only)', genetics: { meanKinship: 0.125, inbreeding: 0 }, holder: 'Holder 3' }),
+  row({ id: 'b', studbookNumber: '2', oldNumbers: ['T1'], coId: 'REG-A-0002', animalId: 'Tank', sex: 'male', birthType: 'wild', birthSort: '2001-04-02', birthDate: '2 Apr 2001', sire: 'WILD', dam: 'WILD', genetics: { meanKinship: 0.05, inbreeding: 0.0625 } }),
+  row({ id: 'c', studbookNumber: 'T3', coId: 'REG-A-0031', status: 'dead', sire: '2', dam: '10' }),
+  row({ id: 'secret', studbookNumber: '7', coId: 'REG-A-SECRET', animalId: 'Hidden', private: true, status: 'dead' }),
 ]
 const bodyRows = () => within(screen.getAllByRole('rowgroup')[1]!).getAllByRole('row')
 const firstCells = () => bodyRows().map((r) => r.querySelector('th, td')!.textContent!.replace(/ \(was .*\)$/, ''))
@@ -19,16 +19,16 @@ const firstCells = () => bodyRows().map((r) => r.querySelector('th, td')!.textCo
 describe('studbook table', () => {
   it('shows both IDs on every animal and keeps private animals as placeholders that reveal nothing', () => {
     const html = renderToStaticMarkup(<StudbookTable rows={rows} caption="Redfoot assurance" showAll />)
-    for (const s of ['CO-A-0010', 'Shelly', 'CO-A-0002', 'Tank', 'CO-A-0031', 'was T1']) expect(html).toContain(s)
+    for (const s of ['REG-A-0010', 'Shelly', 'REG-A-0002', 'Tank', 'REG-A-0031', 'was T1']) expect(html).toContain(s)
     expect(html).toContain('Private animal')
-    for (const s of ['CO-A-SECRET', 'Hidden', '>7<']) expect(html).not.toContain(s)
+    for (const s of ['REG-A-SECRET', 'Hidden', '>7<']) expect(html).not.toContain(s)
     expect(html).toContain('Showing 4 of 4 animals')
   })
 
-  it('finds an animal by studbook number, old number, CO ID or Animal ID, and never matches a private one', () => {
+  it('finds an animal by studbook number, old number, Registry ID or Animal ID, and never matches a private one', () => {
     render(<StudbookTable rows={rows} caption="Book" showAll />)
     const search = screen.getByRole('searchbox', { name: 'Find an animal' })
-    for (const [q, first] of [['t1', '2'], ['tank', '2'], ['co-a-0010', '10'], ['T3', 'T3']] as const) {
+    for (const [q, first] of [['t1', '2'], ['tank', '2'], ['reg-a-0010', '10'], ['T3', 'T3']] as const) {
       fireEvent.change(search, { target: { value: q } })
       expect(firstCells()).toEqual([first])
     }

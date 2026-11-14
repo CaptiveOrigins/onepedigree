@@ -47,7 +47,7 @@ export function lifeSpan(individual: Individual | undefined): LifeSpan {
   return {
     born: yearOf(pick(data, ['born', 'birthDate', 'birth']) ?? ged.birth?.date),
     died: yearOf(pick(data, ['died', 'deathDate', 'death']) ?? ged.death?.date),
-    // `status: 'alive'` is how keeper records (e.g. Captive Origins animals) say so.
+    // `status: 'alive'` is how some keeper records say so.
     living: data.living === true || data.status === 'alive',
   }
 }

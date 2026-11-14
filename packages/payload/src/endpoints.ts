@@ -14,7 +14,7 @@ import {
   type PedigreeViewId,
   type ReproductiveModeId,
   roleLabel,
-} from '@captiveorigins/onepedigree-core'
+} from '@extantape/onepedigree-core'
 import { addDataAndFileToRequest, APIError, type CollectionSlug, type Endpoint, type GlobalSlug, type PayloadRequest, type Where } from 'payload'
 
 import { checkParentage } from './integrity.js'

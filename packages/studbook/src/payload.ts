@@ -1,5 +1,5 @@
 import type { Endpoint, PayloadRequest } from 'payload'
-import { biologicalParents, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { biologicalParents, type PedigreeDocument } from '@extantape/onepedigree-core'
 import { KinshipError, kinshipAnalysis, PEDIGREE_BASED, type KinshipResult } from './kinship.js'
 import { DAM_ROLES, PmxError, SIRE_ROLES, toPed } from './pmx.js'
 import type { Studbook, StudbookAnimal, StudbookDate } from './types.js'

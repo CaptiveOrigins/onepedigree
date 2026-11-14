@@ -1,6 +1,6 @@
 'use client'
 
-import type { PedigreeViewId } from '@captiveorigins/onepedigree-core'
+import type { PedigreeViewId } from '@extantape/onepedigree-core'
 import { useId, useState } from 'react'
 
 import { VIEW_LABELS } from './describe.js'

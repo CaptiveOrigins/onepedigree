@@ -1,5 +1,5 @@
-import { carrierFromOffspring, layoutSync, PEDIGREE_VIEWS, projectPedigree, type OccurrenceMode, type PedigreeViewId, type GeneDefinition, type GenotypeRecord } from '@captiveorigins/onepedigree-core'
-import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS, type GenotypeMark } from '@captiveorigins/onepedigree-react'
+import { carrierFromOffspring, layoutSync, PEDIGREE_VIEWS, projectPedigree, type OccurrenceMode, type PedigreeViewId, type GeneDefinition, type GenotypeRecord } from '@extantape/onepedigree-core'
+import { PedigreeExplorer, THEME_PRESETS, VIEW_LABELS, type GenotypeMark } from '@extantape/onepedigree-react'
 import { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 

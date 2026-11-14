@@ -1,10 +1,10 @@
 {
-  "name": "@captiveorigins/onepedigree-core",
-  "version": "0.1.0-alpha.21",
+  "name": "@extantape/onepedigree-core",
+  "version": "0.1.0-alpha.22",
   "description": "OnePedigree core: the species-neutral pedigree data model, validation, bounded traversal, view projections and layout, with no React, Payload or database dependency.",
-  "homepage": "https://github.com/CaptiveOrigins/onepedigree#readme",
+  "homepage": "https://github.com/ExtantApe/OnePedigree#readme",
   "bugs": {
-    "url": "https://github.com/CaptiveOrigins/onepedigree/issues"
+    "url": "https://github.com/ExtantApe/OnePedigree/issues"
   },
   "keywords": [
     "pedigree",
@@ -17,7 +17,7 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CaptiveOrigins/onepedigree.git",
+    "url": "git+https://github.com/ExtantApe/OnePedigree.git",
     "directory": "packages/core"
   },
   "type": "module",

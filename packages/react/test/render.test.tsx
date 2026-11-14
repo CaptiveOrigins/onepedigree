@@ -1,4 +1,4 @@
-import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@captiveorigins/onepedigree-core'
+import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@extantape/onepedigree-core'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
@@ -38,14 +38,14 @@ describe('server rendering', () => {
   it('shows the host identifier beside the name, in the node and its spoken name, but never on a placeholder', () => {
     const doc = {
       ...privateAncestor,
-      individuals: privateAncestor.individuals.map((i) => (i.id === 'pebble' ? { ...i, identifier: 'CO-AQCR6T' } : i.id === 'private-1' ? { ...i, identifier: 'CO-SECRET' } : i)),
+      individuals: privateAncestor.individuals.map((i) => (i.id === 'pebble' ? { ...i, identifier: 'REG-AQCR6T' } : i.id === 'private-1' ? { ...i, identifier: 'REG-SECRET' } : i)),
     }
     const projection = projectPedigree(doc, { focalId: 'pebble', view: 'pedigree' })
     const html = renderToStaticMarkup(<PedigreeView projection={projection} layout={layoutSync(projection)} />)
-    expect(html).toContain('Pebble (CO-AQCR6T)')
+    expect(html).toContain('Pebble (REG-AQCR6T)')
     // The spoken name: the node's <title> (or its link's aria-label).
-    expect(html).toMatch(/data-individual="pebble"[^>]*><title>Pebble \(CO-AQCR6T\)/)
-    expect(html).not.toContain('CO-SECRET')
+    expect(html).toMatch(/data-individual="pebble"[^>]*><title>Pebble \(REG-AQCR6T\)/)
+    expect(html).not.toContain('REG-SECRET')
   })
 
   it('marks a private placeholder, names it "Private record" and never shows its ID', () => {

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "paths": { "@captiveorigins/onepedigree-core": ["../core/src/index.ts"] }
+    "paths": { "@extantape/onepedigree-core": ["../core/src/index.ts"] }
   },
   "include": ["src", "test", "../../fixtures"]
 }

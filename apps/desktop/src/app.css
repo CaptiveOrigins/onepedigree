@@ -7,7 +7,7 @@
   --muted: #5b6577;
   --border: #d9dde5;
   --accent: #cf8137;
-  /* Focus rings: the darker orange on light backgrounds (owner decision N154, 2026-11-11), 4.62:1 on the panel. Dark keeps #e7a066. */
+  /* Focus rings: the darker orange on light backgrounds (owner decision, 2026-11-11), 4.62:1 on the panel. Dark keeps #e7a066. */
   --focus: #a65f20;
   --field: #ffffff;
 }

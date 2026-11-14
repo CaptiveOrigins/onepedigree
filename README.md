@@ -4,16 +4,16 @@ A species-neutral pedigree framework for humans and other animals (and plants): 
 data model, graph validation, bounded ancestry traversal, view projections, automatic
 layout, server-renderable React components and a Payload CMS plugin.
 
-Part of the [OneOrigin suite](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
+Part of the [OneOrigin suite](https://github.com/ExtantApe/OnePhylogeny/blob/main/docs/oneorigin/README.md): independent tools, with no subscriptions, that work alone or together.
 
 > **Status: alpha.** The schema-version-1 contract is stable in intent; package APIs may
 > still change before the first prerelease.
 
 | Package | Purpose |
 |---|---|
-| `@captiveorigins/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
-| `@captiveorigins/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
-| `@captiveorigins/payload-plugin-onepedigree` | Payload plugin: managed, standard or mapped collections, cycle-safe serialized writes, deletion policies, permission-aware endpoints, Admin preview and color settings. |
+| `@extantape/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
+| `@extantape/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
+| `@extantape/payload-plugin-onepedigree` | Payload plugin: managed, standard or mapped collections, cycle-safe serialized writes, deletion policies, permission-aware endpoints, Admin preview and color settings. |
 
 ## Principles
 
@@ -30,7 +30,7 @@ Part of the [OneOrigin suite](https://github.com/CaptiveOrigins/onephylogeny/blo
 ## Quick start
 
 ```ts
-import { getAncestors, indexPedigree, validatePedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { getAncestors, indexPedigree, validatePedigree, type PedigreeDocument } from '@extantape/onepedigree-core'
 
 const pedigree: PedigreeDocument = {
   schemaVersion: 1,
@@ -100,7 +100,7 @@ rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m
 
 ## Part of the OneOrigin suite
 
-OnePedigree works on its own, or with [OneTaxonomy](https://github.com/CaptiveOrigins/onetaxonomy) and [OnePhylogeny](https://github.com/CaptiveOrigins/onephylogeny). See [the suite](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/CaptiveOrigins/onephylogeny/blob/main/docs/oneorigin/guidelines.md).
+OnePedigree works on its own, or with [OneTaxonomy](https://github.com/ExtantApe/OneTaxonomy) and [OnePhylogeny](https://github.com/ExtantApe/OnePhylogeny). See [the suite](https://github.com/ExtantApe/OnePhylogeny/blob/main/docs/oneorigin/README.md) and its [guidelines](https://github.com/ExtantApe/OnePhylogeny/blob/main/docs/oneorigin/guidelines.md).
 
 ## Documentation
 
@@ -108,4 +108,4 @@ OnePedigree works on its own, or with [OneTaxonomy](https://github.com/CaptiveOr
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from Captive Origins. Versions published before this change remain under MIT.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from EXTANT APE. Versions published before this change remain under MIT.

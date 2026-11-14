@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { layoutSync, normalizePedigree, projectPedigree, type ParentLinksMode } from '@captiveorigins/onepedigree-core'
+import { layoutSync, normalizePedigree, projectPedigree, type ParentLinksMode } from '@extantape/onepedigree-core'
 
 import { fosterDam, fosterDamBiological, humanFamily } from '../../../fixtures'
 import { PedigreeExplorer, PedigreeView } from '../src'

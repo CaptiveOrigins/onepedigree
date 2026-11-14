@@ -1,6 +1,6 @@
 {
-  "name": "@captiveorigins/onepedigree-studbook",
-  "version": "0.1.0-alpha.21",
+  "name": "@extantape/onepedigree-studbook",
+  "version": "0.1.0-alpha.22",
   "type": "module",
   "description": "OnePedigree studbook: species-neutral studbook numbering, pedigree-based kinship, inbreeding, mean kinship, gene diversity and founder analysis, and PMx export, for any managed population.",
   "keywords": [
@@ -12,6 +12,10 @@
     "conservation-breeding",
     "pmx"
   ],
+  "homepage": "https://github.com/ExtantApe/OnePedigree#readme",
+  "bugs": {
+    "url": "https://github.com/ExtantApe/OnePedigree/issues"
+  },
   "license": "PolyForm-Noncommercial-1.0.0",
   "exports": {
     ".": {
@@ -35,7 +39,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@captiveorigins/onepedigree-core": "workspace:^"
+    "@extantape/onepedigree-core": "workspace:^"
   },
   "peerDependencies": {
     "payload": "^3.80.0"
@@ -55,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CaptiveOrigins/onepedigree.git",
+    "url": "git+https://github.com/ExtantApe/OnePedigree.git",
     "directory": "packages/studbook"
   }
 }

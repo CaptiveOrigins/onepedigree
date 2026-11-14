@@ -9,9 +9,9 @@ layout, server-renderable React components and a Payload CMS plugin.
 
 | Package | Purpose |
 |---|---|
-| `@captiveorigins/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
-| `@captiveorigins/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
-| `@captiveorigins/payload-plugin-onepedigree` | Payload plugin: managed, standard or mapped collections, cycle-safe serialized writes, deletion policies, permission-aware endpoints, Admin preview and color settings. |
+| `@extantape/onepedigree-core` | Data model, normalization, validation, traversal, projections, layout, serialization. No React, Payload or database dependency. |
+| `@extantape/onepedigree-react` | Server-renderable SVG views (all 13), interactive explorer, headless hooks, CSS-variable styling. |
+| `@extantape/payload-plugin-onepedigree` | Payload plugin: managed, standard or mapped collections, cycle-safe serialized writes, deletion policies, permission-aware endpoints, Admin preview and color settings. |
 
 ## Principles
 
@@ -28,7 +28,7 @@ layout, server-renderable React components and a Payload CMS plugin.
 ## Quick start
 
 ```ts
-import { getAncestors, indexPedigree, validatePedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { getAncestors, indexPedigree, validatePedigree, type PedigreeDocument } from '@extantape/onepedigree-core'
 
 const pedigree: PedigreeDocument = {
   schemaVersion: 1,
@@ -86,7 +86,7 @@ possible het with a chance, non-carrier, unknown; with how it is known).
 - `genotypeSummary` — "Super Pastel 66% possible het Pied" from the records.
 
 Nothing is guessed: polygenic and unproven genes have no odds, and a sex-linked gene needs the sex.
-In `@captiveorigins/onepedigree-react`, `genotypes` draws allele dots for several genes on every node
+In `@extantape/onepedigree-react`, `genotypes` draws allele dots for several genes on every node
 (two dots per gene, one per copy), `GenotypeDots` draws them anywhere, and `geneOverlay` focuses on one
 gene with the usual genetic pedigree symbols and `GeneLegend`.
 
@@ -102,4 +102,4 @@ rendered) and `dist/index.html` (interactive; serve the folder, e.g. `python3 -m
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from Captive Origins. Versions published before this change remain under MIT.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from EXTANT APE. Versions published before this change remain under MIT.

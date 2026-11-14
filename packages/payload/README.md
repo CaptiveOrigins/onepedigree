@@ -1,11 +1,11 @@
-# @captiveorigins/payload-plugin-onepedigree
+# @extantape/payload-plugin-onepedigree
 
 [OnePedigree](../../README.md) for Payload CMS 3: parentage on your own collection, cycle-safe
 writes, deletion policies, permission-aware pedigree endpoints for all 13 views, and Admin
 components (pedigree preview, relatives, color theme settings).
 
 ```ts
-import { onePedigree } from '@captiveorigins/payload-plugin-onepedigree'
+import { onePedigree } from '@extantape/payload-plugin-onepedigree'
 
 export default buildConfig({
   collections: [Animals, Clutches],
@@ -24,7 +24,7 @@ export default buildConfig({
 ## Identifiers beside names
 
 `fields.identifier` shows a host identifier after each name in every view, relatives list and
-spoken name, e.g. "Mead (CO-AQCR6T)". Give a field path, or a function of the requester so each
+spoken name, e.g. "Mead (REG-AQCR6T)". Give a field path, or a function of the requester so each
 person can choose, for example a registry ID or their own studbook number:
 
 ```ts
@@ -116,4 +116,4 @@ role fields) in production; the standard fields declare it.
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from Captive Origins. Versions published before this change remain under MIT.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). Free for noncommercial use, with attribution; commercial use needs a separate license from EXTANT APE. Versions published before this change remain under MIT.

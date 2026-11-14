@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@captiveorigins/onepedigree-core'
+import { layoutSync, PEDIGREE_VIEWS, projectPedigree } from '@extantape/onepedigree-core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -40,7 +40,7 @@ describe('themes', () => {
   })
 })
 
-describe('focus ring (owner decision N154, 2026-11-11)', () => {
+describe('focus ring (owner decision, 2026-11-11)', () => {
   const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8')
   const darkAt = css.indexOf('@media (prefers-color-scheme: dark) {\n  .op-root, .op-explorer, .op-studbook')
   const focusOf = (text: string) => /--op-focus: (#[0-9a-f]{6})/.exec(text)?.[1]

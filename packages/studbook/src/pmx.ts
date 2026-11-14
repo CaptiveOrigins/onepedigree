@@ -1,4 +1,4 @@
-import { biologicalParents } from '@captiveorigins/onepedigree-core'
+import { biologicalParents } from '@extantape/onepedigree-core'
 import type { Studbook, StudbookAnimal, StudbookDate, StudbookEvent } from './types.js'
 
 /**
@@ -12,7 +12,7 @@ import type { Studbook, StudbookAnimal, StudbookDate, StudbookEvent } from './ty
  *   *SIRE: id; probability      (after a MULT sire; the same with *DAM)
  *   *MOVE: DateIn; InEst; InType; DateOut; OutEst; OutType; Location; Notes
  *
- * IDs are studbook numbers. Other ID is the Captive Origins ID and the AnimalID column the keeper's own, so both IDs
+ * IDs are studbook numbers. Other ID is the registry ID and the AnimalID column the keeper's own, so both IDs
  * travel (owner, 2026-11-09). Locations are holder codes unless `holderLabel` names them, which only those allowed to
  * export see (contract with the platform). Fields can't hold `;`, `:` or tabs: an ID or code with one is refused, and
  * free-text notes have them replaced.
@@ -118,7 +118,7 @@ export function toPed(book: Studbook, options: PmxOptions = {}): string {
     lines.push([
       numberOf.get(a.id)!, sire.code, dam.code, sexCode(a), selected ? 'T' : 'F', a.status === 'dead' ? 'T' : 'F',
       a.birth.precision === 'unknown' ? '' : ymd(a.birth.date), death && death.date.precision !== 'unknown' ? ymd(death.date.date) : '',
-      last ? holder(last.location) : '', last?.localId ? safe(last.localId, 'Local ID') : '', safe(a.coId, 'Captive Origins ID'), a.animalId ? safe(a.animalId, 'Animal ID') : '',
+      last ? holder(last.location) : '', last?.localId ? safe(last.localId, 'Local ID') : '', safe(a.coId, 'Registry ID'), a.animalId ? safe(a.animalId, 'Animal ID') : '',
     ].join('; '))
     for (const c of sire.candidates ?? []) lines.push(`*SIRE: ${c.number}; ${c.probability}`)
     for (const c of dam.candidates ?? []) lines.push(`*DAM: ${c.number}; ${c.probability}`)

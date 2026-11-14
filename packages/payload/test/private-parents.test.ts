@@ -83,10 +83,10 @@ beforeAll(async () => {
     tokens[name] = ((await login.json()) as { token: string }).token
   }
   // P is private to its owner. Q is public, kept by someone else, and P is its mother.
-  await create('P', { visibility: 'private', owner: users.owner!.id, coId: 'CO-APPPPP' })
+  await create('P', { visibility: 'private', owner: users.owner!.id, coId: 'REG-APPPPP' })
   await create('S', { owner: users.keeper!.id })
-  await create('S2', { owner: users.keeper!.id, coId: 'CO-AS2222' })
-  await create('Q', { owner: users.keeper!.id, coId: 'CO-AQCR6T', studbook: 'CHCA-2501', parentage: { parents: [{ individual: a.P, role: 'mother' }, { individual: a.S, role: 'father' }] } })
+  await create('S2', { owner: users.keeper!.id, coId: 'REG-AS2222' })
+  await create('Q', { owner: users.keeper!.id, coId: 'REG-AQCR6T', studbook: 'CHCA-2501', parentage: { parents: [{ individual: a.P, role: 'mother' }, { individual: a.S, role: 'father' }] } })
   await create('G', { owner: users.keeper!.id, parentage: { parents: [{ individual: a.Q, role: 'mother' }] } })
 })
 afterAll(async () => stop?.())
@@ -236,14 +236,14 @@ describe('identifiers beside names', () => {
   type Projection = { individuals: Record<string, { label?: string; identifier?: string | null; data?: { private?: boolean } }> }
   it('come with each individual in the pedigree, per requester, and never with a private placeholder', async () => {
     const anon = (await rest(`/animals/${a.Q}/pedigree?view=pedigree`)).body as { projection: Projection }
-    expect(anon.projection.individuals[a.Q!]!.identifier).toBe('CO-AQCR6T')
-    expect(JSON.stringify(anon)).not.toContain('CO-APPPPP')
+    expect(anon.projection.individuals[a.Q!]!.identifier).toBe('REG-AQCR6T')
+    expect(JSON.stringify(anon)).not.toContain('REG-APPPPP')
     const placeholder = Object.values(anon.projection.individuals).find((i) => i.data?.private)!
     expect(placeholder.identifier ?? null).toBeNull()
     const keeper = (await rest(`/animals/${a.Q}/pedigree?view=pedigree`, 'keeper')).body as { projection: Projection }
     expect(keeper.projection.individuals[a.Q!]!.identifier).toBe('CHCA-2501')
     // The owner can read the private mother, so sees her ID.
-    expect(JSON.stringify((await rest(`/animals/${a.Q}/pedigree?view=pedigree`, 'owner')).body)).toContain('CO-APPPPP')
+    expect(JSON.stringify((await rest(`/animals/${a.Q}/pedigree?view=pedigree`, 'owner')).body)).toContain('REG-APPPPP')
   })
 
   it('come with each relative, and a private parent stays { private: true }', async () => {
@@ -251,8 +251,8 @@ describe('identifiers beside names', () => {
     const parents = (q.body as { parents: { individual: Record<string, unknown> }[] }).parents.map((p) => p.individual)
     expect(parents).toContainEqual({ private: true })
     // Earlier tests made S2 the father.
-    expect(parents).toContainEqual(expect.objectContaining({ label: 'S2', identifier: 'CO-AS2222' }))
-    expect(JSON.stringify(q.body)).not.toContain('CO-APPPPP')
+    expect(parents).toContainEqual(expect.objectContaining({ label: 'S2', identifier: 'REG-AS2222' }))
+    expect(JSON.stringify(q.body)).not.toContain('REG-APPPPP')
   })
 })
 

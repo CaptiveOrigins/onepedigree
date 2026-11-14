@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": [],
-    "paths": { "@captiveorigins/onepedigree-core": ["../core/src/index.ts"] }
+    "paths": { "@extantape/onepedigree-core": ["../core/src/index.ts"] }
   },
   "include": [
     "src",

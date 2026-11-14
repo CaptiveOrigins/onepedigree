@@ -8,7 +8,7 @@ import {
   type PedigreeLayoutEngine,
   type PedigreeViewProjection,
   type ProjectionOptions,
-} from '@captiveorigins/onepedigree-core'
+} from '@extantape/onepedigree-core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 /** Memoized projection of a document (or index) for one view. */

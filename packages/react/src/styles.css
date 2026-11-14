@@ -25,7 +25,7 @@
   overflow: visible;
 }
 /*
- * Focus ring (brand/README.md; owner decision N154, 2026-11-11): the darker orange #a65f20 on light backgrounds
+ * Focus ring (brand/README.md; owner decision, 2026-11-11): the darker orange #a65f20 on light backgrounds
  * (4.91:1 on white), the lighter #e7a066 in dark (7.98:1 on the dark card). Fills and selection keep their colors.
  */
 .op-root, .op-explorer, .op-studbook { --op-focus: #a65f20; }

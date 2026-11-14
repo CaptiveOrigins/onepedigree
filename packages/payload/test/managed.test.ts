@@ -1,4 +1,4 @@
-import { indexPedigree, PEDIGREE_VIEWS, projectPedigree, validatePedigree, type PedigreeDocument } from '@captiveorigins/onepedigree-core'
+import { indexPedigree, PEDIGREE_VIEWS, projectPedigree, validatePedigree, type PedigreeDocument } from '@extantape/onepedigree-core'
 import type { Payload, TypedUser } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 

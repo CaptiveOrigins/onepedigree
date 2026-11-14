@@ -1,4 +1,4 @@
-import { IDENTIFIER_FORMAT, nameWithIdentifier, type Individual, type PedigreeViewId, type PedigreeViewProjection, type ReproductiveStructure } from '@captiveorigins/onepedigree-core'
+import { IDENTIFIER_FORMAT, nameWithIdentifier, type Individual, type PedigreeViewId, type PedigreeViewProjection, type ReproductiveStructure } from '@extantape/onepedigree-core'
 
 export const VIEW_LABELS: Record<PedigreeViewId, string> = {
   pedigree: 'Pedigree',
@@ -58,7 +58,7 @@ export function sexWord(sex: string | null | undefined, terms: Terminology = DEF
 }
 
 /**
- * Display name: the label with the host's identifier ("Mead (CO-AQCR6T)"), else either alone, else the record ID.
+ * Display name: the label with the host's identifier ("Mead (REG-AQCR6T)"), else either alone, else the record ID.
  * Anonymous placeholders (`data.private`) show neither their ID nor any identifier.
  */
 export const labelOf = (individual: Individual | undefined, terms: Terminology = DEFAULT_TERMS) =>

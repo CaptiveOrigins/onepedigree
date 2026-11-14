@@ -1,4 +1,4 @@
-import type { PedigreeViewId } from '@captiveorigins/onepedigree-core'
+import type { PedigreeViewId } from '@extantape/onepedigree-core'
 import type { CSSProperties } from 'react'
 
 /** Colors a theme sets; each maps to a `--op-*` custom property. */

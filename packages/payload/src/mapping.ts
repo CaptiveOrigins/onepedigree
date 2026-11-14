@@ -1,4 +1,4 @@
-import { adaptIndividual, REPRODUCTIVE_MODES, type Individual, type ParentReference, type PedigreeAdapter, type ReproductiveModeId } from '@captiveorigins/onepedigree-core'
+import { adaptIndividual, REPRODUCTIVE_MODES, type Individual, type ParentReference, type PedigreeAdapter, type ReproductiveModeId } from '@extantape/onepedigree-core'
 import type { Where } from 'payload'
 
 import type { OnePedigreePluginOptions, ResolvedOptions } from './types.js'
@@ -130,7 +130,7 @@ export const maternalRoles = (opts: ResolvedOptions) => opts.lineageRoles?.mater
 
 /** Parent terms for a request: the user's preference (if configured), else the installation default. */
 export async function termsFor(opts: ResolvedOptions, user: unknown) {
-  const { resolveParentTerms } = await import('@captiveorigins/onepedigree-core')
+  const { resolveParentTerms } = await import('@extantape/onepedigree-core')
   const pref = opts.terminology?.userPreference && user ? getAt(user, opts.terminology.userPreference) : undefined
   return resolveParentTerms(pref, opts.terminology?.parents ?? 'mother-father')
 }

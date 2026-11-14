@@ -5,7 +5,7 @@ import { getStudbook, studbookEndpoint, type StudbookEndpointOptions, type Studb
 
 // A made-up studbook. P is a private wild founder: counted everywhere, named nowhere.
 const date = (d: string | null) => ({ date: d, precision: d ? ('day' as const) : ('unknown' as const) })
-const animal = (a: Partial<StudbookAnimal> & Pick<StudbookAnimal, 'id' | 'studbookNumber'>): StudbookAnimal => ({ coId: `CO-A-${a.id}`, sex: 'unknown', birthType: 'captive', birth: date(null), parentage: null, status: 'alive', ...a })
+const animal = (a: Partial<StudbookAnimal> & Pick<StudbookAnimal, 'id' | 'studbookNumber'>): StudbookAnimal => ({ coId: `REG-A-${a.id}`, sex: 'unknown', birthType: 'captive', birth: date(null), parentage: null, status: 'alive', ...a })
 const mother = (id: string) => ({ individual: id, role: 'mother' })
 const father = (id: string) => ({ individual: id, role: 'father' })
 const book: Studbook = {
@@ -14,7 +14,7 @@ const book: Studbook = {
   animals: [
     animal({ id: 'w1', studbookNumber: '1', sex: 'female', birthType: 'wild', animalId: 'Ruby' }),
     animal({ id: 'w2', studbookNumber: '2', sex: 'male', birthType: 'wild' }),
-    animal({ id: 'P', studbookNumber: '9', coId: 'CO-A-SECRET', animalId: 'Hidden', sex: 'female', birthType: 'wild', private: true }),
+    animal({ id: 'P', studbookNumber: '9', coId: 'REG-A-SECRET', animalId: 'Hidden', sex: 'female', birthType: 'wild', private: true }),
     animal({ id: 'c3', studbookNumber: '3', sex: 'male', parentage: { parents: [mother('w1'), father('w2')] }, birth: date('2015-06-01') }),
     animal({ id: 'c4', studbookNumber: '4', sex: 'female', parentage: { parents: [mother('P'), father('c3')] }, animalId: 'Fern' }),
     animal({ id: 'c5', studbookNumber: 'T1', parentage: { parents: [], uncertainParents: [{ role: 'father', candidates: [{ individual: 'w2', probability: 0.5 }, { individual: 'c3', probability: 0.5 }] }, { role: 'mother', candidates: [], kind: 'wild' }] } }),
@@ -49,7 +49,7 @@ describe('studbook endpoint: privacy', () => {
   it('counts a private animal but names it nowhere: not as a row, a parent, a founder or a holder', async () => {
     const { status, text } = await call(coordinator)
     expect(status).toBe(200)
-    for (const s of ['CO-A-SECRET', 'Hidden', '"P"', 'HSECRET', '"9"']) expect(text).not.toContain(s)
+    for (const s of ['REG-A-SECRET', 'Hidden', '"P"', 'HSECRET', '"9"']) expect(text).not.toContain(s)
     const r = JSON.parse(text) as StudbookResponse
     expect(r.animals.filter((a) => 'private' in a)).toEqual([{ private: true }])
     expect(view(r, '4').dam).toBe('Private')
@@ -108,7 +108,7 @@ describe('studbook endpoint: who sees genetics', () => {
 describe('studbook endpoint: rows', () => {
   it('shows both IDs, parent codes (number, MULT, WILD, UNK for a parent with no record), and holders through holderLabel only', async () => {
     const r = JSON.parse((await call(coordinator)).text) as StudbookResponse
-    expect(view(r, '4')).toMatchObject({ coId: 'CO-A-c4', animalId: 'Fern', sire: '3', holder: 'Holder H2' })
+    expect(view(r, '4')).toMatchObject({ coId: 'REG-A-c4', animalId: 'Fern', sire: '3', holder: 'Holder H2' })
     expect(view(r, 'T1')).toMatchObject({ sire: 'MULT', dam: 'WILD' })
     expect(view(r, '6')).toMatchObject({ sire: 'UNK', dam: 'UNK', selected: false })
     expect(view(r, '1').holder).toBeNull()
@@ -127,7 +127,7 @@ describe('studbook endpoint: MULT candidates', () => {
     expect(view(r, '7').mult).toEqual({ dam: [{ studbookNumber: '1', probability: 0.5 }, { private: true, probability: 0.3 }, { private: true, probability: 0.1 }] })
     expect(view(r, '7')).toMatchObject({ sire: '3', dam: 'MULT' })
     expect(view(r, '4').mult).toBeNull()
-    for (const s of ['"9"', 'CO-A-SECRET', 'gone']) expect(text).not.toContain(s)
+    for (const s of ['"9"', 'REG-A-SECRET', 'gone']) expect(text).not.toContain(s)
   })
 })
 

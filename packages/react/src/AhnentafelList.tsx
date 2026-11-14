@@ -1,4 +1,4 @@
-import { lifeLabel, lifeSpan, type Individual, type PedigreeViewProjection } from '@captiveorigins/onepedigree-core'
+import { lifeLabel, lifeSpan, type Individual, type PedigreeViewProjection } from '@extantape/onepedigree-core'
 
 import { DEFAULT_TERMS, labelOf, type Terminology } from './describe.js'
 

@@ -1,4 +1,4 @@
-import type { PedigreeIssue } from '@captiveorigins/onepedigree-core'
+import type { PedigreeIssue } from '@extantape/onepedigree-core'
 
 /**
  * Studbook numbers, by the rules studbook keepers use (PopLink 2.5.2; docs/architecture/studbook.md):
